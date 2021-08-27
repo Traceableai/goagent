@@ -13,7 +13,7 @@ var cfg *traceconfig.Traceable
 var cfgMux = &sync.Mutex{}
 
 // InitConfig initializes the config with default values
-func InitConfig(c *traceconfig.AgentConfig) {
+func InitConfig(c *traceconfig.Traceable) {
 	cfgMux.Lock()
 	defer cfgMux.Unlock()
 
@@ -26,14 +26,14 @@ func InitConfig(c *traceconfig.AgentConfig) {
 	// is because user might decide to change values in runtime and that is undesirable
 	// without a proper API.
 	var ok bool
-	cfg, ok = proto.Clone(c).(*traceconfig.AgentConfig)
+	cfg, ok = proto.Clone(c).(*traceconfig.Traceable)
 	if !ok {
 		log.Fatal("failed to initialize config.")
 	}
 }
 
 // GetConfig returns the config value
-func GetConfig() *traceconfig.AgentConfig {
+func GetConfig() *traceconfig.Traceable {
 	if cfg == nil {
 		InitConfig(config.Load())
 	}
