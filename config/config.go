@@ -1,11 +1,11 @@
 package config
 
 import (
+	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
-	traceconfig "github.com/traceableai/agent-config/gen/go/v1"
 )
 
 type AgentConfig struct {
-	Hypertrace *hyperconfig.AgentConfig
-	Traceable  traceconfig.Traceable
+	Tracing  *hyperconfig.AgentConfig
+	Blocking *traceconfig.AgentConfig
 }

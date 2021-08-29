@@ -15,9 +15,9 @@ import (
 	"strings"
 	"unsafe"
 
+	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
-	traceconfig "github.com/traceableai/agent-config/gen/go/v1"
 )
 
 const defaultAgentManagerEndpoint = "localhost:5441"

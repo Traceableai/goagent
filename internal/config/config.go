@@ -4,16 +4,16 @@ import (
 	"log"
 	"sync"
 
-	"github.com/hypertrace/goagent/config"
-	traceconfig "github.com/traceableai/agent-config/gen/go/v1"
+	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	"github.com/Traceableai/goagent/config"
 	"google.golang.org/protobuf/proto"
 )
 
-var cfg *traceconfig.Traceable
+var cfg *traceconfig.AgentConfig
 var cfgMux = &sync.Mutex{}
 
 // InitConfig initializes the config with default values
-func InitConfig(c *traceconfig.Traceable) {
+func InitConfig(c *traceconfig.AgentConfig) {
 	cfgMux.Lock()
 	defer cfgMux.Unlock()
 
@@ -26,16 +26,16 @@ func InitConfig(c *traceconfig.Traceable) {
 	// is because user might decide to change values in runtime and that is undesirable
 	// without a proper API.
 	var ok bool
-	cfg, ok = proto.Clone(c).(*traceconfig.Traceable)
+	cfg, ok = proto.Clone(c).(*traceconfig.AgentConfig)
 	if !ok {
 		log.Fatal("failed to initialize config.")
 	}
 }
 
 // GetConfig returns the config value
-func GetConfig() *traceconfig.Traceable {
+func GetConfig() *traceconfig.AgentConfig {
 	if cfg == nil {
-		InitConfig(config.Load())
+		InitConfig(config.Load().Blocking)
 	}
 
 	return cfg

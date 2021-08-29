@@ -8,9 +8,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/traceableai/goagent"
-	"github.com/traceableai/goagent/config"
-	"github.com/traceableai/goagent/instrumentation/net/traceablehttp"
+	"github.com/Traceableai/goagent"
+	"github.com/Traceableai/goagent/config"
+	"github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 

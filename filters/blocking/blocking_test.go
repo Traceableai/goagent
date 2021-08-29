@@ -9,7 +9,7 @@ package blocking
 import (
 	"testing"
 
-	traceconfig "github.com/traceableai/agent-config/gen/go/v1"
+	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
 
 	"github.com/hypertrace/goagent/sdk/filter"
 	"github.com/stretchr/testify/assert"

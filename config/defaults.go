@@ -1,34 +1,38 @@
 package config
 
-import agentconfig "github.com/hypertrace/agent-config/gen/go/v1"
+import (
+	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
+)
 
 // defaultConfig holds the default config values for agent.
 var defaultConfig = &AgentConfig{
-	hypertrace: agentconfig.AgentConfig{
-		PropagationFormats: []agentconfig.PropagationFormat{agentconfig.PropagationFormat_TRACECONTEXT},
-		DataCapture: &agentconfig.DataCapture{
-			HttpHeaders: &agentconfig.Message{
-				Request:  agentconfig.Bool(true),
-				Response: agentconfig.Bool(true),
+	Tracing: &hyperconfig.AgentConfig{
+		PropagationFormats: []hyperconfig.PropagationFormat{hyperconfig.PropagationFormat_TRACECONTEXT},
+		DataCapture: &hyperconfig.DataCapture{
+			HttpHeaders: &hyperconfig.Message{
+				Request:  hyperconfig.Bool(true),
+				Response: hyperconfig.Bool(true),
 			},
-			HttpBody: &agentconfig.Message{
-				Request:  agentconfig.Bool(true),
-				Response: agentconfig.Bool(true),
+			HttpBody: &hyperconfig.Message{
+				Request:  hyperconfig.Bool(true),
+				Response: hyperconfig.Bool(true),
 			},
-			RpcMetadata: &agentconfig.Message{
-				Request:  agentconfig.Bool(true),
-				Response: agentconfig.Bool(true),
+			RpcMetadata: &hyperconfig.Message{
+				Request:  hyperconfig.Bool(true),
+				Response: hyperconfig.Bool(true),
 			},
-			RpcBody: &agentconfig.Message{
-				Request:  agentconfig.Bool(true),
-				Response: agentconfig.Bool(true),
+			RpcBody: &hyperconfig.Message{
+				Request:  hyperconfig.Bool(true),
+				Response: hyperconfig.Bool(true),
 			},
-			BodyMaxSizeBytes: agentconfig.Int32(131072),
+			BodyMaxSizeBytes: hyperconfig.Int32(131072),
 		},
-		Reporting: &agentconfig.Reporting{
-			Endpoint:          agentconfig.String("http://localhost:9411/api/v2/spans"),
-			Secure:            agentconfig.Bool(false),
-			TraceReporterType: agentconfig.TraceReporterType_ZIPKIN,
+		Reporting: &hyperconfig.Reporting{
+			Endpoint:          hyperconfig.String("http://localhost:9411/api/v2/spans"),
+			Secure:            hyperconfig.Bool(false),
+			TraceReporterType: hyperconfig.TraceReporterType_OTLP,
 		},
 	},
+	Blocking: &traceconfig.AgentConfig{},
 }

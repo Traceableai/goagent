@@ -3,11 +3,14 @@ package config
 import (
 	"testing"
 
-	config "github.com/hypertrace/agent-config/gen/go/v1"
+	config "github.com/Traceableai/agent-config/gen/go/v1"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func TestConfig(t *testing.T) {
 	InitConfig(&config.AgentConfig{
-		ServiceName: config.String("my_service"),
+		Opa: &config.Opa{
+			Enabled: wrapperspb.Bool(true),
+		},
 	})
 }

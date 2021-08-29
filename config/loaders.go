@@ -1,36 +1,50 @@
 package config
 
-import agentconfig "github.com/hypertrace/agent-config/gen/go/v1"
+import (
+	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
+)
+
+const envPrefix = "TRACEABLE_"
 
 func Load() *AgentConfig {
 	return &AgentConfig{
-		Hypertrace: agentconfig.Load(
-			agentconfig.WithEnvPrefix("TRACEABLE_"),
-			agentconfig.WithDefaults(defaultConfig.Hypertrace),
+		Tracing: hyperconfig.Load(
+			hyperconfig.WithEnvPrefix(envPrefix),
+			hyperconfig.WithDefaults(defaultConfig.Tracing),
+		),
+		Blocking: traceconfig.Load(
+			traceconfig.WithEnvPrefix(envPrefix),
+			traceconfig.WithDefaults(defaultConfig.Blocking),
 		),
 	}
 }
 
 func LoadFromFile(configFile string) *AgentConfig {
 	return &AgentConfig{
-		Hypertrace: agentconfig.LoadFromFile(
+		Tracing: hyperconfig.LoadFromFile(
 			configFile,
-			agentconfig.WithEnvPrefix("TRACEABLE_"),
-			agentconfig.WithDefaults(defaultConfig.Hypertrace),
+			hyperconfig.WithEnvPrefix(envPrefix),
+			hyperconfig.WithDefaults(defaultConfig.Tracing),
+		),
+		Blocking: traceconfig.LoadFromFile(
+			configFile,
+			traceconfig.WithEnvPrefix(envPrefix),
+			traceconfig.WithDefaults(defaultConfig.Blocking),
 		),
 	}
 }
 
-func PropagationFormats(formats ...agentconfig.PropagationFormat) []agentconfig.PropagationFormat {
+func PropagationFormats(formats ...hyperconfig.PropagationFormat) []hyperconfig.PropagationFormat {
 	return formats
 }
 
 var (
-	Bool                           = agentconfig.Bool
-	String                         = agentconfig.String
-	Int32                          = agentconfig.Int32
-	TraceReporterType_OTLP         = agentconfig.TraceReporterType_OTLP
-	TraceReporterType_ZIPKIN       = agentconfig.TraceReporterType_ZIPKIN
-	PropagationFormat_B3           = agentconfig.PropagationFormat_B3
-	PropagationFormat_TRACECONTEXT = agentconfig.PropagationFormat_TRACECONTEXT
+	Bool                           = hyperconfig.Bool
+	String                         = hyperconfig.String
+	Int32                          = hyperconfig.Int32
+	TraceReporterType_OTLP         = hyperconfig.TraceReporterType_OTLP
+	TraceReporterType_ZIPKIN       = hyperconfig.TraceReporterType_ZIPKIN
+	PropagationFormat_B3           = hyperconfig.PropagationFormat_B3
+	PropagationFormat_TRACECONTEXT = hyperconfig.PropagationFormat_TRACECONTEXT
 )

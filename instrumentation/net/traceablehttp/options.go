@@ -9,7 +9,7 @@ type Options struct {
 	Filter filter.Filter
 }
 
-func (o *Options) toSDKOptions() *http.Options {
+func (o Options) toSDKOptions() *http.Options {
 	return &http.Options{
 		Filter: o.Filter,
 	}

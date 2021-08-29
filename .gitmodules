@@ -1,3 +1,0 @@
-[submodule "config-proto/_traceableai/agent-config"]
-	path = config-proto/_traceableai/agent-config
-	url = git@github.com:traceableai/agent-config.git
