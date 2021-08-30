@@ -1,4 +1,4 @@
-package config
+package config // import "github.com/Traceableai/goagent/config"
 
 import (
 	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
@@ -40,9 +40,9 @@ func PropagationFormats(formats ...hyperconfig.PropagationFormat) []hyperconfig.
 }
 
 var (
-	Bool                           = hyperconfig.Bool
-	String                         = hyperconfig.String
-	Int32                          = hyperconfig.Int32
+	Bool                           = traceconfig.Bool
+	String                         = traceconfig.String
+	Int32                          = traceconfig.Int32
 	TraceReporterType_OTLP         = hyperconfig.TraceReporterType_OTLP
 	TraceReporterType_ZIPKIN       = hyperconfig.TraceReporterType_ZIPKIN
 	PropagationFormat_B3           = hyperconfig.PropagationFormat_B3

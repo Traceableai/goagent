@@ -1,6 +1,6 @@
 //+build linux
 
-package blocking
+package blocking // import "github.com/Traceableai/goagent/filters/blocking"
 
 /*
 #cgo CFLAGS: -I../../../dependent-apis/libtraceable/build/traceable

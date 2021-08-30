@@ -1,4 +1,4 @@
-package config
+package config // import "github.com/Traceableai/goagent/config"
 
 import (
 	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"

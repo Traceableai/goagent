@@ -1,4 +1,4 @@
-package traceablehttp
+package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 
 import (
 	"github.com/hypertrace/goagent/sdk/filter"

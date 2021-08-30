@@ -1,6 +1,6 @@
 //+build !linux
 
-package blocking
+package blocking // import "github.com/Traceableai/goagent/filters/blocking"
 
 import (
 	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"

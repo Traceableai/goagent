@@ -1,13 +1,12 @@
-package traceablehttp
+package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 
 import (
 	"net/http"
 
-	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
-	"github.com/Traceableai/goagent/filters/blocking"
+	"github.com/Traceableai/goagent/instrumentation/internal/filter"
+
 	internalconfig "github.com/Traceableai/goagent/internal/config"
 	"github.com/hypertrace/goagent/instrumentation/opentelemetry"
-	"github.com/hypertrace/goagent/sdk/filter"
 	sdkhttp "github.com/hypertrace/goagent/sdk/instrumentation/net/http"
 )
 
@@ -15,7 +14,7 @@ import (
 // needs to be used with OTel instrumentation.
 func WrapHandler(delegate http.Handler, options *Options) http.Handler {
 	newOpts := Options{
-		Filter: resolveFilter(internalconfig.GetConfig(), options.Filter),
+		Filter: filter.ResolveFilter(internalconfig.GetConfig(), options.Filter),
 	}
 
 	return sdkhttp.WrapHandler(
@@ -23,29 +22,4 @@ func WrapHandler(delegate http.Handler, options *Options) http.Handler {
 		opentelemetry.SpanFromContext,
 		newOpts.toSDKOptions(),
 	)
-}
-
-// isNoop returns true if the filter is NO-OP. This is useful specially when
-// we are in environments where the filters can be noop se we can reduce the
-// overhead of the filter call.
-func isNoop(f filter.Filter) bool {
-	if _, ok := f.(filter.NoopFilter); ok {
-		return true
-	}
-
-	return false
-}
-
-func resolveFilter(cfg *traceconfig.AgentConfig, f filter.Filter) filter.Filter {
-	blockingFilter := blocking.NewBlockingFilter(cfg)
-
-	if !isNoop(blockingFilter) {
-		if f != nil {
-			return filter.NewMultiFilter(f)
-		} else {
-			return blockingFilter
-		}
-	}
-
-	return f
 }
