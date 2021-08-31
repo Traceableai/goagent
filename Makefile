@@ -24,8 +24,7 @@ deps-ci:
 check-examples:
 	find ./ -type d -print | \
 	grep examples/ | \
-	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "Building {}" ; go build -o ./build_example main.go ; fi'
-	find . -name "build_example" -delete
+	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "Building {}" ; go build -o ./build_example main.go ; rm build_example ; fi'
 
 .PHONY: fmt
 fmt:
