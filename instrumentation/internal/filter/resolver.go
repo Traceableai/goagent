@@ -20,13 +20,13 @@ func isNoop(f sdkfilter.Filter) bool {
 func ResolveFilter(cfg *traceconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.Filter {
 	blockingFilter := blocking.NewBlockingFilter(cfg)
 
-	if !isNoop(blockingFilter) {
-		if f != nil {
-			return sdkfilter.NewMultiFilter(f)
-		} else {
-			return blockingFilter
-		}
+	if isNoop(blockingFilter) {
+		return f
 	}
 
-	return f
+	if f == nil {
+		return blockingFilter
+	}
+
+	return sdkfilter.NewMultiFilter(f)
 }

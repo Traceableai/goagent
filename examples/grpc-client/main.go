@@ -1,5 +1,3 @@
-// +build ignore
-
 package main
 
 import (
@@ -8,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/hypertrace/goagent/config"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry/google.golang.org/hypergrpc"
-	pb "github.com/hypertrace/goagent/instrumentation/opentelemetry/google.golang.org/hypergrpc/examples/helloworld"
+	"github.com/Traceableai/goagent"
+	"github.com/Traceableai/goagent/config"
+	pb "github.com/Traceableai/goagent/examples/internal/helloworld"
+	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 )
@@ -25,7 +23,7 @@ func main() {
 	cfg := config.Load()
 	cfg.ServiceName = config.String("grpc-client")
 
-	closer := opentelemetry.Init(cfg)
+	closer := goagent.Init(cfg)
 	defer closer()
 
 	// Set up a connection to the server.
@@ -34,7 +32,7 @@ func main() {
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 		grpc.WithUnaryInterceptor(
-			hypergrpc.WrapUnaryClientInterceptor(
+			traceablegrpc.WrapUnaryClientInterceptor(
 				otelgrpc.UnaryClientInterceptor(),
 			),
 		),

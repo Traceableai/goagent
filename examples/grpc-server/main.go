@@ -1,5 +1,3 @@
-// +build ignore
-
 package main
 
 import (
@@ -10,8 +8,8 @@ import (
 
 	"github.com/Traceableai/goagent"
 	"github.com/Traceableai/goagent/config"
+	pb "github.com/Traceableai/goagent/examples/internal/helloworld"
 	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc"
-	pb "github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc/examples/helloworld"
 	sdkgrpc "github.com/hypertrace/goagent/sdk/instrumentation/google.golang.org/grpc"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"

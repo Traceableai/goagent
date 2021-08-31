@@ -8,5 +8,3 @@ require (
 )
 
 replace github.com/Traceableai/goagent => ../../
-
-replace github.com/Traceableai/agent-config/gen/go => ../../../agent-config/gen/go
