@@ -26,6 +26,10 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
+      # https://github.com/golangci/golangci-lint/issues/1176
+      - name: Install CGO deps
+        run: sudo apt update && sudo apt install libsnmp-dev
+
       - name: download dependencies
         run: |
           make deps
