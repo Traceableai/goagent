@@ -2,10 +2,6 @@
 
 package blocking
 
-// IMPORTANT: These tests require the librtraceable.so library to be loaded
-// in the host for which we run `make install-libs`, otherwise we need to compile
-// the tests and run them linking the dynamic library as in Dockerfile.modsec.test
-
 import (
 	"testing"
 
@@ -99,11 +95,11 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				RegionBlocking: &traceconfig.RegionBlockingConfig{
 					Enabled: traceconfig.Bool(false),
 				},
-				RemoteConfig: &commonv1.RemoteConfig{
+				RemoteConfig: &traceconfig.RemoteConfig{
 					Enabled: traceconfig.Bool(false),
 				},
 			},
-			Opa: {
+			Opa: &traceconfig.Opa{
 				Endpoint:          wrapperspb.String("http://opa:8181"),
 				PollPeriodSeconds: wrapperspb.Int32(10),
 			},
@@ -133,7 +129,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					PollPeriodSeconds: traceconfig.Int32(10),
 				},
 			},
-			Opa: &traceconfig.BlockingConfig{
+			Opa: &traceconfig.Opa{
 				Endpoint:          traceconfig.String("http://opa:8181"),
 				PollPeriodSeconds: traceconfig.Int32(10),
 			},

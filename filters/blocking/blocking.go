@@ -24,7 +24,7 @@ const defaultAgentManagerEndpoint = "localhost:5441"
 const defaultPollPeriodSec = 30
 
 // NewBlockingFilter creates libtraceable based blocking filter
-func NewBlockingFilter(config *traceconfig.Traceable) filter.Filter {
+func NewBlockingFilter(config *traceconfig.AgentConfig) filter.Filter {
 	blockingConfig := config.BlockingConfig
 	// disabled if no blocking config or enabled is set to false
 	if blockingConfig == nil || blockingConfig.Enabled.Value == false {
@@ -144,7 +144,7 @@ func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]st
 	return m
 }
 
-func getLibTraceableConfig(config *traceconfig.Traceable) C.traceable_blocking_config {
+func getLibTraceableConfig(config *traceconfig.AgentConfig) C.traceable_blocking_config {
 	blocking, opa := config.BlockingConfig, config.Opa
 
 	// debug log off by default
@@ -248,6 +248,6 @@ func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.tra
 	return (*[1 << 30]C.traceable_attribute)(unsafe.Pointer(attributes.attribute_array))[:attributes.count:attributes.count]
 }
 
-func getGoString(cstring *C.char) string {
-	return C.GoString(cstring)
+func getGoString(cStr *C.char) string {
+	return C.GoString(cStr)
 }
