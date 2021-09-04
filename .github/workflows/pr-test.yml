@@ -31,8 +31,7 @@ jobs:
         run: sudo apt update && sudo apt install libsnmp-dev
 
       - name: download dependencies
-        run: |
-          make deps
+        run: make deps
 
       - name: Lint files
         uses: golangci/golangci-lint-action@v2
@@ -44,8 +43,17 @@ jobs:
           skip-go-installation: true
           skip-pkg-cache: true
           args: --skip-dirs google --skip-dirs proto
+
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...
+
+      - name: Run linux tests
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          context: .
+          file: ./Dockerfile.test
+          tags: linux_tests:latest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1

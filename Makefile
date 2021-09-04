@@ -45,3 +45,10 @@ install-tools: ## Install all the dependencies under the tools module
 check-vanity-import:
 	@porto -l .
 	@if [[ "$(porto --skip-files ".*\\.pb\\.go$" -l . | wc -c | xargs)" -ne "0" ]]; then echo "Vanity imports are not up to date" ; exit 1 ; fi
+
+.PHONY: install-libtraceable
+install-libtraceable:
+	@cd ./filters/blocking/cmd/libtraceable-install && \
+	TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
+	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
+	go run main.go $(LIBTRACEABLE_DESTINATION)
