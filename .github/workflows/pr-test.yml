@@ -33,6 +33,10 @@ jobs:
       - name: download dependencies
         run: make deps
 
+      # https://github.com/golangci/golangci-lint/issues/1176#issuecomment-639118049
+      - name: Fix for the lint
+        run: sudo cp ./filters/blocking/library/blocking.h /usr/local/include
+
       - name: Lint files
         uses: golangci/golangci-lint-action@v2
         with:
