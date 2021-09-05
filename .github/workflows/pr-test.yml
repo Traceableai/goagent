@@ -42,7 +42,6 @@ jobs:
           # See https://github.com/golangci/golangci-lint-action/issues/135#issuecomment-791775296
           skip-go-installation: true
           skip-pkg-cache: true
-          args: --skip-dirs google --skip-dirs proto
 
       - name: Install libtraceable
         run: >
@@ -70,14 +69,3 @@ jobs:
 
       - name: check examples
         run: make check-examples
-
-  security:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@master
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=low
