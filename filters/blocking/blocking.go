@@ -3,7 +3,7 @@
 package blocking // import "github.com/Traceableai/goagent/filters/blocking"
 
 /*
-#cgo CFLAGS: -I/etc/libtraceable/lib
+#cgo CFLAGS: -I./library
 #cgo LDFLAGS: -L/etc/libtraceable/lib -ltraceable -ldl
 #include "blocking.h"
 

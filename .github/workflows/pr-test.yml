@@ -45,9 +45,10 @@ jobs:
           args: --skip-dirs google --skip-dirs proto
 
       - name: Install libtraceable
-        run: |
-          LIBTRACEABLE_DESTINATION=/etc/libtraceable/lib make install-libtraceable 
-          LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu make install-libtraceable
+        run: >
+          LIBTRACEABLE_OS=ubuntu_20.04
+          LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu
+          make install-libtraceable
 
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...

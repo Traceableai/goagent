@@ -4,6 +4,12 @@
 test:
 	@go test -count=1 -v -race -cover ./...
 
+.PHONY: test-linux
+test-linux:
+	@docker build -f Dockerfile.test -t goagent-test \
+	--build-arg TA_BASIC_AUTH_USER=$(TA_BASIC_AUTH_USER) \
+	--build-arg TA_BASIC_AUTH_TOKEN=$(TA_BASIC_AUTH_TOKEN) .
+
 .PHONY: bench
 bench:
 	go test -v -run - -bench . -benchmem ./...
@@ -48,7 +54,14 @@ check-vanity-import:
 
 .PHONY: install-libtraceable
 install-libtraceable:
-	@cd ./filters/blocking/cmd/libtraceable-install && \
+	@cd ./filters/blocking/cmd/libtraceable && \
 	TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
 	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
-	go run main.go $(LIBTRACEABLE_DESTINATION)
+	go run main.go install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
+
+.PHONY: pull-libtraceable
+pull-libtraceable:
+	@cd ./filters/blocking/cmd/libtraceable && \
+	TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
+	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
+	go run main.go pull-library "./filters/blocking/library"
