@@ -52,14 +52,21 @@ check-vanity-import:
 	@porto -l .
 	@if [[ "$(porto --skip-files ".*\\.pb\\.go$" -l . | wc -c | xargs)" -ne "0" ]]; then echo "Vanity imports are not up to date" ; exit 1 ; fi
 
+.PHONY: install-libtraceable-downloader
+install-libtraceable-downloader:
+	cd ./filters/blocking/cmd/libtraceable-downloader; \
+	go mod download; \
+	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
+	libtraceable-downloader
+
 .PHONY: install-libtraceable
 install-libtraceable:
 	@TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
 	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
-	libtraceable install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
+	libtraceable-downloader install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
 
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
 	@TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
 	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
-	libtraceable pull-library-headers "./filters/blocking/library"
+	libtraceable-downloader pull-library-headers "./filters/blocking/library"
