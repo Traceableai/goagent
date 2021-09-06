@@ -50,12 +50,11 @@ install-tools: ## Install all the dependencies under the tools module
 .PHONY: check-vanity-import
 check-vanity-import:
 	@porto -l .
-	@if [[ "$(porto --skip-files ".*\\.pb\\.go$" -l . | wc -c | xargs)" -ne "0" ]]; then echo "Vanity imports are not up to date" ; exit 1 ; fi
 
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:
 	cd ./filters/blocking/cmd/libtraceable-downloader && \
-	go mod download -x && \
+	go mod download && \
 	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
 
 .PHONY: install-libtraceable
