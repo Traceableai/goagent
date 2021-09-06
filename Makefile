@@ -54,10 +54,9 @@ check-vanity-import:
 
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:
-	cd ./filters/blocking/cmd/libtraceable-downloader; \
-	go mod download; \
+	cd ./filters/blocking/cmd/libtraceable-downloader && \
+	go mod download -x && \
 	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
-	libtraceable-downloader
 
 .PHONY: install-libtraceable
 install-libtraceable:
