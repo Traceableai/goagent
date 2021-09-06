@@ -1,4 +1,4 @@
-# This dockerfile is only aimed to be used for testing modsec processor
+# This dockerfile is only aimed to be used for testing the blocking filter
 
 FROM ubuntu:20.04
 
