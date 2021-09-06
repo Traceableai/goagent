@@ -3,7 +3,6 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	_ "embed"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,9 +19,6 @@ type libraryInfo struct {
 	OS      string
 	Version string
 }
-
-//go:embed version.txt
-var libVersion string
 
 var downloadURLTmpl = template.Must(template.New("download_url").Parse(
 	"https://traceableai.jfrog.io/artifactory/gradle-local/ai/traceable/agent/" +
