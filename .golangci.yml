@@ -1,7 +1,7 @@
 run:
   deadline: 5m
   build-tags:
-    - linux
+    - "!linux"
 
 linters:
   disable-all: true
