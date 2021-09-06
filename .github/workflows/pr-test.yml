@@ -26,8 +26,11 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: download dependencies
+      - name: Download dependencies
         run: make deps
+
+      - name: Install tools
+        run: make install-tools
 
       #- name: Lint files
       #  uses: golangci/golangci-lint-action@v2

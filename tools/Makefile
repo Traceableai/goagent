@@ -2,3 +2,4 @@
 install:
 	go mod download
 	go install github.com/jcchavezs/porto/cmd/porto
+	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable

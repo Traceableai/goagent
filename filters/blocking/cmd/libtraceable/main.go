@@ -53,7 +53,7 @@ func main() {
 		statusCode = 0
 	)
 
-	if len(cmdArgs) > 2 {
+	if len(os.Args) > 2 {
 		cmdArgs = os.Args[2:]
 	}
 
@@ -80,15 +80,24 @@ Usage:
 
 The commands are:
 
-	help              displays the help
-	pull-library-headers      pulls the library headers into the repository
-	install-library   installs the library in the host
+	help                    displays the help
+	pull-library-headers    pulls the library headers into the repository
+	install-library         installs the library in the host
 	`, filepath.Base(os.Args[0]))
 	return 0
 }
 
 func pullLibraryHeadersCmd(out io.Writer, args []string) int {
-	dstDir, _ := filepath.Abs("../../library")
+	if len(args) != 1 {
+		writeStringf(out, `
+Usage: 
+
+	%s %s <dst_folder>
+			`, filepath.Base(os.Args[0]), os.Args[1])
+		return 1
+	}
+
+	dstDir, _ := filepath.Abs(args[0])
 
 	writeStringf(out, "Downloading header file to %q", dstDir)
 

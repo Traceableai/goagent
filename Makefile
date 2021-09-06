@@ -54,14 +54,12 @@ check-vanity-import:
 
 .PHONY: install-libtraceable
 install-libtraceable:
-	@cd ./filters/blocking/cmd/libtraceable && \
-	TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
+	@TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
 	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
-	go run main.go install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
+	libtraceable install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
 
-.PHONY: pull-libtraceable
-pull-libtraceable:
-	@cd ./filters/blocking/cmd/libtraceable && \
-	TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
+.PHONY: pull-libtraceable-headers
+pull-libtraceable-headers:
+	@TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
 	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
-	go run main.go pull-library-headers "./filters/blocking/library"
+	libtraceable pull-library-headers "./filters/blocking/library"
