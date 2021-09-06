@@ -64,4 +64,4 @@ pull-libtraceable:
 	@cd ./filters/blocking/cmd/libtraceable && \
 	TA_BASIC_AUTH_USER="$(TA_BASIC_AUTH_USER)" \
 	TA_BASIC_AUTH_TOKEN="$(TA_BASIC_AUTH_TOKEN)" \
-	go run main.go pull-library "./filters/blocking/library"
+	go run main.go pull-library-headers "./filters/blocking/library"

@@ -49,15 +49,19 @@ func main() {
 
 	var (
 		out        = os.Stdout
-		cmdArgs    = os.Args[2:]
+		cmdArgs    []string
 		statusCode = 0
 	)
+
+	if len(cmdArgs) > 2 {
+		cmdArgs = os.Args[2:]
+	}
 
 	switch cmd {
 	case "help":
 		statusCode = helpCmd(out, cmdArgs)
-	case "pull-library":
-		statusCode = pullLibraryCmd(out, cmdArgs)
+	case "pull-library-headers":
+		statusCode = pullLibraryHeadersCmd(out, cmdArgs)
 	case "install-library":
 		statusCode = installLibraryCmd(out, cmdArgs)
 	default:
@@ -77,37 +81,46 @@ Usage:
 The commands are:
 
 	help              displays the help
-	pull-library      pulls the library into the repository
+	pull-library-headers      pulls the library headers into the repository
 	install-library   installs the library in the host
-
-	`, os.Args[0])
+	`, filepath.Base(os.Args[0]))
 	return 0
 }
 
-func pullLibraryCmd(out io.Writer, args []string) int {
+func pullLibraryHeadersCmd(out io.Writer, args []string) int {
+	dstDir, _ := filepath.Abs("../../library")
+
+	writeStringf(out, "Downloading header file to %q", dstDir)
+
 	return downloadFile(out, libraryInfo{
 		Name:    "libtraceable",
 		OS:      "ubuntu_20.04",
 		Version: libVersion,
-	}, "traceable/blocking.h", "../../library")
+	}, "traceable/blocking.h", dstDir)
 }
 
 func installLibraryCmd(out io.Writer, args []string) int {
 	if len(args) != 2 {
 		writeStringf(out, `
-Usage: %s %s <os> <dst_folder>
-			`, os.Args[0], os.Args[1])
+Usage: 
+
+	%s %s <os> <dst_folder>
+			`, filepath.Base(os.Args[0]), os.Args[1])
 		return 1
 	}
 
+	os, dstDir := args[0], args[1]
+
+	writeStringf(out, "Installing library file to %q", dstDir)
+
 	return downloadFile(out, libraryInfo{
 		Name:    "libtraceable",
-		OS:      args[0],
+		OS:      os,
 		Version: libVersion,
-	}, "traceable/libtraceable.so", args[1])
+	}, "traceable/libtraceable.so", dstDir)
 }
 
-func downloadFile(out io.Writer, lib libraryInfo, filepath, dstDir string) int {
+func downloadFile(out io.Writer, lib libraryInfo, fpath, dstDir string) int {
 	tmpFile, err := ioutil.TempFile(os.TempDir(), lib.Name)
 	if err != nil {
 		writeStringf(out, "Failed to create temporary download file: %v", err)
@@ -130,6 +143,15 @@ func downloadFile(out io.Writer, lib libraryInfo, filepath, dstDir string) int {
 	}
 
 	username, token := os.Getenv("TA_BASIC_AUTH_USER"), os.Getenv("TA_BASIC_AUTH_TOKEN")
+	if username == "" {
+		writeStringf(out, "Environment variable \"TA_BASIC_AUTH_USER\" is required.")
+		return 1
+	}
+
+	if token == "" {
+		writeStringf(out, "Environment variable \"TA_BASIC_AUTH_TOKEN\" is required.")
+		return 1
+	}
 
 	req, err := http.NewRequest(http.MethodGet, downloadURL(lib), nil)
 	if err != nil {
@@ -160,7 +182,7 @@ func downloadFile(out io.Writer, lib libraryInfo, filepath, dstDir string) int {
 		return 1
 	}
 
-	count, err := unzipFile(tmpFile.Name(), filepath, dstDir)
+	count, err := unzipFile(tmpFile.Name(), fpath, dstDir)
 	if err != nil {
 		writeStringf(out, "Failed to unzip downloaded file: %v", err)
 		return 1
