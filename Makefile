@@ -1,14 +1,14 @@
 .DEFAULT_GOAL := test
 
+LIBTRACEABLE_DOWNLOADER ?= libtraceable-downloader
+
 .PHONY: test
 test:
 	@go test -count=1 -v -race -cover ./...
 
 .PHONY: test-linux
 test-linux:
-	@docker build -f Dockerfile.test -t goagent-test \
-	--build-arg TA_BASIC_AUTH_USER=$(TA_BASIC_AUTH_USER) \
-	--build-arg TA_BASIC_AUTH_TOKEN=$(TA_BASIC_AUTH_TOKEN) .
+	@docker build -f Dockerfile.test -t goagent-test .
 
 .PHONY: bench
 bench:
@@ -59,9 +59,8 @@ install-libtraceable-downloader:
 
 .PHONY: install-libtraceable
 install-libtraceable:
-	@libtraceable-downloader install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION) || \
-	sudo libtraceable-downloader install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
+	@$(LIBTRACEABLE_DOWNLOADER) install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
 
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
-	@libtraceable-downloader pull-library-headers "./filters/blocking/library"
+	@$(LIBTRACEABLE_DOWNLOADER) pull-library-headers "./filters/blocking/library"
