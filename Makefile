@@ -1,8 +1,14 @@
 .DEFAULT_GOAL := test
 
+LIBTRACEABLE_DOWNLOADER ?= libtraceable-downloader
+
 .PHONY: test
 test:
 	@go test -count=1 -v -race -cover ./...
+
+.PHONY: test-linux
+test-linux:
+	@docker build -f Dockerfile.test -t goagent-test .
 
 .PHONY: bench
 bench:
@@ -17,15 +23,10 @@ lint:
 deps:
 	@go get -v -t -d ./...
 
-.PHONY: ci-deps
-deps-ci:
-	@go get github.com/golangci/golangci-lint/cmd/golangci-lint
-
 check-examples:
 	find ./ -type d -print | \
 	grep examples/ | \
-	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "Building {}" ; go build -o ./build_example main.go ; fi'
-	find . -name "build_example" -delete
+	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "Building {}" ; go build -o ./build_example main.go ; rm build_example ; fi'
 
 .PHONY: fmt
 fmt:
@@ -45,4 +46,17 @@ install-tools: ## Install all the dependencies under the tools module
 .PHONY: check-vanity-import
 check-vanity-import:
 	@porto -l .
-	@if [[ "$(porto --skip-files ".*\\.pb\\.go$" -l . | wc -c | xargs)" -ne "0" ]]; then echo "Vanity imports are not up to date" ; exit 1 ; fi
+
+.PHONY: install-libtraceable-downloader
+install-libtraceable-downloader:
+	cd ./filters/blocking/cmd/libtraceable-downloader && \
+	go mod download && \
+	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
+
+.PHONY: install-libtraceable
+install-libtraceable:
+	@$(LIBTRACEABLE_DOWNLOADER) install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
+
+.PHONY: pull-libtraceable-headers
+pull-libtraceable-headers:
+	@$(LIBTRACEABLE_DOWNLOADER) pull-library-headers "./filters/blocking/library"

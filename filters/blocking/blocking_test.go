@@ -2,10 +2,6 @@
 
 package blocking
 
-// IMPORTANT: These tests require the librtraceable.so library to be loaded
-// in the host for which we run `make install-libs`, otherwise we need to compile
-// the tests and run them linking the dynamic library as in Dockerfile.modsec.test
-
 import (
 	"testing"
 
@@ -50,8 +46,8 @@ func TestBlockingDisabled(t *testing.T) {
 	f := NewBlockingFilter(&traceconfig.AgentConfig{})
 	assert.IsType(t, filter.NoopFilter{}, f)
 
-	f = NewBlockingFilter(&traceconfig.AgentConfig
-		BlockingConfig: &commonv1.BlockingConfig{
+	f = NewBlockingFilter(&traceconfig.AgentConfig{
+		BlockingConfig: &traceconfig.BlockingConfig{
 			Enabled: wrapperspb.Bool(false),
 		},
 	})
@@ -62,14 +58,14 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	// most straightforward config, only opa is specified
 	libTraceableConfig := getLibTraceableConfig(
 		&traceconfig.AgentConfig{
-			BlockingConfig{
-				Enabled: wrapperspb.Bool(true),
+			BlockingConfig: &traceconfig.BlockingConfig{
+				Enabled: traceconfig.Bool(true),
 			},
-			Opa{
-				Endpoint:          wrapperspb.String("http://opa:8181"),
-				PollPeriodSeconds: wrapperspb.Int32(10),
-			}
-		}
+			Opa: &traceconfig.Opa{
+				Endpoint:          traceconfig.String("http://opa:8181"),
+				PollPeriodSeconds: traceconfig.Int32(10),
+			},
+		},
 	)
 
 	assert.Equal(t, "http://opa:8181", getGoString(libTraceableConfig.opa_config.opa_server_url))
@@ -88,26 +84,26 @@ func TestGetLibTraceableConfig(t *testing.T) {
 
 	// specify all options
 	libTraceableConfig = getLibTraceableConfig(
-		&traceconfig.AgentConfig {
-		BlockingConfig: {
-			Enabled:  wrapperspb.Bool(true),
-			DebugLog: wrapperspb.Bool(true),
-			Modsecurity: &commonv1.ModsecurityConfig{
-				Enabled: wrapperspb.Bool(false),
+		&traceconfig.AgentConfig{
+			BlockingConfig: &traceconfig.BlockingConfig{
+				Enabled:  traceconfig.Bool(true),
+				DebugLog: traceconfig.Bool(true),
+				Modsecurity: &traceconfig.ModsecurityConfig{
+					Enabled: traceconfig.Bool(false),
+				},
+				EvaluateBody: traceconfig.Bool(false),
+				RegionBlocking: &traceconfig.RegionBlockingConfig{
+					Enabled: traceconfig.Bool(false),
+				},
+				RemoteConfig: &traceconfig.RemoteConfig{
+					Enabled: traceconfig.Bool(false),
+				},
 			},
-			EvaluateBody: wrapperspb.Bool(false),
-			RegionBlocking: &commonv1.RegionBlockingConfig{
-				Enabled: wrapperspb.Bool(false),
-			},
-			RemoteConfig: &commonv1.RemoteConfig{
-				Enabled: wrapperspb.Bool(false),
+			Opa: &traceconfig.Opa{
+				Endpoint:          wrapperspb.String("http://opa:8181"),
+				PollPeriodSeconds: wrapperspb.Int32(10),
 			},
 		},
-		Opa: {
-			Endpoint:          wrapperspb.String("http://opa:8181"),
-			PollPeriodSeconds: wrapperspb.Int32(10),
-		},
-	}
 	)
 
 	assert.Equal(t, "http://opa:8181", getGoString(libTraceableConfig.opa_config.opa_server_url))
@@ -125,19 +121,19 @@ func TestGetLibTraceableConfig(t *testing.T) {
 
 	// verify for RemoteConfig
 	libTraceableConfig = getLibTraceableConfig(
-		&traceconfig.AgentConfig {
-		BlockingConfig: {
-			Enabled: wrapperspb.Bool(true),
-			RemoteConfig: &commonv1.RemoteConfig{
-				Endpoint:          wrapperspb.String("agent.traceableai:5441"),
-				PollPeriodSeconds: wrapperspb.Int32(10),
+		&traceconfig.AgentConfig{
+			BlockingConfig: &traceconfig.BlockingConfig{
+				Enabled: traceconfig.Bool(true),
+				RemoteConfig: &traceconfig.RemoteConfig{
+					Endpoint:          traceconfig.String("agent.traceableai:5441"),
+					PollPeriodSeconds: traceconfig.Int32(10),
+				},
+			},
+			Opa: &traceconfig.Opa{
+				Endpoint:          traceconfig.String("http://opa:8181"),
+				PollPeriodSeconds: traceconfig.Int32(10),
 			},
 		},
-		Opa: {
-			Endpoint:          wrapperspb.String("http://opa:8181"),
-			PollPeriodSeconds: wrapperspb.Int32(10),
-		},
-	}
 	)
 
 	assert.Equal(t, "http://opa:8181", getGoString(libTraceableConfig.opa_config.opa_server_url))

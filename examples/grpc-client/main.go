@@ -21,7 +21,7 @@ const (
 
 func main() {
 	cfg := config.Load()
-	cfg.ServiceName = config.String("grpc-client")
+	cfg.Tracing.ServiceName = config.String("grpc-client")
 
 	closer := goagent.Init(cfg)
 	defer closer()

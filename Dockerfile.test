@@ -1,0 +1,37 @@
+# This dockerfile is only aimed to be used for testing the blocking filter
+
+FROM ubuntu:20.04
+
+RUN apt-get -qq update && apt-get -qq install -y wget git build-essential
+
+ARG GO_VERSION=1.16.2
+
+RUN wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -xvf go${GO_VERSION}.linux-amd64.tar.gz && \
+    mv go /usr/local
+
+ENV GOROOT=/usr/local/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+WORKDIR /usr/local/app/
+
+# We first copy these files to be able to cache the dependencies download
+# and speed up the test container.
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+# Once the dependencies are cached in previous layers we copy everything else.
+COPY . .
+
+WORKDIR /usr/local/app
+
+RUN make install-libtraceable-downloader
+
+RUN LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader \
+    LIBTRACEABLE_OS=ubuntu_20.04 \
+    LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu \
+    make install-libtraceable
+
+RUN make deps
+
+RUN make test

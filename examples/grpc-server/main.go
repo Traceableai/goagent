@@ -10,7 +10,6 @@ import (
 	"github.com/Traceableai/goagent/config"
 	pb "github.com/Traceableai/goagent/examples/internal/helloworld"
 	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc"
-	sdkgrpc "github.com/hypertrace/goagent/sdk/instrumentation/google.golang.org/grpc"
 
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -46,7 +45,7 @@ func main() {
 		grpc.UnaryInterceptor(
 			traceablegrpc.WrapUnaryServerInterceptor(
 				otelgrpc.UnaryServerInterceptor(),
-				&sdkgrpc.Options{},
+				&traceablegrpc.Options{},
 			),
 		),
 	)

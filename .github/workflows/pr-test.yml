@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: ["1.13", "1.14", "1.15", "1.16"]
+        go: ["1.15", "1.16", "1.17"]
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -26,18 +26,39 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: download dependencies
-        run: |
-          make deps
+      - name: Install libtraceable-downloader
+        run: make install-libtraceable-downloader
+
+      - name: Install libtraceable
+        run: >
+          sudo make install-libtraceable
+          LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader
+          LIBTRACEABLE_OS=ubuntu_20.04
+          LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu
+
+      - name: Download dependencies
+        run: make deps
 
       - name: Lint files
         uses: golangci/golangci-lint-action@v2
         with:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
           version: v1.29
+          # work around for "file exists" errors.
+          # See https://github.com/golangci/golangci-lint-action/issues/135#issuecomment-791775296
+          skip-go-installation: true
+          skip-pkg-cache: true
 
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...
+
+      - name: Run linux tests
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          context: .
+          file: ./Dockerfile.test
+          tags: linux_tests:latest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
@@ -48,14 +69,3 @@ jobs:
 
       - name: check examples
         run: make check-examples
-
-  security:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@master
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=low
