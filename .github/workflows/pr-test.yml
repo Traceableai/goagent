@@ -26,9 +26,6 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: Download dependencies
-        run: make deps
-
       - name: Install libtraceable-downloader
         run: make install-libtraceable-downloader
 
@@ -38,6 +35,9 @@ jobs:
           LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader
           LIBTRACEABLE_OS=ubuntu_20.04
           LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu
+
+      - name: Download dependencies
+        run: make deps
 
       #- name: Lint files
       #  uses: golangci/golangci-lint-action@v2

@@ -23,10 +23,6 @@ lint:
 deps:
 	@go get -v -t -d ./...
 
-.PHONY: ci-deps
-deps-ci:
-	@go get github.com/golangci/golangci-lint/cmd/golangci-lint
-
 check-examples:
 	find ./ -type d -print | \
 	grep examples/ | \

@@ -32,6 +32,6 @@ RUN LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader \
     LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu \
     make install-libtraceable
 
-RUN go get ./...
+RUN make deps
 
-RUN CGO_ENABLED=1 go test -v ./...
+RUN make test
