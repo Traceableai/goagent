@@ -21,8 +21,8 @@ type libraryInfo struct {
 }
 
 var downloadURLTmpl = template.Must(template.New("download_url").Parse(
-	"https://traceableai.jfrog.io/artifactory/gradle-local/ai/traceable/agent/" +
-		"{{ .Name}}_{{ .OS}}_x86_64/{{ .Version}}/{{ .Name}}_{{ .OS}}_x86_64-{{ .Version}}.zip",
+	"https://downloads.traceable.ai/install/" +
+		"{{ .Name}}/{{ .Name}}_{{ .OS}}_x86_64/{{ .Version}}/{{ .Name}}_{{ .OS}}_x86_64-{{ .Version}}.zip",
 ))
 
 func downloadURL(info libraryInfo) string {
@@ -147,23 +147,11 @@ func downloadFile(out io.Writer, lib libraryInfo, fpath, dstDir string) int {
 		},
 	}
 
-	username, token := os.Getenv("TA_BASIC_AUTH_USER"), os.Getenv("TA_BASIC_AUTH_TOKEN")
-	if username == "" {
-		writeStringf(out, "Environment variable \"TA_BASIC_AUTH_USER\" is required.")
-		return 1
-	}
-
-	if token == "" {
-		writeStringf(out, "Environment variable \"TA_BASIC_AUTH_TOKEN\" is required.")
-		return 1
-	}
-
 	req, err := http.NewRequest(http.MethodGet, downloadURL(lib), nil)
 	if err != nil {
 		writeStringf(out, "Failed to build download request: %v", err)
 		return 1
 	}
-	req.SetBasicAuth(username, token)
 
 	resp, err := client.Do(req)
 	if err != nil {

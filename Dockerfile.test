@@ -26,14 +26,8 @@ COPY . .
 WORKDIR /usr/local/app
 
 RUN make install-libtraceable-downloader
-RUN ls -la /usr/local/go/bin; exit 1
 
-ARG TA_BASIC_AUTH_USER
-ARG TA_BASIC_AUTH_TOKEN
-
-RUN TA_BASIC_AUTH_USER=${TA_BASIC_AUTH_USER} \
-    TA_BASIC_AUTH_TOKEN=${TA_BASIC_AUTH_TOKEN} \
-    LIBTRACEABLE_OS=ubuntu_20.04 \
+RUN LIBTRACEABLE_OS=ubuntu_20.04 \
     LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu \
     make install-libtraceable
 
