@@ -32,10 +32,6 @@ jobs:
       - name: Install libtraceable-downloader
         run: make install-libtraceable-downloader
 
-      - run: |
-          go env GOPATH
-          ls -la /home/runner/go/bin
-
       - name: Install libtraceable
         run: >
           export PATH=$PATH:$(go env GOPATH)/bin &&

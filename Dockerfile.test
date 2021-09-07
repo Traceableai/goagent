@@ -27,7 +27,8 @@ WORKDIR /usr/local/app
 
 RUN make install-libtraceable-downloader
 
-RUN LIBTRACEABLE_OS=ubuntu_20.04 \
+RUN export PATH=$PATH:$(go env GOPATH)/bin && \
+    LIBTRACEABLE_OS=ubuntu_20.04 \
     LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu \
     make install-libtraceable
 

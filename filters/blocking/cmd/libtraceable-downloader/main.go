@@ -101,7 +101,7 @@ Usage:
 		Name:    "libtraceable",
 		OS:      "ubuntu_20.04",
 		Version: libVersion,
-	}, "traceable/blocking.h", dstDir)
+	}, "blocking.h", dstDir)
 }
 
 func installLibraryCmd(out io.Writer, args []string) int {
@@ -122,7 +122,7 @@ Usage:
 		Name:    "libtraceable",
 		OS:      os,
 		Version: libVersion,
-	}, "traceable/libtraceable.so", dstDir)
+	}, "libtraceable.so", dstDir)
 }
 
 func downloadFile(out io.Writer, lib libraryInfo, fpath, dstDir string) int {
