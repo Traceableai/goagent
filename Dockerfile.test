@@ -27,11 +27,11 @@ WORKDIR /usr/local/app
 
 RUN make install-libtraceable-downloader
 
-RUN export PATH=$PATH:$(go env GOPATH)/bin && \
+RUN LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader \
     LIBTRACEABLE_OS=ubuntu_20.04 \
     LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu \
     make install-libtraceable
 
 RUN go get ./...
 
-RUN CGO_ENABLED=1 go test ./...
+RUN CGO_ENABLED=1 go test -v ./...
