@@ -37,7 +37,7 @@ jobs:
           LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader
           LIBTRACEABLE_OS=ubuntu_20.04
           LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu
-          make install-libtraceable
+          sudo make install-libtraceable
 
       #- name: Lint files
       #  uses: golangci/golangci-lint-action@v2
