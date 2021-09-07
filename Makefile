@@ -59,7 +59,8 @@ install-libtraceable-downloader:
 
 .PHONY: install-libtraceable
 install-libtraceable:
-	@libtraceable-downloader install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
+	@libtraceable-downloader install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION) || \
+	sudo libtraceable-downloader install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
 
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
