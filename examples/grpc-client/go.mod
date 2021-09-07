@@ -1,6 +1,6 @@
 module github.com/Traceableai/goagent/examples/grpc-client
 
-go 1.16
+go 1.15
 
 replace github.com/Traceableai/goagent => ../../
 

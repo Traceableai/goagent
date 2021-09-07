@@ -1,6 +1,6 @@
 module github.com/Traceableai/goagent
 
-go 1.16
+go 1.15
 
 require (
 	github.com/Traceableai/agent-config/gen/go v0.0.0-20210831204248-e84ced5a826e
