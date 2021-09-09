@@ -45,7 +45,7 @@ install-tools: ## Install all the dependencies under the tools module
 
 .PHONY: check-vanity-import
 check-vanity-import:
-	@porto -l .
+	@porto --skip-files "version.go" -l .
 
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:
