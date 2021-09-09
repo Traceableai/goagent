@@ -10,11 +10,8 @@ import (
 // we are in environments where the filters can be noop se we can reduce the
 // overhead of the filter call.
 func isNoop(f sdkfilter.Filter) bool {
-	if _, ok := f.(sdkfilter.NoopFilter); ok {
-		return true
-	}
-
-	return false
+	_, isNoop := f.(sdkfilter.NoopFilter)
+	return isNoop
 }
 
 func ResolveFilter(cfg *traceconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.Filter {
@@ -28,5 +25,5 @@ func ResolveFilter(cfg *traceconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.F
 		return blockingFilter
 	}
 
-	return sdkfilter.NewMultiFilter(f)
+	return sdkfilter.NewMultiFilter(blockingFilter, f)
 }

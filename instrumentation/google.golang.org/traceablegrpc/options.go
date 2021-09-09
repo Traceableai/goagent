@@ -2,15 +2,19 @@ package traceablegrpc // import "github.com/Traceableai/goagent/instrumentation/
 
 import (
 	"github.com/hypertrace/goagent/sdk/filter"
-	sdkgrpc "github.com/hypertrace/goagent/sdk/instrumentation/google.golang.org/grpc"
+	"github.com/hypertrace/goagent/sdk/instrumentation/google.golang.org/grpc"
 )
 
 type Options struct {
 	Filter filter.Filter
 }
 
-func (o Options) toSDKOptions() *sdkgrpc.Options {
-	return &sdkgrpc.Options{
+func (o *Options) toSDKOptions() *grpc.Options {
+	if o == nil {
+		return &grpc.Options{}
+	}
+
+	return &grpc.Options{
 		Filter: o.Filter,
 	}
 }

@@ -34,10 +34,10 @@ fmt:
 
 .PHONY: tidy
 tidy:
-	find . -path ./config -prune -o -name "go.mod" \
+	@find . -name "go.mod" \
 	| grep go.mod \
 	| xargs -I {} bash -c 'dirname {}' \
-	| xargs -I {} bash -c 'cd {}; go mod tidy'
+	| xargs -I {} bash -c 'echo "=> {}"; cd {}; go mod tidy -v; '
 
 .PHONY: install-tools
 install-tools: ## Install all the dependencies under the tools module
@@ -45,7 +45,7 @@ install-tools: ## Install all the dependencies under the tools module
 
 .PHONY: check-vanity-import
 check-vanity-import:
-	@porto -l .
+	@porto --skip-files "version.go" -l .
 
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:

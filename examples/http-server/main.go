@@ -12,7 +12,6 @@ import (
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 	"github.com/gorilla/mux"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
@@ -22,12 +21,10 @@ func main() {
 	defer closer()
 
 	r := mux.NewRouter()
-	r.Handle("/foo", otelhttp.NewHandler(
-		traceablehttp.WrapHandler(
-			http.HandlerFunc(fooHandler),
-			&traceablehttp.Options{},
-		),
+	r.Handle("/foo", traceablehttp.NewHandler(
+		http.HandlerFunc(fooHandler),
 		"/foo",
+		nil,
 	))
 	log.Fatal(http.ListenAndServe(":8081", r))
 }
