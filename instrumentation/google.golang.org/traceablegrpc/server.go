@@ -3,17 +3,20 @@ package traceablegrpc // import "github.com/Traceableai/goagent/instrumentation/
 import (
 	"github.com/Traceableai/goagent/instrumentation/internal/filter"
 	internalconfig "github.com/Traceableai/goagent/internal/config"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry/google.golang.org/hypergrpc"
+	"github.com/hypertrace/goagent/instrumentation/hypertrace/google.golang.org/hypergrpc"
 	"google.golang.org/grpc"
 )
 
 // WrapUnaryServerInterceptor returns a new unary server interceptor that will
 // complement existing OpenTelemetry instrumentation
-func WrapUnaryServerInterceptor(delegate grpc.UnaryServerInterceptor, options *Options) grpc.UnaryServerInterceptor {
-	newOpts := Options{
-		Filter: filter.ResolveFilter(internalconfig.GetConfig(), options.Filter),
+func UnaryServerInterceptor(options *Options) grpc.UnaryServerInterceptor {
+	newOpts := Options{}
+	if options == nil || options.Filter == nil {
+		newOpts.Filter = filter.ResolveFilter(internalconfig.GetConfig(), nil)
+	} else {
+		newOpts.Filter = filter.ResolveFilter(internalconfig.GetConfig(), options.Filter)
 	}
 
-	return hypergrpc.WrapUnaryServerInterceptor(delegate, newOpts.toSDKOptions())
+	return hypergrpc.UnaryServerInterceptor(newOpts.toSDKOptions())
 
 }

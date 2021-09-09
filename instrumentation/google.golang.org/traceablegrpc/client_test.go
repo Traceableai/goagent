@@ -35,11 +35,7 @@ func TestClientHelloWorldSuccess(t *testing.T) {
 		"bufnet",
 		grpc.WithContextDialer(dialer),
 		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(
-			WrapUnaryClientInterceptor(
-				otelgrpc.UnaryClientInterceptor(),
-			),
-		),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
 	)
 	if err != nil {
 		t.Fatalf("failed to dial bufnet: %v", err)
@@ -109,11 +105,7 @@ func TestClientRegisterPersonFails(t *testing.T) {
 		"bufnet",
 		grpc.WithContextDialer(dialer),
 		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(
-			WrapUnaryClientInterceptor(
-				otelgrpc.UnaryClientInterceptor(),
-			),
-		),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
 	)
 	if err != nil {
 		t.Fatalf("failed to dial bufnet: %v", err)
@@ -155,11 +147,7 @@ func BenchmarkClientRequestResponseBodyMarshaling(b *testing.B) {
 		"bufnet",
 		grpc.WithContextDialer(dialer),
 		grpc.WithInsecure(),
-		grpc.WithUnaryInterceptor(
-			WrapUnaryClientInterceptor(
-				otelgrpc.UnaryClientInterceptor(),
-			),
-		),
+		grpc.WithUnaryInterceptor(UnaryClientInterceptor()),
 	)
 	if err != nil {
 		b.Fatalf("failed to dial bufnet: %v", err)

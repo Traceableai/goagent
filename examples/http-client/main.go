@@ -11,7 +11,6 @@ import (
 	"github.com/Traceableai/goagent"
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type message struct {
@@ -25,9 +24,7 @@ func main() {
 	defer closer()
 
 	client := http.Client{
-		Transport: otelhttp.NewTransport(
-			traceablehttp.WrapTransport(http.DefaultTransport),
-		),
+		Transport: traceablehttp.NewTransport(http.DefaultTransport),
 	}
 
 	req, err := http.NewRequest("GET", "http://localhost:8081/foo", bytes.NewBufferString(`{"name":"Dave"}`))

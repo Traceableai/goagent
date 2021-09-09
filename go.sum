@@ -31,6 +31,7 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/go-control-plane v0.9.9-0.20210217033140-668b12f5399d/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0/go.mod h1:hliV/p42l8fGbc6Y9bQ70uLwIvmJyVE5k4iMKlh8wCQ=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
+github.com/felixge/httpsnoop v1.0.2 h1:+nS9g82KMXccJ/wp0zyRW9ZBHFETmMGtkk+2CTTrW4o=
 github.com/felixge/httpsnoop v1.0.2/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
@@ -128,6 +129,7 @@ go.opentelemetry.io/contrib v0.22.0 h1:0F7gDEjgb1WGn4ODIjaCAg75hmqF+UN0LiVgwxsCo
 go.opentelemetry.io/contrib v0.22.0/go.mod h1:EH4yDYeNoaTqn/8yCWQmfNB78VHfGX2Jt2bvnvzBlGM=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.22.0 h1:TjqELdtCtlOJQrTnXd2y+RP6wXKZUnnJer0HR0CSo18=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.22.0/go.mod h1:KjqwX4uJNaj479ZjFpADOMJKOM4rBXq4kN7nbeuGKrY=
+go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.22.0 h1:WHjZguqT+3UjTgFum33hWZYybDVnx8u9q5/kQDfaGTs=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.22.0/go.mod h1:o3MuU25bYroYnc2TOKe8mTk8f9X1oPFO6C5RCoPKtSU=
 go.opentelemetry.io/contrib/propagators v0.22.0 h1:KGdv58M2//veiYLIhb31mofaI2LgkIPXXAZVeYVyfd8=
 go.opentelemetry.io/contrib/propagators v0.22.0/go.mod h1:xGOuXr6lLIF9BXipA4pm6UuOSI0M98U6tsI3khbOiwU=
@@ -141,7 +143,9 @@ go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.0.0-RC3 h1:F3
 go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.0.0-RC3/go.mod h1:9JCUOSptzVKaFbxGVO+Wa1P8fDpA5QGVTuIzL/PKSrk=
 go.opentelemetry.io/otel/exporters/zipkin v1.0.0-RC3 h1:NcjZQwPFW0V2OvasQQJWSOTGA6R+4SLLgcPGIiDC3fk=
 go.opentelemetry.io/otel/exporters/zipkin v1.0.0-RC3/go.mod h1:3ASq7NNNoDb2P6dIBEBuurzogYO3Jo+wfbeonxBc11Y=
+go.opentelemetry.io/otel/internal/metric v0.22.0 h1:Q9bS02XRykSRIbggaU4hVF9oWOP9PyILu26zJWoKmk0=
 go.opentelemetry.io/otel/internal/metric v0.22.0/go.mod h1:7qVuMihW/ktMonEfOvBXuh6tfMvvEyoIDgeJNRloYbQ=
+go.opentelemetry.io/otel/metric v0.22.0 h1:/qv10BzznqEifrXBwsTT370OCN1PRgt+mnjzMwxJKrQ=
 go.opentelemetry.io/otel/metric v0.22.0/go.mod h1:KcsUkBiYGW003DJ+ugd2aqIRIfjabD9jeOUXqsAtrq0=
 go.opentelemetry.io/otel/oteltest v1.0.0-RC1/go.mod h1:+eoIG0gdEOaPNftuy1YScLr1Gb4mL/9lpDkZ0JjMRq4=
 go.opentelemetry.io/otel/oteltest v1.0.0-RC2 h1:xNKqMhlZYkASSyvF4JwObZFMq0jhFN3c3SP+2rCzVPk=

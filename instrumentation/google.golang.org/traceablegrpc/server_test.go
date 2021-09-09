@@ -81,9 +81,7 @@ func TestServerRegisterPersonSuccess(t *testing.T) {
 	_, flusher := tracetesting.InitTracer()
 
 	s := grpc.NewServer(
-		grpc.UnaryInterceptor(
-			WrapUnaryServerInterceptor(otelgrpc.UnaryServerInterceptor(), &Options{}),
-		),
+		grpc.UnaryInterceptor(UnaryServerInterceptor(nil)),
 	)
 	defer s.Stop()
 
@@ -148,9 +146,7 @@ func TestServerRegisterPersonFails(t *testing.T) {
 	_, flusher := tracetesting.InitTracer()
 
 	s := grpc.NewServer(
-		grpc.UnaryInterceptor(
-			WrapUnaryServerInterceptor(otelgrpc.UnaryServerInterceptor(), &Options{}),
-		),
+		grpc.UnaryInterceptor(UnaryServerInterceptor(nil)),
 	)
 	defer s.Stop()
 
@@ -194,9 +190,7 @@ func BenchmarkServerRequestResponseBodyMarshaling(b *testing.B) {
 	tracetesting.InitTracer()
 
 	s := grpc.NewServer(
-		grpc.UnaryInterceptor(
-			WrapUnaryServerInterceptor(otelgrpc.UnaryServerInterceptor(), &Options{}),
-		),
+		grpc.UnaryInterceptor(UnaryServerInterceptor(nil)),
 	)
 	defer s.Stop()
 
