@@ -1,20 +1,31 @@
 package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 
 import (
+	"github.com/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
 	"github.com/hypertrace/goagent/sdk/filter"
-	"github.com/hypertrace/goagent/sdk/instrumentation/net/http"
 )
 
-type Options struct {
+type options struct {
 	Filter filter.Filter
 }
 
-func (o *Options) toSDKOptions() *http.Options {
+func (o *options) toHyperOptions() []hyperhttp.Option {
 	if o == nil {
-		return &http.Options{}
+		return nil
 	}
 
-	return &http.Options{
-		Filter: o.Filter,
+	opts := []hyperhttp.Option{}
+	if o.Filter != nil {
+		opts = append(opts, hyperhttp.WithFilter(o.Filter))
+	}
+
+	return opts
+}
+
+type Option func(o *options)
+
+func WithFilter(f filter.Filter) Option {
+	return func(o *options) {
+		o.Filter = f
 	}
 }

@@ -14,6 +14,8 @@ func isNoop(f sdkfilter.Filter) bool {
 	return isNoop
 }
 
+// ResolveFilter resolves a joint filter based on the agent configuration and a provided filter.
+// If both are nil or noop, this function will return nil.
 func ResolveFilter(cfg *traceconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.Filter {
 	blockingFilter := blocking.NewBlockingFilter(cfg)
 
@@ -21,9 +23,15 @@ func ResolveFilter(cfg *traceconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.F
 		return f
 	}
 
-	if f == nil {
-		return blockingFilter
+	if f != nil {
+		return sdkfilter.NewMultiFilter(blockingFilter, f)
 	}
 
-	return sdkfilter.NewMultiFilter(blockingFilter, f)
+	if isNoop(blockingFilter) {
+		// if blockingFilter is also NoOp we return nil to avoid the overhead of
+		// carrying a NoOp filter.
+		return nil
+	}
+
+	return blockingFilter
 }

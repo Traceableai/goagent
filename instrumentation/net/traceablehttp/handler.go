@@ -10,14 +10,17 @@ import (
 )
 
 // NewHandler wraps the passed handler, functioning like middleware.
-func NewHandler(base http.Handler, operation string, options *Options) http.Handler {
-	newOpts := Options{
-		Filter: filter.ResolveFilter(internalconfig.GetConfig(), options.Filter),
+func NewHandler(base http.Handler, operation string, opts ...Option) http.Handler {
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
 	}
+
+	o.Filter = filter.ResolveFilter(internalconfig.GetConfig(), o.Filter)
 
 	return hyperhttp.NewHandler(
 		base,
 		operation,
-		newOpts.toSDKOptions(),
+		o.toHyperOptions()...,
 	)
 }

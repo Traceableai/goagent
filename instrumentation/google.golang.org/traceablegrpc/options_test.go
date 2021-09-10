@@ -1,4 +1,4 @@
-package traceablehttp
+package traceablegrpc
 
 import (
 	"testing"
