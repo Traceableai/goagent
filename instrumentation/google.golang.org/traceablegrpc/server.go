@@ -9,14 +9,14 @@ import (
 
 // WrapUnaryServerInterceptor returns a new unary server interceptor that will
 // complement existing OpenTelemetry instrumentation
-func UnaryServerInterceptor(options *Options) grpc.UnaryServerInterceptor {
-	newOpts := Options{}
-	if options == nil || options.Filter == nil {
-		newOpts.Filter = filter.ResolveFilter(internalconfig.GetConfig(), nil)
-	} else {
-		newOpts.Filter = filter.ResolveFilter(internalconfig.GetConfig(), options.Filter)
+func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
 	}
 
-	return hypergrpc.UnaryServerInterceptor(newOpts.toSDKOptions())
+	o.Filter = filter.ResolveFilter(internalconfig.GetConfig(), o.Filter)
+
+	return hypergrpc.UnaryServerInterceptor(o.toHyperOptions()...)
 
 }

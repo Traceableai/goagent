@@ -5,7 +5,7 @@ import (
 	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
 )
 
-const envPrefix = "TRACEABLE_"
+const envPrefix = "TA_"
 
 func Load() *AgentConfig {
 	return &AgentConfig{

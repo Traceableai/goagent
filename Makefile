@@ -24,9 +24,9 @@ deps:
 	@go get -v -t -d ./...
 
 check-examples:
-	find ./ -type d -print | \
+	@find ./ -type d -print | \
 	grep examples/ | \
-	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "Building {}" ; go build -o ./build_example main.go ; rm build_example ; fi'
+	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "=> {}" ; go build -o ./build_example main.go ; rm build_example ; fi'
 
 .PHONY: fmt
 fmt:
