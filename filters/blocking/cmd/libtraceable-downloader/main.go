@@ -105,16 +105,20 @@ Usage:
 }
 
 func installLibraryCmd(out io.Writer, args []string) int {
-	if len(args) != 2 {
+	if len(args) != 0 {
 		writeStringf(out, `
 Usage: 
 
-	%s %s <os> <dst_folder>
+	%s %s
 			`, filepath.Base(os.Args[0]), os.Args[1])
 		return 1
 	}
 
-	os, dstDir := args[0], args[1]
+	os, dstDir, err := getLinuxDistroAndInstallDir()
+	if err != nil {
+		writeStringf(out, "Failed to resolve OS: %s", err)
+		return 1
+	}
 
 	writeStringf(out, "Installing library file to %q", dstDir)
 

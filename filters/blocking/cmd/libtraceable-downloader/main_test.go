@@ -41,3 +41,8 @@ func TestUnzip(t *testing.T) {
 	assert.Equal(t, 1, c)
 	os.RemoveAll(dirpath)
 }
+
+func TestOsDetection(t *testing.T) {
+	os, _ := getOSAndDestinationDir()
+	t.Fail(os)
+}

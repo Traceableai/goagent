@@ -1,0 +1,29 @@
+# This dockerfile is only aimed to be used for testing the blocking filter
+
+FROM amazonlinux:2
+
+RUN yum -y update && yum install -y wget gcc
+
+ARG GO_VERSION
+
+RUN wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -xvf go${GO_VERSION}.linux-amd64.tar.gz && \
+    mv go /usr/local
+
+ENV GOROOT=/usr/local/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+WORKDIR /usr/local/libtraceable-downloader
+
+# We first copy these files to be able to cache the dependencies download
+# and speed up the test container.
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+COPY . .
+
+RUN go get ./...
+
+RUN go build -o libtraceable-downloader .
+
+RUN $(go env GOPATH)/bin/libtraceable-downloader install-library

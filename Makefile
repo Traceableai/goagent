@@ -6,9 +6,20 @@ LIBTRACEABLE_DOWNLOADER ?= libtraceable-downloader
 test:
 	@go test -count=1 -v -race -cover ./...
 
+build-test-linux:
+	docker build -f ./Dockerfile.test \
+	--build-arg TRACEABLE_GOAGENT_DISTRO=$(TRACEABLE_GOAGENT_DISTRO) .
+
 .PHONY: test-linux
 test-linux:
-	@docker build -f Dockerfile.test -t goagent-test .
+	$(MAKE) -C ./filters/blocking/cmd/libtraceable-downloader build-install-images
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=alpine_3.9 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=alpine_3.12 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=centos_7 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=centos_8 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=amazonlinux_2 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=ubuntu_18.04 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=ubuntu_20.04 .
 
 .PHONY: bench
 bench:
