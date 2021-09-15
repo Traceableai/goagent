@@ -120,7 +120,7 @@ Usage:
 		return 1
 	}
 
-	writeStringf(out, "Installing library file to %q", dstDir)
+	writeStringf(out, "Installing library file for %q to %q", os, dstDir)
 
 	return downloadFile(out, libraryInfo{
 		Name:    "libtraceable",
