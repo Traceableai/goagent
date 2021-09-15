@@ -30,7 +30,7 @@ jobs:
         run: |
           cd filters/blocking/cmd/libtraceable-downloader &&
           go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader &&
-          $(go env GOPATH)/bin/libtraceable-downloader install-library
+          sudo $(go env GOPATH)/bin/libtraceable-downloader install-library
 
       - name: Download dependencies
         run: make deps
