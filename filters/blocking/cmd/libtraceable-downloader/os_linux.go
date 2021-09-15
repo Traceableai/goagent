@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os/user"
 	"strings"
 
 	"github.com/zcalusic/sysinfo"
@@ -29,14 +31,14 @@ var installDir = map[string]installSettings{
 }
 
 func getLinuxDistroAndInstallDir() (string, string, error) {
-	//current, err := user.Current()
-	//if err != nil {
-	//	return "", "", fmt.Errorf("failed to obtain current user: %v", err)
-	//}
+	current, err := user.Current()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to obtain current user: %v", err)
+	}
 
-	//if current.Uid != "0" {
-	//	return "", "", errors.New("requires superuser privileges")
-	//}
+	if current.Uid != "0" {
+		return "", "", errors.New("requires superuser privileges")
+	}
 
 	var si sysinfo.SysInfo
 	si.GetSysInfo()
