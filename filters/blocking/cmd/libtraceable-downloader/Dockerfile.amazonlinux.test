@@ -1,8 +1,8 @@
-ARG CENTOS_VERSION
+ARG AMAZONLINUX_VERSION
 
-FROM centos:${CENTOS_VERSION}
+FROM amazonlinux:${AMAZONLINUX_VERSION}
 
-RUN yum -y update && yum install -y wget gcc
+RUN yum -y update && yum install -y wget gcc tar gzip
 
 ARG GO_VERSION
 

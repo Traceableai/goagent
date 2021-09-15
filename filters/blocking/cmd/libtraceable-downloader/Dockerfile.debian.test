@@ -1,8 +1,8 @@
-# This dockerfile is only aimed to be used for testing the blocking filter
+ARG DEBIAN_VERSION
 
-FROM amazonlinux:2
+FROM debian:${DEBIAN_VERSION}
 
-RUN yum -y update && yum install -y wget gcc
+RUN apt-get -qq update && apt-get -qq install -y wget git gcc
 
 ARG GO_VERSION
 
@@ -24,6 +24,6 @@ COPY . .
 
 RUN go get ./...
 
-RUN go build -o libtraceable-downloader .
+RUN go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
 
 RUN $(go env GOPATH)/bin/libtraceable-downloader install-library

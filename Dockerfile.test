@@ -1,8 +1,8 @@
 # This dockerfile is only aimed to be used for testing the blocking filter
 
-ARG TRACEABLE_GOAGENT_DISTRO
+ARG TRACEABLE_GOAGENT_DISTRO_VERSION
 
-FROM traceable_goagent_${TRACEABLE_GOAGENT_DISTRO}:dev
+FROM traceable_goagent_test:${TRACEABLE_GOAGENT_DISTRO_VERSION}
 
 WORKDIR /usr/local/test
 
@@ -15,4 +15,4 @@ COPY . .
 
 RUN go get ./...
 
-RUN go test -count=1 -v -race -cover ./...
+RUN CGO_ENABLED=1 go test -count=1 -v -race -cover ./...

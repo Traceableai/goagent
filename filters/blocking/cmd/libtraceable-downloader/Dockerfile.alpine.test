@@ -1,5 +1,3 @@
-# This dockerfile is only aimed to be used for testing the blocking filter
-
 # Copied from https://github.com/docker-library/golang/blob/4598bb8c77b4e162d2a1d14598d9d83a8e3750c2/1.13/alpine3.12/Dockerfile
 
 ARG ALPINE_VERSION
@@ -10,15 +8,13 @@ ARG GO_VERSION
 
 # We need to install go on beforehand before targeting an exact version
 # see https://stackoverflow.com/a/36689186
-RUN apk add --no-cache --virtual .build-deps bash gcc musl-dev openssl go
+RUN apk add --no-cache --virtual .build-deps bash build-base musl-dev libc-dev openssl go gcc
 RUN wget -O go.tgz https://dl.google.com/go/go${GO_VERSION}.src.tar.gz 
 RUN tar -C /usr/local -xzf go.tgz
 RUN cd /usr/local/go/src/ && ./make.bash 
 
 ENV GOPATH=/go
 ENV PATH=${GOPATH}/bin:/usr/local/go/bin:$PATH
-
-RUN apk del .build-deps 
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
@@ -33,6 +29,6 @@ COPY . .
 
 RUN go get ./...
 
-RUN go build -o libtraceable-downloader .
+RUN go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
 
-RUN $(go env GOPATH)/bin/libtraceable-downloader install-libraryRU
+RUN $(go env GOPATH)/bin/libtraceable-downloader install-library

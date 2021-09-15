@@ -1,25 +1,29 @@
 .DEFAULT_GOAL := test
 
-LIBTRACEABLE_DOWNLOADER ?= libtraceable-downloader
-
 .PHONY: test
 test:
 	@go test -count=1 -v -race -cover ./...
 
 build-test-linux:
+	$(MAKE) -C ./filters/blocking/cmd/libtraceable-downloader build-install-image \
+	TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION)
+
 	docker build -f ./Dockerfile.test \
-	--build-arg TRACEABLE_GOAGENT_DISTRO=$(TRACEABLE_GOAGENT_DISTRO) .
+	--build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION) .
 
 .PHONY: test-linux
 test-linux:
-	$(MAKE) -C ./filters/blocking/cmd/libtraceable-downloader build-install-images
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=alpine_3.9 .
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=alpine_3.12 .
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=centos_7 .
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=centos_8 .
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=amazonlinux_2 .
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=ubuntu_18.04 .
-	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO=ubuntu_20.04 .
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=debian_10
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=debian_11
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=alpine_3.9
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=alpine_3.10
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=alpine_3.11
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=alpine_3.12
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=centos_7
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=centos_8
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=amazonlinux_2
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=ubuntu_18.04
+	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=ubuntu_20.04
 
 .PHONY: bench
 bench:
@@ -64,10 +68,6 @@ install-libtraceable-downloader:
 	go mod download && \
 	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
 
-.PHONY: install-libtraceable
-install-libtraceable:
-	@$(LIBTRACEABLE_DOWNLOADER) install-library $(LIBTRACEABLE_OS) $(LIBTRACEABLE_DESTINATION)
-
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
-	@$(LIBTRACEABLE_DOWNLOADER) pull-library-headers "./filters/blocking/library"
+	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filters/blocking/library"
