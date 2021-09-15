@@ -98,7 +98,7 @@ jobs:
         with:
           push: false
           context: ./filters/blocking/cmd/libtraceable-downloader
-          file: ./Dockerfile.${{ steps.split.outputs._0}}.test
+          file: ./filters/blocking/cmd/libtraceable-downloader/Dockerfile.${{ steps.split.outputs._0}}.test
           build-args: |
             ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._1}}
             GO_VERSION=1.16.8
