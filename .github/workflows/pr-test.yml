@@ -29,6 +29,7 @@ jobs:
       - name: Install libtraceable
         run: |
           cd ./filters/blocking/cmd/libtraceable-downloader && 
+          go get ./... &&
           go build -o libtraceable-downloader . &&
           libtraceable-downloader install-library
 
