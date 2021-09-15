@@ -28,10 +28,9 @@ jobs:
 
       - name: Install libtraceable
         run: |
-          cd ./filters/blocking/cmd/libtraceable-downloader && 
-          go get ./... &&
-          go build -o libtraceable-downloader . &&
-          libtraceable-downloader install-library
+          cd filters/blocking/cmd/libtraceable-downloader &&
+          go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader &&
+          $(go env GOPATH)/bin/libtraceable-downloader install-library
 
       - name: Download dependencies
         run: make deps
