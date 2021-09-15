@@ -91,16 +91,16 @@ jobs:
       - id: string
         uses: ASzc/change-string-case-action@v1
         with:
-          string: ${{ steps.split.outputs._1}}
+          string: ${{ steps.split.outputs._0}}
 
       - name: Build test images
         uses: docker/build-push-action@v2
         with:
           push: false
           context: ./filters/blocking/cmd/libtraceable-downloader
-          file: ./Dockerfile.${{ steps.split.outputs._1}}.test
+          file: ./Dockerfile.${{ steps.split.outputs._0}}.test
           build-args: |
-            ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._2}}
+            ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._1}}
             GO_VERSION=1.16.8
           tags: traceable_goagent_test:${{ matrix.distro_version }}
 
