@@ -71,4 +71,4 @@ install-libtraceable-downloader:
 
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
-	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filters/blocking/library"
+	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filters/blocking"
