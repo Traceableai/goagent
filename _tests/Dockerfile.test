@@ -15,10 +15,10 @@ RUN CGO_ENABLED=1 go test -c ./filters/blocking
 
 # Once the test is compiled we need to pass the LD_LIBRARY_PATH specifying the library
 # location.
-RUN LD_LIBRARY_PATH=/etc/traceable ./blocking.test
+RUN LD_LIBRARY_PATH=/usr/local/traceable ./blocking.test
 
 WORKDIR /go/src/github.com/Traceableai/goagent/_tests
 
 RUN go build -o test-app .
 
-RUN LD_LIBRARY_PATH=/etc/traceable ./test-app
+RUN LD_LIBRARY_PATH=/usr/local/traceable ./test-app
