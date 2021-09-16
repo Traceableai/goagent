@@ -5,7 +5,7 @@ package blocking // import "github.com/Traceableai/goagent/filters/blocking"
 
 /*
 #cgo CFLAGS: -I./library
-#cgo LDFLAGS: -L${SRCDIR}/../.. -ltraceable -ldl
+#cgo LDFLAGS: -L/etc/traceable -ltraceable -ldl
 #include "blocking.h"
 
 #include <stdlib.h>
