@@ -1,10 +1,11 @@
-//+build linux
+//go:build linux
+// +build linux
 
 package blocking // import "github.com/Traceableai/goagent/filters/blocking"
 
 /*
 #cgo CFLAGS: -I./library
-#cgo LDFLAGS: -L/etc/libtraceable/lib -ltraceable -ldl
+#cgo LDFLAGS: -L${SRCDIR}/../.. -ltraceable -ldl
 #include "blocking.h"
 
 #include <stdlib.h>

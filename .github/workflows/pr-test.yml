@@ -30,7 +30,7 @@ jobs:
         run: |
           cd filters/blocking/cmd/libtraceable-downloader &&
           go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader &&
-          sudo $(go env GOPATH)/bin/libtraceable-downloader install-library
+          sudo $(go env GOPATH)/bin/libtraceable-downloader pull-library
 
       - name: Download dependencies
         run: make deps
@@ -81,6 +81,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Since we can't pass non scalar matrix values we pass two values concatenated
+      # and do some parsing to get them separatedly.
       - uses: rishabhgupta/split-by@v1
         id: split
         with:
@@ -101,7 +103,7 @@ jobs:
           build-args: |
             ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._1}}
             GO_VERSION=1.16.8
-          tags: traceable_goagent_test:${{ matrix.distro_version }}
+          tags: traceable_goagent_test_base:${{ matrix.distro_version }}
 
       - name: Run linux tests
         uses: docker/build-push-action@v2
@@ -111,3 +113,4 @@ jobs:
           file: ./Dockerfile.test
           build-args: |
             TRACEABLE_GOAGENT_DISTRO_VERSION=${{ matrix.distro_version }}
+          tags: traceable_goagent_test:${{ matrix.distro_version }}

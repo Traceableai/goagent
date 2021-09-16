@@ -5,11 +5,12 @@ test:
 	@go test -count=1 -v -race -cover ./...
 
 build-test-linux:
-	$(MAKE) -C ./filters/blocking/cmd/libtraceable-downloader build-install-image \
+	@$(MAKE) -C ./filters/blocking/cmd/libtraceable-downloader build-install-image \
 	TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION)
 
-	docker build -f ./Dockerfile.test \
-	--build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION) .
+	@docker build -f ./_tests/Dockerfile.test \
+	--build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION) \
+	-t traceable_goagent_test:$(TRACEABLE_GOAGENT_DISTRO_VERSION) .
 
 .PHONY: test-linux
 test-linux:

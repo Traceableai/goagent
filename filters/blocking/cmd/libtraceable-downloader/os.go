@@ -5,6 +5,6 @@ package main
 
 import "errors"
 
-func getLinuxDistroAndInstallDir() (string, string, error) {
-	return "", "", errors.New("unsupported OS")
+func getLinuxDistro() (string, error) {
+	return "", errors.New("unsupported OS")
 }
