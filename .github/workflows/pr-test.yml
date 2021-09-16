@@ -46,6 +46,9 @@ jobs:
           skip-pkg-cache: true
 
       - name: Copy libtraceable to host
+        # We need to copy the library into the host because we need it to run the go tests
+        # otherwise we might need to compile package by package and run them.
+        # See https://groups.google.com/g/golang-nuts/c/p0sQub6fbn8/m/OIeU1Yun5hsJ
         run: sudo cp /etc/traceable/libtraceable.so /usr/lib/x86_64-linux-gnu/libtraceable.so
 
       - name: Run tests
