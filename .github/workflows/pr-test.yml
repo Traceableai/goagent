@@ -112,7 +112,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false
-          context: ./_tests
+          context: .
           file: ./_tests/Dockerfile.test
           build-args: |
             TRACEABLE_GOAGENT_DISTRO_VERSION=${{ matrix.distro_version }}
