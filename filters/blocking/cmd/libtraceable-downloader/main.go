@@ -221,7 +221,9 @@ func unzipFile(zipFile, haystackFile, dstFolder string) (int, error) {
 		defer rc.Close()
 
 		fpath := filepath.Join(dstFolder, path.Base(f.Name))
-		os.MkdirAll(path.Dir(fpath), os.ModePerm)
+		if err := os.MkdirAll(path.Dir(fpath), os.ModePerm); err != nil {
+			return 0, fmt.Errorf("failed to create a target folder: %v", err)
+		}
 
 		dstFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
