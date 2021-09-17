@@ -1,4 +1,4 @@
-module github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
+module github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
 
 go 1.15
 

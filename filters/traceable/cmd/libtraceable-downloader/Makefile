@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := build-install-images
+.DEFAULT_GOAL := build-install-image
 
 GO_VERSION ?= 1.16.8
 

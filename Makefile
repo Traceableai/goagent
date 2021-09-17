@@ -5,7 +5,7 @@ test:
 	@go test -count=1 -v -race -cover ./...
 
 build-test-linux:
-	@$(MAKE) -C ./filters/blocking/cmd/libtraceable-downloader build-install-image \
+	@$(MAKE) -C ./filters/traceable/cmd/libtraceable-downloader build-install-image \
 	TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION)
 
 	@docker build -f ./_tests/Dockerfile.test \
@@ -65,10 +65,10 @@ check-vanity-import:
 
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:
-	cd ./filters/blocking/cmd/libtraceable-downloader && \
+	cd ./filters/traceable/cmd/libtraceable-downloader && \
 	go mod download && \
-	go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
+	go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
 
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
-	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filters/blocking"
+	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filters/traceable"

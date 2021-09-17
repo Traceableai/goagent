@@ -4,7 +4,7 @@ ARG TRACEABLE_GOAGENT_DISTRO_VERSION
 
 FROM traceable_goagent_test_base:${TRACEABLE_GOAGENT_DISTRO_VERSION}
 
-WORKDIR /go/src/github.com/Traceableai/goagent
+WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
 
 COPY . .
 
@@ -13,10 +13,10 @@ RUN cp /usr/local/traceable/libtraceable.so .
 RUN go get ./...
 
 # Runs blocking package tests to make sure it works.
-RUN CGO_ENABLED=1 go test -c ./filters/blocking
-RUN ./blocking.test
+RUN CGO_ENABLED=1 go test -c ./filters/traceable
+RUN ./traceable.test
 
-WORKDIR /go/src/github.com/Traceableai/goagent/_tests
+WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
 
 # Runs the test app to make sure blocking filter works as expected.
 RUN cp /usr/local/traceable/libtraceable.so .

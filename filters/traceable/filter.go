@@ -1,7 +1,7 @@
 //go:build linux
 // +build linux
 
-package blocking // import "github.com/Traceableai/goagent/filters/blocking"
+package traceable // import "github.com/Traceableai/goagent/filters/traceable"
 
 // "-Wl,-rpath=\$ORIGIN" ensures we don't need to pass LD_LIBRARY_PATH when running the application.
 // See https://stackoverflow.com/a/44214486
@@ -27,8 +27,8 @@ import (
 const defaultAgentManagerEndpoint = "localhost:5441"
 const defaultPollPeriodSec = 30
 
-// NewBlockingFilter creates libtraceable based blocking filter
-func NewBlockingFilter(config *traceconfig.AgentConfig) filter.Filter {
+// NewFilter creates libtraceable based blocking filter
+func NewFilter(config *traceconfig.AgentConfig) filter.Filter {
 	blockingConfig := config.BlockingConfig
 	// disabled if no blocking config or enabled is set to false
 	if blockingConfig == nil || blockingConfig.Enabled.Value == false {
