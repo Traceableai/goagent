@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/hashicorp/go-version"
 	"github.com/zcalusic/sysinfo"
 )
 
@@ -23,13 +25,21 @@ func getLinuxDistro() (string, error) {
 	var si sysinfo.SysInfo
 	si.GetSysInfo()
 
-	if s, ok := resolveLib[si.OS.Vendor]; ok && checkMinVersion(s.minVersion, si.OS.Version) {
-		return s.targetLibrary, nil
+	if s, ok := resolveLib[si.OS.Vendor]; ok {
+		mv, err := version.NewVersion(s.minVersion)
+		if err != nil {
+			return "", errors.New("failed to parse min version")
+		}
+
+		cv, err := version.NewVersion(si.OS.Version)
+		if err != nil {
+			return "", errors.New("failed to parse current version")
+		}
+
+		if mv.LessThanOrEqual(cv) {
+			return s.targetLibrary, nil
+		}
 	}
 
 	return "", fmt.Errorf("unsupported linux distro: %s_%s", si.OS.Vendor, si.OS.Version)
-}
-
-func checkMinVersion(minVersion string, version string) bool {
-	return version >= minVersion
 }
