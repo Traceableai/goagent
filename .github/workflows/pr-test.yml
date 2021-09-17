@@ -47,6 +47,14 @@ jobs:
           skip-go-installation: true
           skip-pkg-cache: true
 
+      - name: Copy libtraceable to host
+        # We need to copy the library into the host because we need it to run the go tests
+        # because all packages are compiled into a test binary and run from a temp directory,
+        # hence the relative location for library declared in cgo LDFLAGS does not work.
+        # See https://go-review.googlesource.com/c/go/+/17949/3/src/cmd/go/test.go#b65 and
+        # https://groups.google.com/g/golang-nuts/c/p0sQub6fbn8/m/OIeU1Yun5hsJ
+        run: sudo cp ./libtraceable.so /usr/lib/x86_64-linux-gnu/libtraceable.so
+
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...
 

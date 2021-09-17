@@ -12,11 +12,13 @@ COPY . .
 RUN cp /usr/local/traceable/libtraceable.so .
 RUN go get ./...
 
+# Runs blocking package tests to make sure it works.
 RUN CGO_ENABLED=1 go test -c ./filters/blocking
 RUN ./blocking.test
 
 WORKDIR /go/src/github.com/Traceableai/goagent/_tests
 
+# Runs the test app to make sure blocking filter works as expected.
 RUN cp /usr/local/traceable/libtraceable.so .
 RUN go build -o test-app .
 RUN ./test-app
