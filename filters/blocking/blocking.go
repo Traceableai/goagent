@@ -3,6 +3,9 @@
 
 package blocking // import "github.com/Traceableai/goagent/filters/blocking"
 
+// "-Wl,-rpath=\$ORIGIN" ensures we don't need to pass LD_LIBRARY_PATH when running the application.
+// See https://stackoverflow.com/a/44214486
+
 /*
 #cgo CFLAGS: -I./library
 #cgo LDFLAGS: -L${SRCDIR}/../../ -Wl,-rpath=\$ORIGIN -ltraceable -ldl
