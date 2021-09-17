@@ -9,16 +9,14 @@ WORKDIR /go/src/github.com/Traceableai/goagent
 COPY . .
 
 # Go get expects the library to be present when retrieving the dependencies
+RUN cp /usr/local/traceable/libtraceable.so .
 RUN go get ./...
 
 RUN CGO_ENABLED=1 go test -c ./filters/blocking
-
-# Once the test is compiled we need to pass the LD_LIBRARY_PATH specifying the library
-# location.
-RUN LD_LIBRARY_PATH=/usr/local/traceable ./blocking.test
+RUN ./blocking.test
 
 WORKDIR /go/src/github.com/Traceableai/goagent/_tests
 
+RUN cp /usr/local/traceable/libtraceable.so .
 RUN go build -o test-app .
-
-RUN LD_LIBRARY_PATH=/usr/local/traceable ./test-app
+RUN ./test-app

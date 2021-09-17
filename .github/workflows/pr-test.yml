@@ -30,7 +30,7 @@ jobs:
         run: |
           cd filters/blocking/cmd/libtraceable-downloader &&
           go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader &&
-          $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable
+          $(go env GOPATH)/bin/libtraceable-downloader pull-library
 
       - name: Download dependencies
         run: make deps
@@ -44,12 +44,6 @@ jobs:
           # See https://github.com/golangci/golangci-lint-action/issues/135#issuecomment-791775296
           skip-go-installation: true
           skip-pkg-cache: true
-
-      - name: Copy libtraceable to host
-        # We need to copy the library into the host because we need it to run the go tests
-        # otherwise we might need to compile package by package and run them.
-        # See https://groups.google.com/g/golang-nuts/c/p0sQub6fbn8/m/OIeU1Yun5hsJ
-        run: sudo cp /usr/local/traceable/libtraceable.so /usr/lib/x86_64-linux-gnu/libtraceable.so
 
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...
