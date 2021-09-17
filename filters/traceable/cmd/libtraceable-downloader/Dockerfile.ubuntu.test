@@ -15,15 +15,10 @@ ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 WORKDIR /usr/local/libtraceable-downloader
 
-# We first copy these files to be able to cache the dependencies download
-# and speed up the test container.
-COPY go.mod go.mod
-COPY go.sum go.sum
-
 COPY . .
 
 RUN go get ./...
 
-RUN go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader
+RUN go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
 
-RUN $(go env GOPATH)/bin/libtraceable-downloader install-library
+RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable

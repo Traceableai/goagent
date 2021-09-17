@@ -58,8 +58,8 @@ func main() {
 		statusCode = helpCmd(out, cmdArgs)
 	case "pull-library-headers":
 		statusCode = pullLibraryHeadersCmd(out, cmdArgs)
-	case "install-library":
-		statusCode = installLibraryCmd(out, cmdArgs)
+	case "pull-library":
+		statusCode = pullLibraryCmd(out, cmdArgs)
 	default:
 		out.WriteString(fmt.Sprintf("Unknown command %q.", cmd))
 		statusCode = 1
@@ -78,7 +78,7 @@ The commands are:
 
 	help                    displays the help
 	pull-library-headers    pulls the library headers into the repository
-	install-library         installs the library in the host
+	pull-library         installs the library in the host
 	`, filepath.Base(os.Args[0]))
 	return 0
 }
@@ -104,29 +104,35 @@ Usage:
 	}, "blocking.h", dstDir)
 }
 
-func installLibraryCmd(out io.Writer, args []string) int {
-	if len(args) != 0 {
+func pullLibraryCmd(out io.Writer, args []string) int {
+	if len(args) > 1 {
 		writeStringf(out, `
 Usage: 
 
-	%s %s
+	%s %s [<dst_folder>]
 			`, filepath.Base(os.Args[0]), os.Args[1])
 		return 1
 	}
 
-	os, dstDir, err := getLinuxDistroAndInstallDir()
+	os, err := getLinuxDistro()
 	if err != nil {
 		writeStringf(out, "Failed to resolve OS: %s", err)
 		return 1
 	}
 
-	writeStringf(out, "Installing library file for %q to %q", os, dstDir)
+	dstDir := "."
+	if len(args) > 0 {
+		dstDir = args[0]
+	}
+	absDstDir, _ := filepath.Abs(dstDir)
+
+	writeStringf(out, "Installing library file for %q to %q", os, absDstDir)
 
 	return downloadFile(out, libraryInfo{
 		Name:    "libtraceable",
 		OS:      os,
 		Version: libVersion,
-	}, "libtraceable.so", dstDir)
+	}, "libtraceable.so", absDstDir)
 }
 
 func downloadFile(out io.Writer, lib libraryInfo, fpath, dstDir string) int {
@@ -215,7 +221,9 @@ func unzipFile(zipFile, haystackFile, dstFolder string) (int, error) {
 		defer rc.Close()
 
 		fpath := filepath.Join(dstFolder, path.Base(f.Name))
-		os.MkdirAll(path.Dir(fpath), os.ModePerm)
+		if err := os.MkdirAll(path.Dir(fpath), os.ModePerm); err != nil {
+			return 0, fmt.Errorf("failed to create a target folder: %v", err)
+		}
 
 		dstFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {

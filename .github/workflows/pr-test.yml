@@ -26,11 +26,13 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: Install libtraceable
+      - name: Install libtraceable-downloader
         run: |
-          cd filters/blocking/cmd/libtraceable-downloader &&
-          go install github.com/Traceableai/goagent/filters/blocking/cmd/libtraceable-downloader &&
-          sudo $(go env GOPATH)/bin/libtraceable-downloader install-library
+          cd ./filters/traceable/cmd/libtraceable-downloader &&
+          go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+
+      - name: Pull libtraceable
+        run: $(go env GOPATH)/bin/libtraceable-downloader pull-library
 
       - name: Download dependencies
         run: make deps
@@ -44,6 +46,14 @@ jobs:
           # See https://github.com/golangci/golangci-lint-action/issues/135#issuecomment-791775296
           skip-go-installation: true
           skip-pkg-cache: true
+
+      - name: Copy libtraceable to host
+        # We need to copy the library into the host because we need it to run the go tests
+        # because all packages are compiled into a test binary and run from a temp directory,
+        # hence the relative location for library declared in cgo LDFLAGS does not work.
+        # See https://go-review.googlesource.com/c/go/+/17949/3/src/cmd/go/test.go#b65 and
+        # https://groups.google.com/g/golang-nuts/c/p0sQub6fbn8/m/OIeU1Yun5hsJ
+        run: sudo cp ./libtraceable.so /usr/lib/x86_64-linux-gnu/libtraceable.so
 
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...
@@ -81,6 +91,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Since we can't pass non scalar matrix values we pass two values concatenated
+      # and do some parsing to get them separatedly.
       - uses: rishabhgupta/split-by@v1
         id: split
         with:
@@ -96,18 +108,19 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: false
-          context: ./filters/blocking/cmd/libtraceable-downloader
-          file: ./filters/blocking/cmd/libtraceable-downloader/Dockerfile.${{ steps.split.outputs._0}}.test
+          context: ./filters/traceable/cmd/libtraceable-downloader
+          file: ./filters/traceable/cmd/libtraceable-downloader/Dockerfile.${{ steps.split.outputs._0}}.test
           build-args: |
             ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._1}}
             GO_VERSION=1.16.8
-          tags: traceable_goagent_test:${{ matrix.distro_version }}
+          tags: traceable_goagent_test_base:${{ matrix.distro_version }}
 
       - name: Run linux tests
         uses: docker/build-push-action@v2
         with:
           push: false
           context: .
-          file: ./Dockerfile.test
+          file: ./_tests/Dockerfile.test
           build-args: |
             TRACEABLE_GOAGENT_DISTRO_VERSION=${{ matrix.distro_version }}
+          tags: traceable_goagent_test:${{ matrix.distro_version }}

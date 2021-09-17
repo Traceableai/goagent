@@ -1,6 +1,7 @@
-//+build linux
+//go:build linux
+// +build linux
 
-package blocking
+package traceable
 
 import (
 	"testing"
@@ -43,10 +44,10 @@ func TestLibTraceableAttributes(t *testing.T) {
 }
 
 func TestBlockingDisabled(t *testing.T) {
-	f := NewBlockingFilter(&traceconfig.AgentConfig{})
+	f := NewFilter(&traceconfig.AgentConfig{})
 	assert.IsType(t, filter.NoopFilter{}, f)
 
-	f = NewBlockingFilter(&traceconfig.AgentConfig{
+	f = NewFilter(&traceconfig.AgentConfig{
 		BlockingConfig: &traceconfig.BlockingConfig{
 			Enabled: wrapperspb.Bool(false),
 		},
