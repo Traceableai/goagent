@@ -31,5 +31,5 @@ func getLinuxDistro() (string, error) {
 }
 
 func checkMinVersion(minVersion string, version string) bool {
-	return version > minVersion
+	return version >= minVersion
 }
