@@ -27,14 +27,12 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Install libtraceable-downloader
-        run: make install-libtraceable-downloader
+        run: |
+          cd ./filters/traceable/cmd/libtraceable-downloader &&
+          go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
 
-      - name: Install libtraceable
-        run: >
-          sudo make install-libtraceable
-          LIBTRACEABLE_DOWNLOADER=$(go env GOPATH)/bin/libtraceable-downloader
-          LIBTRACEABLE_OS=ubuntu_20.04
-          LIBTRACEABLE_DESTINATION=/usr/lib/x86_64-linux-gnu
+      - name: Pull libtraceable
+        run: $(go env GOPATH)/bin/libtraceable-downloader pull-library
 
       - name: Download dependencies
         run: make deps
@@ -49,16 +47,16 @@ jobs:
           skip-go-installation: true
           skip-pkg-cache: true
 
+      - name: Copy libtraceable to host
+        # We need to copy the library into the host because we need it to run the go tests
+        # because all packages are compiled into a test binary and run from a temp directory,
+        # hence the relative location for library declared in cgo LDFLAGS does not work.
+        # See https://go-review.googlesource.com/c/go/+/17949/3/src/cmd/go/test.go#b65 and
+        # https://groups.google.com/g/golang-nuts/c/p0sQub6fbn8/m/OIeU1Yun5hsJ
+        run: sudo cp ./libtraceable.so /usr/lib/x86_64-linux-gnu/libtraceable.so
+
       - name: Run tests
         run: CGO_ENABLED=1 go test -coverprofile=coverage.txt -v ./...
-
-      - name: Run linux tests
-        uses: docker/build-push-action@v2
-        with:
-          push: false
-          context: .
-          file: ./Dockerfile.test
-          tags: linux_tests:latest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
@@ -69,3 +67,60 @@ jobs:
 
       - name: check examples
         run: make check-examples
+
+  test-linux-distro:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        distro_version:
+          - debian_10
+          - debian_11
+          - alpine_3.9
+          - alpine_3.10
+          - alpine_3.11
+          - alpine_3.12
+          - centos_7
+          - centos_8
+          - amazonlinux_2
+          - ubuntu_18.04
+          - ubuntu_20.04
+    steps:
+      # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+
+      # Since we can't pass non scalar matrix values we pass two values concatenated
+      # and do some parsing to get them separatedly.
+      - uses: rishabhgupta/split-by@v1
+        id: split
+        with:
+          string: ${{ matrix.distro_version }}
+          split-by: "_"
+
+      - id: string
+        uses: ASzc/change-string-case-action@v1
+        with:
+          string: ${{ steps.split.outputs._0}}
+
+      - name: Build test images
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          context: ./filters/traceable/cmd/libtraceable-downloader
+          file: ./filters/traceable/cmd/libtraceable-downloader/Dockerfile.${{ steps.split.outputs._0}}.test
+          build-args: |
+            ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._1}}
+            GO_VERSION=1.16.8
+          tags: traceable_goagent_test_base:${{ matrix.distro_version }}
+
+      - name: Run linux tests
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          context: .
+          file: ./_tests/Dockerfile.test
+          build-args: |
+            TRACEABLE_GOAGENT_DISTRO_VERSION=${{ matrix.distro_version }}
+          tags: traceable_goagent_test:${{ matrix.distro_version }}

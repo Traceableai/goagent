@@ -1,14 +1,15 @@
-//+build !linux
+//go:build !linux
+// +build !linux
 
-package blocking // import "github.com/Traceableai/goagent/filters/blocking"
+package traceable // import "github.com/Traceableai/goagent/filters/traceable"
 
 import (
 	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk/filter"
 )
 
-// NewBlockingFilter TODO
-func NewBlockingFilter(config *traceconfig.AgentConfig) filter.Filter {
+// NewFilter TODO
+func NewFilter(config *traceconfig.AgentConfig) filter.Filter {
 	// TODO replace with libtraceable filter impl
 	return filter.NoopFilter{}
 }

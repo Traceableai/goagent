@@ -1,0 +1,24 @@
+ARG CENTOS_VERSION
+
+FROM centos:${CENTOS_VERSION}
+
+RUN yum -y update && yum install -y wget gcc
+
+ARG GO_VERSION
+
+RUN wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -xvf go${GO_VERSION}.linux-amd64.tar.gz && \
+    mv go /usr/local
+
+ENV GOROOT=/usr/local/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+WORKDIR /usr/local/libtraceable-downloader
+
+COPY . .
+
+RUN go get ./...
+
+RUN go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+
+RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable
