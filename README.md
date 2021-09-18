@@ -1,22 +1,25 @@
 # Go Agent
 
-`goagent` provides a set of instrumentation features for collecting relevant tracing data as well as secure an application by blocking requests selectively.
+`goagent` provides a set of instrumentation features for collecting relevant tracing data as well as secure an application by blocking requests selectively using Traceable features.
 
 ## Getting started
 
 Setting up Go Agent can be done with a few lines:
 
 ```go
-import "github.com/Traceableai/goagent/config"
+import (
+    "github.com/Traceableai/goagent"
+    "github.com/Traceableai/goagent/config"
+)
 
-...
+//...
 
 func main() {
     cfg := config.Load()
     cfg.ServiceName = config.String("myservice")
 
     shutdown := goagent.Init(cfg)
-    defer shutdown
+    defer shutdown()
 }
 ```
 
@@ -41,8 +44,8 @@ func main() {
 
     r := mux.NewRouter()
     r.Handle("/foo/{bar}", traceablehttp.NewHandler(
-        fooHandler,
-        "/foo/{bar}",
+        fooHandler, // existing user handler
+        "/foo/{bar}", // name of the span generated for this handler
     ))
 
     // ...
@@ -53,9 +56,10 @@ func main() {
 
 ##### Filter
 
-Filtering can be added as part of options. Multiple filters can be added and they will be run in sequence until a filter returns true (request is blocked), or all filters are run.
+Filters allow users to filter requests based on URL, headers or body. Filters can be added in the handler declaration using the `traceablehttp.WithFilter` option. Multiple filters can be added too by using `filter.NewMultiFilter` and they will be run in sequence until a filter returns true (request is blocked), or all filters are run.
 
 ```go
+import "github.com/hypertrace/goagent/sdk/filter"
 
 // ...
 
@@ -108,7 +112,6 @@ In terminal 2 run the server:
 go run ./examples/http-server/main.go
 ```
 
-
 ## Gin-Gonic Server
 
 Gin server instrumentation relies on adding the `traceablegin.Middleware` middleware to the gin server.
@@ -140,7 +143,6 @@ Then make a request to `localhost:8080/ping`
 The server instrumentation relies on the `grpc.UnaryServerInterceptor` component of the server declarations.
 
 ```go
-
 server := grpc.NewServer(
     grpc.UnaryInterceptor(
         traceablegrpc.UnaryServerInterceptor(),
@@ -152,9 +154,10 @@ server := grpc.NewServer(
 
 ##### Filter
 
-Filtering can be added as part of options. Multiple filters can be added and they will be run in sequence until a filter returns true (request is blocked), or all filters are run.
+Filters allow users to filter requests based on URL, headers or body. Filters can be added in the server interceptor declaration using the `traceablegrpc.WithFilter` option. Multiple filters can be added too by using `filter.NewMultiFilter` and they will be run in sequence until a filter returns true (request is blocked), or all filters are run.
 
 ```go
+import "github.com/hypertrace/goagent/sdk/filter"
 
 // ...
 
@@ -163,9 +166,6 @@ Filtering can be added as part of options. Multiple filters can be added and the
             traceablegrpc.WithFilter(filter.NewMultiFilter(filter1, filter2))
         ),
     ),
-
-// ...
-
 ````
 
 ### GRPC client
@@ -215,27 +215,22 @@ In terminal 2 run the server:
 go run ./examples/grpc-server/main.go
 ```
 
+## Traceable filter
+
+By default, `goagent` includes the [Traceable filter](./filters/traceable) into server instrumentations (e.g. http server or grpc server) based on the [configuration features](https://github.com/Traceableai/agent-config/blob/main/proto/ai/traceable/agent/config/v1/config.proto#L29). To run Traceable filter we need to download the library next to the application binary:
+
+```bash
+# Install libtraceable downloader (run this from a non go.mod folder)
+go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader@latest
+
+...
+
+# Pull library
+cd /path/to/myapp &&
+libtraceable-downloader pull-library
+```
+
 ## Other instrumentations
 
 - [database/traceablesql](instrumentation/database/traceablesql)
 - [github.com/gorilla/traceablemux](instrumentation/github.com/gorilla/traceablemux)
-
-## Contributing
-
-### Running tests
-
-Tests can be run with (requires docker)
-
-```bash
-make test
-```
-
-for unit tests only
-
-```bash
-make test-unit
-```
-
-### Releasing
-
-Run `./release.sh <version_number>` (`<version_number>` should follow semver, e.g. `1.2.3`). The script will change the hardcoded version, commit it, push a tag and prepare the hardcoded version for the next release.

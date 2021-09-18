@@ -1,4 +1,4 @@
-# Agent Config Go
+# Agent Config
 
 Agent config holds all the configuration settings for the Traceable Go Agent.
 
