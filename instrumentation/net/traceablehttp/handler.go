@@ -3,9 +3,8 @@ package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/
 import (
 	"net/http"
 
-	"github.com/Traceableai/goagent/instrumentation/internal/filter"
+	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
 
-	internalconfig "github.com/Traceableai/goagent/internal/config"
 	"github.com/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
 )
 
@@ -15,8 +14,7 @@ func NewHandler(base http.Handler, operation string, opts ...Option) http.Handle
 	for _, opt := range opts {
 		opt(o)
 	}
-
-	o.Filter = filter.ResolveFilter(internalconfig.GetConfig(), o.Filter)
+	o.Filter = traceablefilter.AppendTraceableFilter(o.Filter)
 
 	return hyperhttp.NewHandler(
 		base,

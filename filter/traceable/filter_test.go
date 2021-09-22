@@ -8,7 +8,6 @@ import (
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 
-	"github.com/hypertrace/goagent/sdk/filter"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -45,14 +44,22 @@ func TestLibTraceableAttributes(t *testing.T) {
 
 func TestBlockingDisabled(t *testing.T) {
 	f := NewFilter(&traceableconfig.AgentConfig{})
-	assert.IsType(t, filter.NoopFilter{}, f)
+	assert.IsType(t, Filter{}, *f)
+	assert.False(t, f.started)
+
+	f.Start() // the blocking engine was not enabled thus start will never be true
+	assert.False(t, f.started)
 
 	f = NewFilter(&traceableconfig.AgentConfig{
 		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled: wrapperspb.Bool(false),
 		},
 	})
-	assert.IsType(t, filter.NoopFilter{}, f)
+	assert.IsType(t, Filter{}, *f)
+	assert.False(t, f.started)
+
+	f.Start() // the blocking engine was not enabled thus start will never be true
+	assert.False(t, f.started)
 }
 
 func TestGetLibTraceableConfig(t *testing.T) {

@@ -8,11 +8,9 @@ import (
 	"github.com/hypertrace/goagent/sdk"
 )
 
-type Span interface {
-	sdk.Span
-}
+//type Span sdk.Span
 
-func SpanFromContext(ctx context.Context) Span {
+func SpanFromContext(ctx context.Context) sdk.Span {
 	return hypertrace.SpanFromContext(ctx)
 }
 
@@ -40,10 +38,10 @@ func WithTimestamp(ts time.Time) Option {
 	}
 }
 
-func htStarterToSpanStarter(
-	s func(ctx context.Context, name string, opts *sdk.SpanOptions) (context.Context, sdk.Span, func()),
-) func(ctx context.Context, name string, opts ...Option) (context.Context, Span, func()) {
-	return func(ctx context.Context, name string, opts ...Option) (context.Context, Span, func()) {
+type SpanStarter func(ctx context.Context, name string, opts ...Option) (context.Context, sdk.Span, func())
+
+func translateSpanStarter(s sdk.StartSpan) SpanStarter {
+	return func(ctx context.Context, name string, opts ...Option) (context.Context, sdk.Span, func()) {
 		o := &sdk.SpanOptions{}
 		for _, opt := range opts {
 			opt(o)
@@ -53,4 +51,4 @@ func htStarterToSpanStarter(
 	}
 }
 
-var StartSpan = htStarterToSpanStarter(hypertrace.StartSpan)
+var StartSpan = translateSpanStarter(hypertrace.StartSpan)
