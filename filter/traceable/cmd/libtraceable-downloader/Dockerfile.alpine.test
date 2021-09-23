@@ -24,6 +24,6 @@ COPY . .
 
 RUN go get ./...
 
-RUN go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+RUN go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
 
 RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable

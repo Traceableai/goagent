@@ -5,7 +5,7 @@ test:
 	@go test -count=1 -v -race -cover ./...
 
 build-test-linux:
-	@$(MAKE) -C ./filters/traceable/cmd/libtraceable-downloader build-install-image \
+	@$(MAKE) -C ./filter/traceable/cmd/libtraceable-downloader build-install-image \
 	TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION)
 
 	@docker build -f ./_tests/Dockerfile.test \
@@ -41,7 +41,7 @@ deps:
 
 check-examples:
 	@find ./ -type d -print | \
-	grep examples/ | \
+	grep _examples/ | \
 	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "=> {}" ; go build -o ./build_example main.go ; rm build_example ; fi'
 
 .PHONY: fmt
@@ -65,10 +65,10 @@ check-vanity-import:
 
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:
-	cd ./filters/traceable/cmd/libtraceable-downloader && \
+	cd ./filter/traceable/cmd/libtraceable-downloader && \
 	go mod download && \
-	go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+	go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
 
 .PHONY: pull-libtraceable-headers
 pull-libtraceable-headers:
-	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filters/traceable"
+	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filter/traceable"

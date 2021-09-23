@@ -1,8 +1,8 @@
-ARG DEBIAN_VERSION
+ARG CENTOS_VERSION
 
-FROM debian:${DEBIAN_VERSION}
+FROM centos:${CENTOS_VERSION}
 
-RUN apt-get -qq update && apt-get -qq install -y wget git gcc
+RUN yum -y update && yum install -y wget gcc
 
 ARG GO_VERSION
 
@@ -19,6 +19,6 @@ COPY . .
 
 RUN go get ./...
 
-RUN go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+RUN go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
 
 RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable

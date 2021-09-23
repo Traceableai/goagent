@@ -1,8 +1,8 @@
-ARG UBUNTU_VERSION
+ARG DEBIAN_VERSION
 
-FROM ubuntu:${UBUNTU_VERSION}
+FROM debian:${DEBIAN_VERSION}
 
-RUN apt-get -qq update && apt-get -qq install -y wget git build-essential
+RUN apt-get -qq update && apt-get -qq install -y wget git gcc
 
 ARG GO_VERSION
 
@@ -19,6 +19,6 @@ COPY . .
 
 RUN go get ./...
 
-RUN go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+RUN go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
 
 RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable

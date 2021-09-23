@@ -27,11 +27,11 @@ Config values can be declared in config file, env variables or code. For further
 
 ### Traceable filter
 
-By default, `goagent` includes the [Traceable filter](./filters/traceable) into server instrumentations (e.g. http server or grpc server) based on the [configuration features](https://github.com/Traceableai/agent-config/blob/main/proto/ai/traceable/agent/config/v1/config.proto#L29). To run Traceable filter we need to download the library next to the application binary:
+By default, `goagent` includes the [Traceable filter](./filter/traceable) into server instrumentations (e.g. http server or grpc server) based on the [configuration features](https://github.com/Traceableai/agent-config/blob/main/proto/ai/traceable/agent/config/v1/config.proto#L29). To run Traceable filter we need to download the library next to the application binary:
 
 ```bash
 # Install libtraceable downloader (run this from a non go.mod folder)
-go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader@latest
+go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader@latest
 
 ...
 
@@ -118,13 +118,13 @@ res, err := client.Do(req)
 In terminal 1 run the client:
 
 ```bash
-go run ./examples/http-client/main.go
+go run ./_examples/http-client/main.go
 ```
 
 In terminal 2 run the server:
 
 ```bash
-go run ./examples/http-server/main.go
+go run ./_examples/http-server/main.go
 ```
 
 ## Gin-Gonic Server
@@ -146,7 +146,7 @@ r.Use(traceablegin.Middleware())
 To run an example gin server with the middleware:
 
 ```bash
-go run ./examples/gin-server/main.go
+go run ./_examples/gin-server/main.go
 ```
 
 Then make a request to `localhost:8080/ping`
@@ -221,13 +221,13 @@ func main() {
 In terminal 1 run the client:
 
 ```bash
-go run ./examples/grpc-client/main.go
+go run ./_examples/grpc-client/main.go
 ```
 
 In terminal 2 run the server:
 
 ```bash
-go run ./examples/grpc-server/main.go
+go run ./_examples/grpc-server/main.go
 ```
 
 ## Other instrumentations

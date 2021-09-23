@@ -1,7 +1,7 @@
 //go:build !linux
 // +build !linux
 
-package traceable // import "github.com/Traceableai/goagent/filters/traceable"
+package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
 import (
 	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"

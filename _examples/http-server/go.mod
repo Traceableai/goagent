@@ -1,4 +1,4 @@
-module github.com/Traceableai/goagent/examples/http-server
+module github.com/Traceableai/goagent/_examples/http-server
 
 go 1.15
 

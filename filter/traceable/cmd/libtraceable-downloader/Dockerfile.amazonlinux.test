@@ -1,8 +1,8 @@
-ARG CENTOS_VERSION
+ARG AMAZONLINUX_VERSION
 
-FROM centos:${CENTOS_VERSION}
+FROM amazonlinux:${AMAZONLINUX_VERSION}
 
-RUN yum -y update && yum install -y wget gcc
+RUN yum -y update && yum install -y wget gcc tar gzip
 
 ARG GO_VERSION
 
@@ -19,6 +19,6 @@ COPY . .
 
 RUN go get ./...
 
-RUN go install github.com/Traceableai/goagent/filters/traceable/cmd/libtraceable-downloader
+RUN go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
 
 RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable
