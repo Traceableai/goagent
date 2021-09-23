@@ -19,7 +19,7 @@ import (
 	"strings"
 	"unsafe"
 
-	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
 )
@@ -28,7 +28,7 @@ const defaultAgentManagerEndpoint = "localhost:5441"
 const defaultPollPeriodSec = 30
 
 // NewFilter creates libtraceable based blocking filter
-func NewFilter(config *traceconfig.AgentConfig) filter.Filter {
+func NewFilter(config *traceableconfig.AgentConfig) filter.Filter {
 	blockingConfig := config.BlockingConfig
 	// disabled if no blocking config or enabled is set to false
 	if blockingConfig == nil || blockingConfig.Enabled.Value == false {
@@ -148,7 +148,7 @@ func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]st
 	return m
 }
 
-func getLibTraceableConfig(config *traceconfig.AgentConfig) C.traceable_blocking_config {
+func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_blocking_config {
 	blocking, opa := config.BlockingConfig, config.Opa
 
 	// debug log off by default

@@ -1,7 +1,7 @@
 package config // import "github.com/Traceableai/goagent/config"
 
 import (
-	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
 )
 
@@ -34,26 +34,26 @@ var defaultConfig = &AgentConfig{
 			TraceReporterType: hyperconfig.TraceReporterType_OTLP,
 		},
 	},
-	Blocking: &traceconfig.AgentConfig{
-		Opa: &traceconfig.Opa{
-			Enabled:           traceconfig.Bool(true),
-			Endpoint:          traceconfig.String("http://localhost:8181/"),
-			PollPeriodSeconds: traceconfig.Int32(30),
+	Blocking: &traceableconfig.AgentConfig{
+		Opa: &traceableconfig.Opa{
+			Enabled:           traceableconfig.Bool(true),
+			Endpoint:          traceableconfig.String("http://localhost:8181/"),
+			PollPeriodSeconds: traceableconfig.Int32(30),
 		},
-		BlockingConfig: &traceconfig.BlockingConfig{
-			Enabled:  traceconfig.Bool(true),
-			DebugLog: traceconfig.Bool(false),
-			Modsecurity: &traceconfig.ModsecurityConfig{
-				Enabled: traceconfig.Bool(true),
+		BlockingConfig: &traceableconfig.BlockingConfig{
+			Enabled:  traceableconfig.Bool(true),
+			DebugLog: traceableconfig.Bool(false),
+			Modsecurity: &traceableconfig.ModsecurityConfig{
+				Enabled: traceableconfig.Bool(true),
 			},
-			EvaluateBody: traceconfig.Bool(true),
-			RegionBlocking: &traceconfig.RegionBlockingConfig{
-				Enabled: traceconfig.Bool(true),
+			EvaluateBody: traceableconfig.Bool(true),
+			RegionBlocking: &traceableconfig.RegionBlockingConfig{
+				Enabled: traceableconfig.Bool(true),
 			},
-			RemoteConfig: &traceconfig.RemoteConfig{
-				Enabled:           traceconfig.Bool(true),
-				Endpoint:          traceconfig.String("localhost:5441"),
-				PollPeriodSeconds: traceconfig.Int32(30),
+			RemoteConfig: &traceableconfig.RemoteConfig{
+				Enabled:           traceableconfig.Bool(true),
+				Endpoint:          traceableconfig.String("localhost:5441"),
+				PollPeriodSeconds: traceableconfig.Int32(30),
 			},
 		},
 	},
