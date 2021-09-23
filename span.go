@@ -8,8 +8,6 @@ import (
 	"github.com/hypertrace/goagent/sdk"
 )
 
-//type Span sdk.Span
-
 func SpanFromContext(ctx context.Context) sdk.Span {
 	return hypertrace.SpanFromContext(ctx)
 }

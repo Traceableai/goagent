@@ -56,7 +56,6 @@ var _ filter.Filter = (*Filter)(nil)
 // Start() starts the threads to poll config
 func (f *Filter) Start() bool {
 	if f.blockingEngine == nil {
-		return false
 		ret := C.traceable_start_blocking_engine(f.blockingEngine)
 		if ret == C.TRACEABLE_SUCCESS {
 			f.started = true
