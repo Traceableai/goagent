@@ -9,7 +9,7 @@ type options struct {
 	Filter filter.Filter
 }
 
-func (o *options) toHyperOptions() []hypergrpc.Option {
+func (o *options) translateOptions() []hypergrpc.Option {
 	if o == nil {
 		return nil
 	}

@@ -83,8 +83,8 @@ github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFb
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/hypertrace/agent-config/gen/go v0.0.0-20210827180927-f8a7187ff6cc h1:6FwZna7lpLZVX2ICjVrPQq6+DS374z9rTILbSO5I1JU=
 github.com/hypertrace/agent-config/gen/go v0.0.0-20210827180927-f8a7187ff6cc/go.mod h1:jHPM5DZ7T1ageruSEOKSyt84lSwfG6Hvw7BJzEuJb2Y=
-github.com/hypertrace/goagent v0.4.1-0.20210910122740-410091eff3b0 h1:Y14kELSp3/LT57UXgFPKyeiv3cEUY+ksb9Uvx/zsgw8=
-github.com/hypertrace/goagent v0.4.1-0.20210910122740-410091eff3b0/go.mod h1:isBKviCXPIwhUHpxAqD8IfJckLwvsdWN3kLj1VP3ILI=
+github.com/hypertrace/goagent v0.4.1-0.20210922214533-75e1ca7f6a82 h1:/K1orXMBXcc8cmU4V1mSfVAn2muOmsdWpB42AwG0910=
+github.com/hypertrace/goagent v0.4.1-0.20210922214533-75e1ca7f6a82/go.mod h1:isBKviCXPIwhUHpxAqD8IfJckLwvsdWN3kLj1VP3ILI=
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

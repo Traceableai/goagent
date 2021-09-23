@@ -8,11 +8,7 @@ import (
 	"github.com/hypertrace/goagent/sdk"
 )
 
-type Span interface {
-	sdk.Span
-}
-
-func SpanFromContext(ctx context.Context) Span {
+func SpanFromContext(ctx context.Context) sdk.Span {
 	return hypertrace.SpanFromContext(ctx)
 }
 
@@ -21,11 +17,11 @@ type Option func(o *sdk.SpanOptions)
 type SpanKind string
 
 const (
-	Undetermined SpanKind = SpanKind(sdk.Undetermined)
-	Client       SpanKind = SpanKind(sdk.Client)
-	Server       SpanKind = SpanKind(sdk.Server)
-	Producer     SpanKind = SpanKind(sdk.Producer)
-	Consumer     SpanKind = SpanKind(sdk.Consumer)
+	SpanKindUndetermined SpanKind = SpanKind(sdk.SpanKindUndetermined)
+	SpanKindClient       SpanKind = SpanKind(sdk.SpanKindClient)
+	SpanKindServer       SpanKind = SpanKind(sdk.SpanKindServer)
+	SpanKindProducer     SpanKind = SpanKind(sdk.SpanKindProducer)
+	SpanKindConsumer     SpanKind = SpanKind(sdk.SpanKindConsumer)
 )
 
 func WithSpanKind(kind SpanKind) Option {
@@ -40,10 +36,10 @@ func WithTimestamp(ts time.Time) Option {
 	}
 }
 
-func htStarterToSpanStarter(
-	s func(ctx context.Context, name string, opts *sdk.SpanOptions) (context.Context, sdk.Span, func()),
-) func(ctx context.Context, name string, opts ...Option) (context.Context, Span, func()) {
-	return func(ctx context.Context, name string, opts ...Option) (context.Context, Span, func()) {
+type SpanStarter func(ctx context.Context, name string, opts ...Option) (context.Context, sdk.Span, func())
+
+func translateSpanStarter(s sdk.StartSpan) SpanStarter {
+	return func(ctx context.Context, name string, opts ...Option) (context.Context, sdk.Span, func()) {
 		o := &sdk.SpanOptions{}
 		for _, opt := range opts {
 			opt(o)
@@ -53,4 +49,4 @@ func htStarterToSpanStarter(
 	}
 }
 
-var StartSpan = htStarterToSpanStarter(hypertrace.StartSpan)
+var StartSpan = translateSpanStarter(hypertrace.StartSpan)

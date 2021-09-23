@@ -1,8 +1,7 @@
 package traceablegrpc // import "github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc"
 
 import (
-	"github.com/Traceableai/goagent/instrumentation/internal/filter"
-	internalconfig "github.com/Traceableai/goagent/internal/config"
+	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
 	"github.com/hypertrace/goagent/instrumentation/hypertrace/google.golang.org/hypergrpc"
 	"google.golang.org/grpc"
 )
@@ -14,9 +13,8 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	for _, opt := range opts {
 		opt(o)
 	}
+	o.Filter = traceablefilter.AppendTraceableFilter(o.Filter)
 
-	o.Filter = filter.ResolveFilter(internalconfig.GetConfig(), o.Filter)
-
-	return hypergrpc.UnaryServerInterceptor(o.toHyperOptions()...)
+	return hypergrpc.UnaryServerInterceptor(o.translateOptions()...)
 
 }

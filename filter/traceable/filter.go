@@ -7,7 +7,7 @@ package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 // See https://stackoverflow.com/a/44214486
 
 /*
-#cgo CFLAGS: -I./library
+#cgo CFLAGS: -I./
 #cgo LDFLAGS: -L${SRCDIR}/../../ -Wl,-rpath=\$ORIGIN -ltraceable -ldl
 #include "blocking.h"
 
@@ -28,33 +28,63 @@ const defaultAgentManagerEndpoint = "localhost:5441"
 const defaultPollPeriodSec = 30
 
 // NewFilter creates libtraceable based blocking filter
-func NewFilter(config *traceableconfig.AgentConfig) filter.Filter {
+func NewFilter(config *traceableconfig.AgentConfig) *Filter {
 	blockingConfig := config.BlockingConfig
 	// disabled if no blocking config or enabled is set to false
-	if blockingConfig == nil || blockingConfig.Enabled.Value == false {
-		return filter.NoopFilter{}
+	if blockingConfig == nil ||
+		blockingConfig.Enabled == nil ||
+		blockingConfig.Enabled.Value == false {
+		return &Filter{}
 	}
 
 	libTraceableConfig := getLibTraceableConfig(config)
 	defer freeLibTraceableConfig(libTraceableConfig)
 
-	var blockingFilter libTraceableFilter
+	var blockingFilter Filter
 	ret := C.traceable_new_blocking_engine(libTraceableConfig, &blockingFilter.blockingEngine)
 	if ret != C.TRACEABLE_SUCCESS {
-		return filter.NoopFilter{}
+		return &Filter{}
 	}
 	return &blockingFilter
 }
 
-type libTraceableFilter struct {
+type Filter struct {
 	blockingEngine C.traceable_blocking_engine
+	started        bool
 }
 
-var _ filter.Filter = (*libTraceableFilter)(nil)
+var _ filter.Filter = (*Filter)(nil)
+
+// Start() starts the threads to poll config
+func (f *Filter) Start() bool {
+	if f.blockingEngine != nil {
+		ret := C.traceable_start_blocking_engine(f.blockingEngine)
+		if ret == C.TRACEABLE_SUCCESS {
+			f.started = true
+			return true
+		}
+	}
+	return false
+}
+
+func (f *Filter) Stop() bool {
+	if f.blockingEngine != nil {
+		ret := C.traceable_delete_blocking_engine(f.blockingEngine)
+		if ret == C.TRACEABLE_SUCCESS {
+			f.started = false
+			return true
+		}
+	}
+	return false
+}
 
 // EvaluateURLAndHeaders calls into libtraceable to evaluate if request with URL should be blocked
 // or if request with headers should be blocked
-func (f *libTraceableFilter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) bool {
+func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) bool {
+	if !f.started {
+		return false
+	}
+
 	headerAttributes := map[string]string{
 		// evaluate URL together with headers
 		"http.url": url,
@@ -73,9 +103,9 @@ func (f *libTraceableFilter) EvaluateURLAndHeaders(span sdk.Span, url string, he
 }
 
 // EvaluateBody calls into libtraceable to evaluate if request with body should be blocked
-func (f *libTraceableFilter) EvaluateBody(span sdk.Span, body []byte) bool {
+func (f *Filter) EvaluateBody(span sdk.Span, body []byte) bool {
 	// no need to call into libtraceable if no body, cgo is expensive.
-	if len(body) == 0 {
+	if !f.started || len(body) == 0 {
 		return false
 	}
 
@@ -86,7 +116,7 @@ func (f *libTraceableFilter) EvaluateBody(span sdk.Span, body []byte) bool {
 
 // evaluate is a common function that calls into libtraceable
 // and returns block result attributes to be added to span.
-func (f *libTraceableFilter) evaluate(span sdk.Span, attributes map[string]string) bool {
+func (f *Filter) evaluate(span sdk.Span, attributes map[string]string) bool {
 	inputLibTraceableAttributes := createLibTraceableAttributes(attributes)
 	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
 

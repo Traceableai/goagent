@@ -1,4 +1,4 @@
-package config
+package state
 
 import (
 	"log"
@@ -9,8 +9,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var cfg *traceableconfig.AgentConfig
-var cfgMux = &sync.Mutex{}
+var (
+	cfg    *traceableconfig.AgentConfig
+	cfgMux = &sync.Mutex{}
+)
 
 // InitConfig initializes the config with default values
 func InitConfig(c *traceableconfig.AgentConfig) {

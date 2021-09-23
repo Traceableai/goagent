@@ -6,7 +6,7 @@ require (
 	github.com/Traceableai/agent-config/gen/go v0.0.0-20210831204248-e84ced5a826e
 	github.com/golang/protobuf v1.5.2
 	github.com/hypertrace/agent-config/gen/go v0.0.0-20210827180927-f8a7187ff6cc
-	github.com/hypertrace/goagent v0.4.1-0.20210910122740-410091eff3b0
+	github.com/hypertrace/goagent v0.4.1-0.20210922214533-75e1ca7f6a82
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.22.0
 	go.opentelemetry.io/contrib/propagators v0.22.0
