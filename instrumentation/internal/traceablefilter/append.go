@@ -11,25 +11,27 @@ import (
 // If both are nil or noop, this function will return nil.
 func AppendTraceableFilter(f sdkfilter.Filter) sdkfilter.Filter {
 	cfg := internalstate.GetConfig()
-	return appendTraceableFilterPerConfig(cfg, f)
+	f, closer := appendTraceableFilterPerConfig(cfg, f)
+	internalstate.AppendCloser(closer)
+	return f
 }
 
-func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.Filter {
+func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, f sdkfilter.Filter) (sdkfilter.Filter, func()) {
 	if cfg.BlockingConfig == nil ||
 		cfg.BlockingConfig.Enabled == nil ||
 		!cfg.BlockingConfig.Enabled.Value {
-		return f
+		return f, func() {}
 	}
 
 	traceableFilter := traceable.NewFilter(cfg)
 	if !traceableFilter.Start() {
-		return f
+		return f, func() {}
 	}
-	internalstate.AppendCloser(func() { traceableFilter.Stop() })
+	closer := func() { traceableFilter.Stop() }
 
 	if f != nil {
-		return sdkfilter.NewMultiFilter(traceableFilter, f)
+		return sdkfilter.NewMultiFilter(traceableFilter, f), closer
 	}
 
-	return traceableFilter
+	return traceableFilter, closer
 }
