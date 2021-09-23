@@ -17,9 +17,11 @@ type noopSpan struct{}
 
 var _ sdk.Span = noopSpan{}
 
-func (s noopSpan) SetAttribute(key string, value interface{}) {}
+func (s noopSpan) SetAttribute(_ string, _ interface{}) {}
 
-func (s noopSpan) SetError(err error) {}
+func (s noopSpan) SetError(_ error) {}
+
+func (s noopSpan) SetStatus(_ sdk.Code, _ string)
 
 func (s noopSpan) IsNoop() bool { return true }
 
