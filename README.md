@@ -118,13 +118,13 @@ res, err := client.Do(req)
 In terminal 1 run the client:
 
 ```bash
-go run ./examples/http-client/main.go
+go run ./_examples/http-client/main.go
 ```
 
 In terminal 2 run the server:
 
 ```bash
-go run ./examples/http-server/main.go
+go run ./_examples/http-server/main.go
 ```
 
 ## Gin-Gonic Server
@@ -146,7 +146,7 @@ r.Use(traceablegin.Middleware())
 To run an example gin server with the middleware:
 
 ```bash
-go run ./examples/gin-server/main.go
+go run ./_examples/gin-server/main.go
 ```
 
 Then make a request to `localhost:8080/ping`
@@ -221,13 +221,13 @@ func main() {
 In terminal 1 run the client:
 
 ```bash
-go run ./examples/grpc-client/main.go
+go run ./_examples/grpc-client/main.go
 ```
 
 In terminal 2 run the server:
 
 ```bash
-go run ./examples/grpc-server/main.go
+go run ./_examples/grpc-server/main.go
 ```
 
 ## Other instrumentations

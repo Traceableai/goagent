@@ -41,7 +41,7 @@ deps:
 
 check-examples:
 	@find ./ -type d -print | \
-	grep examples/ | \
+	grep _examples/ | \
 	xargs -I {} bash -c 'if [ -f "{}/main.go" ] ; then cd {} ; echo "=> {}" ; go build -o ./build_example main.go ; rm build_example ; fi'
 
 .PHONY: fmt

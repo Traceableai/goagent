@@ -7,8 +7,8 @@ import (
 	"net"
 
 	"github.com/Traceableai/goagent"
+	pb "github.com/Traceableai/goagent/_examples/internal/helloworld"
 	"github.com/Traceableai/goagent/config"
-	pb "github.com/Traceableai/goagent/examples/internal/helloworld"
 	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc"
 
 	"google.golang.org/grpc"
