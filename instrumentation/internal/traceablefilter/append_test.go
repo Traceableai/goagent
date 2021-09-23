@@ -14,6 +14,10 @@ func TestAppendTraceableFilter(t *testing.T) {
 		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled: traceableconfig.Bool(true),
 		},
+		Opa: &traceableconfig.Opa{ // needed to run the test
+			Endpoint:          traceableconfig.String("localhost:123"),
+			PollPeriodSeconds: traceableconfig.Int32(10),
+		},
 	}
 	f := appendTraceableFilterPerConfig(enabledConfig, filter.NoopFilter{})
 	assert.IsType(t, &filter.MultiFilter{}, f)

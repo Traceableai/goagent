@@ -31,7 +31,9 @@ const defaultPollPeriodSec = 30
 func NewFilter(config *traceableconfig.AgentConfig) *Filter {
 	blockingConfig := config.BlockingConfig
 	// disabled if no blocking config or enabled is set to false
-	if blockingConfig == nil || blockingConfig.Enabled.Value == false {
+	if blockingConfig == nil ||
+		blockingConfig.Enabled == nil ||
+		blockingConfig.Enabled.Value == false {
 		return &Filter{}
 	}
 
