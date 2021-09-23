@@ -1,7 +1,7 @@
 package filter
 
 import (
-	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent/filter/traceable"
 	sdkfilter "github.com/hypertrace/goagent/sdk/filter"
 )
@@ -16,7 +16,7 @@ func isNoop(f sdkfilter.Filter) bool {
 
 // ResolveFilter resolves a joint filter based on the agent configuration and a provided filter.
 // If both are nil or noop, this function will return nil.
-func ResolveFilter(cfg *traceconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.Filter {
+func ResolveFilter(cfg *traceableconfig.AgentConfig, f sdkfilter.Filter) sdkfilter.Filter {
 	blockingFilter := traceable.NewFilter(cfg)
 
 	if isNoop(blockingFilter) {

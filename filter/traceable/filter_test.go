@@ -6,7 +6,7 @@ package traceable
 import (
 	"testing"
 
-	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 
 	"github.com/hypertrace/goagent/sdk/filter"
 	"github.com/stretchr/testify/assert"
@@ -44,11 +44,11 @@ func TestLibTraceableAttributes(t *testing.T) {
 }
 
 func TestBlockingDisabled(t *testing.T) {
-	f := NewFilter(&traceconfig.AgentConfig{})
+	f := NewFilter(&traceableconfig.AgentConfig{})
 	assert.IsType(t, filter.NoopFilter{}, f)
 
-	f = NewFilter(&traceconfig.AgentConfig{
-		BlockingConfig: &traceconfig.BlockingConfig{
+	f = NewFilter(&traceableconfig.AgentConfig{
+		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled: wrapperspb.Bool(false),
 		},
 	})
@@ -58,13 +58,13 @@ func TestBlockingDisabled(t *testing.T) {
 func TestGetLibTraceableConfig(t *testing.T) {
 	// most straightforward config, only opa is specified
 	libTraceableConfig := getLibTraceableConfig(
-		&traceconfig.AgentConfig{
-			BlockingConfig: &traceconfig.BlockingConfig{
-				Enabled: traceconfig.Bool(true),
+		&traceableconfig.AgentConfig{
+			BlockingConfig: &traceableconfig.BlockingConfig{
+				Enabled: traceableconfig.Bool(true),
 			},
-			Opa: &traceconfig.Opa{
-				Endpoint:          traceconfig.String("http://opa:8181"),
-				PollPeriodSeconds: traceconfig.Int32(10),
+			Opa: &traceableconfig.Opa{
+				Endpoint:          traceableconfig.String("http://opa:8181"),
+				PollPeriodSeconds: traceableconfig.Int32(10),
 			},
 		},
 	)
@@ -85,22 +85,22 @@ func TestGetLibTraceableConfig(t *testing.T) {
 
 	// specify all options
 	libTraceableConfig = getLibTraceableConfig(
-		&traceconfig.AgentConfig{
-			BlockingConfig: &traceconfig.BlockingConfig{
-				Enabled:  traceconfig.Bool(true),
-				DebugLog: traceconfig.Bool(true),
-				Modsecurity: &traceconfig.ModsecurityConfig{
-					Enabled: traceconfig.Bool(false),
+		&traceableconfig.AgentConfig{
+			BlockingConfig: &traceableconfig.BlockingConfig{
+				Enabled:  traceableconfig.Bool(true),
+				DebugLog: traceableconfig.Bool(true),
+				Modsecurity: &traceableconfig.ModsecurityConfig{
+					Enabled: traceableconfig.Bool(false),
 				},
-				EvaluateBody: traceconfig.Bool(false),
-				RegionBlocking: &traceconfig.RegionBlockingConfig{
-					Enabled: traceconfig.Bool(false),
+				EvaluateBody: traceableconfig.Bool(false),
+				RegionBlocking: &traceableconfig.RegionBlockingConfig{
+					Enabled: traceableconfig.Bool(false),
 				},
-				RemoteConfig: &traceconfig.RemoteConfig{
-					Enabled: traceconfig.Bool(false),
+				RemoteConfig: &traceableconfig.RemoteConfig{
+					Enabled: traceableconfig.Bool(false),
 				},
 			},
-			Opa: &traceconfig.Opa{
+			Opa: &traceableconfig.Opa{
 				Endpoint:          wrapperspb.String("http://opa:8181"),
 				PollPeriodSeconds: wrapperspb.Int32(10),
 			},
@@ -122,17 +122,17 @@ func TestGetLibTraceableConfig(t *testing.T) {
 
 	// verify for RemoteConfig
 	libTraceableConfig = getLibTraceableConfig(
-		&traceconfig.AgentConfig{
-			BlockingConfig: &traceconfig.BlockingConfig{
-				Enabled: traceconfig.Bool(true),
-				RemoteConfig: &traceconfig.RemoteConfig{
-					Endpoint:          traceconfig.String("agent.traceableai:5441"),
-					PollPeriodSeconds: traceconfig.Int32(10),
+		&traceableconfig.AgentConfig{
+			BlockingConfig: &traceableconfig.BlockingConfig{
+				Enabled: traceableconfig.Bool(true),
+				RemoteConfig: &traceableconfig.RemoteConfig{
+					Endpoint:          traceableconfig.String("agent.traceableai:5441"),
+					PollPeriodSeconds: traceableconfig.Int32(10),
 				},
 			},
-			Opa: &traceconfig.Opa{
-				Endpoint:          traceconfig.String("http://opa:8181"),
-				PollPeriodSeconds: traceconfig.Int32(10),
+			Opa: &traceableconfig.Opa{
+				Endpoint:          traceableconfig.String("http://opa:8181"),
+				PollPeriodSeconds: traceableconfig.Int32(10),
 			},
 		},
 	)

@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 
-	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent"
 	"github.com/Traceableai/goagent/filter/traceable"
 )
 
 func main() {
-	cfg := traceconfig.Load()
+	cfg := traceableconfig.Load()
 	f := traceable.NewFilter(cfg)
 
 	_, s, ender := goagent.StartSpan(context.Background(), "test")
