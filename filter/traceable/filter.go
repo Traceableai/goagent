@@ -1,7 +1,7 @@
 //go:build linux
 // +build linux
 
-package traceable // import "github.com/Traceableai/goagent/filters/traceable"
+package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
 // "-Wl,-rpath=\$ORIGIN" ensures we don't need to pass LD_LIBRARY_PATH when running the application.
 // See https://stackoverflow.com/a/44214486

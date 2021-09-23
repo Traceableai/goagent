@@ -2,7 +2,7 @@ package filter
 
 import (
 	traceconfig "github.com/Traceableai/agent-config/gen/go/v1"
-	"github.com/Traceableai/goagent/filters/traceable"
+	"github.com/Traceableai/goagent/filter/traceable"
 	sdkfilter "github.com/hypertrace/goagent/sdk/filter"
 )
 
