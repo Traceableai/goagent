@@ -18,7 +18,7 @@ func TestStartSpan(t *testing.T) {
 	_, s, ender := StartSpan(
 		context.Background(),
 		"test",
-		WithSpanKind(Client),
+		WithSpanKind(SpanKindClient),
 		WithTimestamp(time.Now()),
 	)
 	defer ender()

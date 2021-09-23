@@ -19,11 +19,11 @@ type Option func(o *sdk.SpanOptions)
 type SpanKind string
 
 const (
-	Undetermined SpanKind = SpanKind(sdk.Undetermined)
-	Client       SpanKind = SpanKind(sdk.Client)
-	Server       SpanKind = SpanKind(sdk.Server)
-	Producer     SpanKind = SpanKind(sdk.Producer)
-	Consumer     SpanKind = SpanKind(sdk.Consumer)
+	SpanKindUndetermined SpanKind = SpanKind(sdk.SpanKindUndetermined)
+	SpanKindClient       SpanKind = SpanKind(sdk.SpanKindClient)
+	SpanKindServer       SpanKind = SpanKind(sdk.SpanKindServer)
+	SpanKindProducer     SpanKind = SpanKind(sdk.SpanKindProducer)
+	SpanKindConsumer     SpanKind = SpanKind(sdk.SpanKindConsumer)
 )
 
 func WithSpanKind(kind SpanKind) Option {
