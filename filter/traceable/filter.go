@@ -7,7 +7,7 @@ package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 // See https://stackoverflow.com/a/44214486
 
 /*
-#cgo CFLAGS: -I./library
+#cgo CFLAGS: -I./
 #cgo LDFLAGS: -L${SRCDIR}/../../ -Wl,-rpath=\$ORIGIN -ltraceable -ldl
 #include "blocking.h"
 
@@ -57,7 +57,7 @@ var _ filter.Filter = (*Filter)(nil)
 
 // Start() starts the threads to poll config
 func (f *Filter) Start() bool {
-	if f.blockingEngine == nil {
+	if f.blockingEngine != nil {
 		ret := C.traceable_start_blocking_engine(f.blockingEngine)
 		if ret == C.TRACEABLE_SUCCESS {
 			f.started = true

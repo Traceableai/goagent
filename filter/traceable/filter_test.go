@@ -48,6 +48,7 @@ func TestBlockingDisabled(t *testing.T) {
 	assert.False(t, f.started)
 
 	f.Start() // the blocking engine was not enabled thus start will never be true
+
 	assert.False(t, f.started)
 
 	f = NewFilter(&traceableconfig.AgentConfig{
