@@ -24,7 +24,6 @@ func main() {
 	r.Handle("/foo", traceablehttp.NewHandler(
 		http.HandlerFunc(fooHandler),
 		"/foo",
-		nil,
 	))
 	log.Fatal(http.ListenAndServe(":8081", r))
 }
