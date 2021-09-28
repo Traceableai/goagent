@@ -29,7 +29,7 @@ var defaultConfig = &AgentConfig{
 			BodyMaxSizeBytes: hyperconfig.Int32(131072),
 		},
 		Reporting: &hyperconfig.Reporting{
-			Endpoint:          hyperconfig.String("http://localhost:9411/api/v2/spans"),
+			Endpoint:          hyperconfig.String("localhost:4317"),
 			Secure:            hyperconfig.Bool(false),
 			TraceReporterType: hyperconfig.TraceReporterType_OTLP,
 		},

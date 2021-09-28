@@ -42,7 +42,7 @@ func main() {
 	}
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(
-			traceablegrpc.UnaryServerInterceptor(nil),
+			traceablegrpc.UnaryServerInterceptor(),
 		),
 	)
 
