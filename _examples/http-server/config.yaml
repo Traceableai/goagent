@@ -1,5 +1,5 @@
 service_name: http_server
 opa:
-  enabled: false
+  enabled: true
   endpoint: http://localhost:8181/
   pollPeriodSeconds: 30

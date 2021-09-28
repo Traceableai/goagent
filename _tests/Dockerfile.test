@@ -26,5 +26,5 @@ WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
 
 # Runs the test app to make sure blocking filter works as expected.
 RUN cp /usr/local/traceable/libtraceable.so .
-RUN go build -o test-app .
+RUN CGO_ENABLED=1 go build -o test-app .
 RUN ./test-app

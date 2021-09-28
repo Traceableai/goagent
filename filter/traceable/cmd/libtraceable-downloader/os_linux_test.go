@@ -1,5 +1,11 @@
 package main
 
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
 func TestCheckMinVersion(t *testing.T) {
 	assert.True(t, checkMinVersion("20", "20.08"))
 	assert.True(t, checkMinVersion("10", "10"))

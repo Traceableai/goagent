@@ -1,18 +1,50 @@
 package goagent // import "github.com/Traceableai/goagent"
 
 import (
+	"log"
+	"os"
+
 	"github.com/Traceableai/goagent/config"
+	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
 	"github.com/hypertrace/goagent/instrumentation/hypertrace"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Init initializes Traceable tracing and returns a shutdown function to flush data immediately
 // on a termination signal.
 func Init(cfg *config.AgentConfig) func() {
+	loggerCloser := initLogger(os.Getenv("TA_LOG_LEVEL"))
+	internalstate.AppendCloser(loggerCloser)
+
 	internalstate.InitConfig(cfg.Blocking)
+
 	tracingCloser := hypertrace.Init(cfg.Tracing)
 	internalstate.AppendCloser(tracingCloser)
 	return internalstate.CloserFn()
+}
+
+func initLogger(logLevel string) func() {
+	var lvl zapcore.Level
+	switch logLevel {
+	case "debug":
+		lvl = zap.DebugLevel
+	case "info":
+		lvl = zap.InfoLevel
+	default:
+		lvl = zap.ErrorLevel
+	}
+
+	l, err := zap.NewProduction(zap.IncreaseLevel(lvl))
+	if err != nil {
+		log.Printf("Failed to init logger: %v", err)
+		return func() {}
+	}
+
+	logger.InitLogger(l)
+
+	return func() { l.Sync() }
 }
 
 func RegisterService(
