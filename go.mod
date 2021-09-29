@@ -13,6 +13,7 @@ require (
 	go.opentelemetry.io/otel v1.0.0
 	go.opentelemetry.io/otel/sdk v1.0.0
 	go.opentelemetry.io/otel/trace v1.0.0
+	go.uber.org/zap v1.19.1
 	golang.org/x/net v0.0.0-20210928044308-7d9f5e0b762b // indirect
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
 	golang.org/x/text v0.3.7 // indirect

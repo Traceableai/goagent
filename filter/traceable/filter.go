@@ -20,8 +20,10 @@ import (
 	"unsafe"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	"github.com/Traceableai/goagent/internal/logger"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
+	"go.uber.org/zap"
 )
 
 const defaultAgentManagerEndpoint = "localhost:5441"
@@ -34,7 +36,7 @@ func NewFilter(config *traceableconfig.AgentConfig) *Filter {
 	if blockingConfig == nil ||
 		blockingConfig.Enabled == nil ||
 		blockingConfig.Enabled.Value == false {
-		return &Filter{}
+		return &Filter{logger: logger.Logger()}
 	}
 
 	libTraceableConfig := getLibTraceableConfig(config)
@@ -43,14 +45,17 @@ func NewFilter(config *traceableconfig.AgentConfig) *Filter {
 	var blockingFilter Filter
 	ret := C.traceable_new_blocking_engine(libTraceableConfig, &blockingFilter.blockingEngine)
 	if ret != C.TRACEABLE_SUCCESS {
-		return &Filter{}
+		return &Filter{logger: logger.Logger()}
 	}
+
+	blockingFilter.logger = logger.Logger()
 	return &blockingFilter
 }
 
 type Filter struct {
 	blockingEngine C.traceable_blocking_engine
 	started        bool
+	logger         *zap.Logger
 }
 
 var _ filter.Filter = (*Filter)(nil)
@@ -63,6 +68,8 @@ func (f *Filter) Start() bool {
 			f.started = true
 			return true
 		}
+
+		f.logger.Debug("Failed to start blocking engine")
 	}
 	return false
 }
@@ -74,6 +81,8 @@ func (f *Filter) Stop() bool {
 			f.started = false
 			return true
 		}
+
+		f.logger.Debug("Failed to stop blocking engine")
 	}
 	return false
 }
@@ -82,6 +91,7 @@ func (f *Filter) Stop() bool {
 // or if request with headers should be blocked
 func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) bool {
 	if !f.started {
+		f.logger.Debug("Failed to evaluate URL and headers as engine isn't started")
 		return false
 	}
 
@@ -105,7 +115,13 @@ func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[st
 // EvaluateBody calls into libtraceable to evaluate if request with body should be blocked
 func (f *Filter) EvaluateBody(span sdk.Span, body []byte) bool {
 	// no need to call into libtraceable if no body, cgo is expensive.
-	if !f.started || len(body) == 0 {
+	if !f.started {
+		f.logger.Debug("Failed to evaluate URL and headers as engine isn't started")
+
+		return false
+	}
+
+	if len(body) == 0 {
 		return false
 	}
 
@@ -125,6 +141,7 @@ func (f *Filter) evaluate(span sdk.Span, attributes map[string]string) bool {
 	defer C.traceable_delete_block_result_data(blockResult)
 	// if call fails just return false
 	if ret != C.TRACEABLE_SUCCESS {
+		f.logger.Debug("Failed to evaluate attributes")
 		return false
 	}
 

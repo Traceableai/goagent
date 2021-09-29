@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent"
@@ -10,10 +11,15 @@ import (
 
 func main() {
 	cfg := traceableconfig.Load()
+
 	f := traceable.NewFilter(cfg)
+	f.Start()
 
 	_, s, ender := goagent.StartSpan(context.Background(), "test")
 	defer ender()
 
 	_ = f.EvaluateBody(s, []byte("my_body"))
+	f.Stop()
+
+	fmt.Println("Hello world!")
 }

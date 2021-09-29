@@ -14,6 +14,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	port = ":8081"
+)
+
 func main() {
 	cfg := config.LoadFromFile("./config.yaml")
 
@@ -25,7 +29,7 @@ func main() {
 		http.HandlerFunc(fooHandler),
 		"/foo",
 	))
-	log.Fatal(http.ListenAndServe(":8081", r))
+	log.Fatal(http.ListenAndServe(port, r))
 }
 
 type person struct {
