@@ -8,7 +8,7 @@ linters:
     - goconst
     #- gocyclo response wrapper for server handler is too complex
     - gofmt
-    - revive
+    - golint
     - govet
     - ineffassign
     #- interfacer
@@ -34,4 +34,4 @@ issues:
     - path: config\/.*.go # constants are generated with underscore in *.pb.go files
       text: don't use underscores in Go names
       linters:
-        - revive
+        - golint
