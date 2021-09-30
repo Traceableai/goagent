@@ -46,6 +46,7 @@ jobs:
           # See https://github.com/golangci/golangci-lint-action/issues/135#issuecomment-791775296
           skip-go-installation: true
           skip-pkg-cache: true
+          only-new-issues: true
 
       - name: Copy libtraceable to host
         # We need to copy the library into the host because we need it to run the go tests
