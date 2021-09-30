@@ -81,7 +81,7 @@ func (f *Filter) Stop() bool {
 			return true
 		}
 
-		f.logger.Debug("Failed to stop blocking engine")
+		f.logger.Warn("Failed to stop blocking engine")
 	}
 	return false
 }
@@ -90,7 +90,7 @@ func (f *Filter) Stop() bool {
 // or if request with headers should be blocked
 func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) bool {
 	if !f.started {
-		f.logger.Debug("Failed to evaluate URL and headers as engine isn't started")
+		f.logger.Debug("No evaluation of URL or headers as engine isn't started")
 		return false
 	}
 
@@ -115,7 +115,7 @@ func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[st
 func (f *Filter) EvaluateBody(span sdk.Span, body []byte) bool {
 	// no need to call into libtraceable if no body, cgo is expensive.
 	if !f.started {
-		f.logger.Debug("Failed to evaluate URL and headers as engine isn't started")
+		f.logger.Debug("No evaluation of body as engine isn't started")
 		return false
 	}
 
