@@ -14,11 +14,11 @@ type supportedVersions struct {
 }
 
 var resolveLib = map[string]supportedVersions{
-	"ubuntu": supportedVersions{"18", "ubuntu_18.04"},
-	"debian": supportedVersions{"10", "ubuntu_18.04"},
-	"centos": supportedVersions{"7", "centos_7"},
-	"alpine": supportedVersions{"3.9", "alpine_3.9"},
-	"amzn":   supportedVersions{"2", "centos_7"},
+	"ubuntu": {"18", "ubuntu_18.04"},
+	"debian": {"10", "ubuntu_18.04"},
+	"centos": {"7", "centos_7"},
+	"alpine": {"3.9", "alpine_3.9"},
+	"amzn":   {"2", "centos_7"},
 }
 
 func getLinuxDistro() (string, error) {
