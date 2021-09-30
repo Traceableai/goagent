@@ -11,6 +11,7 @@ import (
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 type noopSpan struct{}
@@ -26,7 +27,7 @@ func (s noopSpan) SetStatus(_ sdk.Code, _ string) {}
 func (s noopSpan) IsNoop() bool { return true }
 
 func TestBlockingStub(t *testing.T) {
-	f := NewFilter(&traceableconfig.AgentConfig{})
+	f := NewFilter(&traceableconfig.AgentConfig{}, zap.NewNop())
 	assert.IsType(t, Filter{}, *f)
 	assert.True(t, f.Start())
 	assert.False(t, f.EvaluateURLAndHeaders(noopSpan{}, "", map[string][]string{}))

@@ -3,6 +3,7 @@ package traceablefilter
 import (
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent/filter/traceable"
+	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
 	sdkfilter "github.com/hypertrace/goagent/sdk/filter"
 )
@@ -23,7 +24,7 @@ func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, f sdkfilte
 		return f, func() {}
 	}
 
-	traceableFilter := traceable.NewFilter(cfg)
+	traceableFilter := traceable.NewFilter(cfg, logger.GetLogger())
 	if !traceableFilter.Start() {
 		return f, func() {}
 	}

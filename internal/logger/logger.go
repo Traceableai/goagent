@@ -1,24 +1,33 @@
 package logger
 
 import (
+	"log"
 	"sync"
 
 	"go.uber.org/zap"
 )
 
 var (
-	_globalMu sync.RWMutex
-	_globalL  = zap.NewNop()
+	_lMux sync.RWMutex
+	_l    *zap.Logger
 )
 
-func Logger() *zap.Logger {
-	_globalMu.RLock()
-	defer _globalMu.RUnlock()
-	return _globalL
+func GetLogger() *zap.Logger {
+	if _l == nil {
+		InitLogger(zap.NewNop())
+	}
+
+	return _l
 }
 
 func InitLogger(l *zap.Logger) {
-	_globalMu.Lock()
-	defer _globalMu.Unlock()
-	_globalL = l
+	_lMux.Lock()
+	defer _lMux.Unlock()
+
+	if _l != nil {
+		log.Println("logger already initialized, ignoring new logger.")
+		return
+	}
+
+	_l = l
 }

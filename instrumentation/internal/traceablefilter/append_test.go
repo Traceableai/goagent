@@ -15,7 +15,7 @@ func TestAppendTraceableFilter(t *testing.T) {
 			Enabled: traceableconfig.Bool(true),
 		},
 		Opa: &traceableconfig.Opa{ // needed to run the test
-			Endpoint:          traceableconfig.String("localhost:123"),
+			Endpoint:          traceableconfig.String("http//localhost:123"),
 			PollPeriodSeconds: traceableconfig.Int32(10),
 		},
 	}

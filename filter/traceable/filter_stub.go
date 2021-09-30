@@ -7,10 +7,11 @@ import (
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
+	"go.uber.org/zap"
 )
 
 // NewFilter creates libtraceable based blocking filter
-func NewFilter(config *traceableconfig.AgentConfig) *Filter {
+func NewFilter(_ *traceableconfig.AgentConfig, _ *zap.Logger) *Filter {
 	return &Filter{}
 }
 
