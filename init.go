@@ -3,13 +3,13 @@ package goagent // import "github.com/Traceableai/goagent"
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
 	"github.com/hypertrace/goagent/instrumentation/hypertrace"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Init initializes Traceable tracing and returns a shutdown function to flush data immediately
@@ -26,17 +26,24 @@ func Init(cfg *config.AgentConfig) func() {
 }
 
 func initLogger(logLevel string) func() {
-	var lvl zapcore.Level
-	switch logLevel {
+	var lvl = zap.ErrorLevel
+	switch strings.ToLower(logLevel) {
 	case "debug":
 		lvl = zap.DebugLevel
 	case "info":
 		lvl = zap.InfoLevel
-	default:
-		lvl = zap.ErrorLevel
+	case "warn":
+		lvl = zap.WarnLevel
 	}
 
-	l, err := zap.NewProduction(zap.IncreaseLevel(lvl))
+	l, err := zap.Config{
+		Level:            zap.NewAtomicLevelAt(lvl),
+		Development:      false,
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+	}.Build()
 	if err != nil {
 		log.Printf("Failed to init logger: %v", err)
 		return func() {}

@@ -7,8 +7,8 @@ test:
 build-test-linux:
 	@$(MAKE) -C ./filter/traceable/cmd/libtraceable-downloader build-install-image \
 	TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION)
-
 	@docker build -f ./_tests/Dockerfile.test \
+	--progress plain \
 	--build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION) \
 	-t traceable_goagent_test:$(TRACEABLE_GOAGENT_DISTRO_VERSION) .
 
