@@ -159,3 +159,10 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, "agent.traceableai:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
 	assert.Equal(t, 10, int(libTraceableConfig.remote_config.poll_period_sec))
 }
+
+func TestIsGRPC(t *testing.T) {
+	assert.False(t, isGRPC(map[string][]string{}))
+	assert.False(t, isGRPC(map[string][]string{"Content-Type": []string{}}))
+	assert.False(t, isGRPC(map[string][]string{"Content-Type": []string{"application/json"}}))
+	assert.True(t, isGRPC(map[string][]string{"Content-Type": []string{"application/grpc+proto"}}))
+}

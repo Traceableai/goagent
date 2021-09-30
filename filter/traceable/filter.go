@@ -87,6 +87,23 @@ func (f *Filter) Stop() bool {
 	return false
 }
 
+const (
+	httpRequestPrefix  = "http.request.header."
+	grpcRequestPrefix  = "rpc.request.metadata."
+	grpcContentType    = "application/grpc"
+	grpcContentTypeLen = 16
+)
+
+// isGRPC determines whether a metadata set belongs to http or no
+func isGRPC(h map[string][]string) bool {
+	contentType, ok := h["Content-Type"]
+	if !ok || len(contentType) == 0 {
+		return false
+	}
+
+	return contentType[0][:grpcContentTypeLen] == grpcContentType
+}
+
 // EvaluateURLAndHeaders calls into libtraceable to evaluate if request with URL should be blocked
 // or if request with headers should be blocked
 func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) bool {
@@ -99,12 +116,18 @@ func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[st
 		// evaluate URL together with headers
 		"http.url": url,
 	}
+
+	prefix := httpRequestPrefix
+	if isGRPC(headers) {
+		prefix = grpcRequestPrefix
+	}
+
 	for k, v := range headers {
 		if len(v) == 1 {
-			headerAttributes[strings.ToLower(k)] = v[0]
+			headerAttributes[fmt.Sprintf("%s%s", prefix, strings.ToLower(k))] = v[0]
 		} else {
 			for i, vv := range v {
-				headerAttributes[fmt.Sprintf("%s[%d]", strings.ToLower(k), i)] = vv
+				headerAttributes[fmt.Sprintf("%s%s[%d]", prefix, strings.ToLower(k), i)] = vv
 			}
 		}
 	}

@@ -1,0 +1,11 @@
+service_name: goagent-example
+
+reporting:
+  endpoint: traceable-agent:4317
+  secure: false
+  trace_reporter_type: OTLP
+
+opa:
+  enabled: true
+  endpoint: http://traceable-agent:8181/
+  poll_period_seconds: 30
