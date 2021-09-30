@@ -8,7 +8,7 @@ package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
 /*
 #cgo CFLAGS: -I./
-#cgo LDFLAGS: -L${SRCDIR}/../../ -Wl,-rpath=\$ORIGIN -ltraceable -ldl
+#cgo LDFLAGS: -L${SRCDIR}/libs -Wl,-rpath=\$ORIGIN -ltraceable -ldl
 #include "blocking.h"
 
 #include <stdlib.h>
