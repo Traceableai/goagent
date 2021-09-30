@@ -5,6 +5,7 @@ import (
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk/filter"
+	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +20,7 @@ func TestAppendTraceableFilter(t *testing.T) {
 			PollPeriodSeconds: traceableconfig.Int32(10),
 		},
 	}
-	f, closer := appendTraceableFilterPerConfig(enabledConfig, filter.NoopFilter{})
+	f, closer := appendTraceableFilterPerConfig(enabledConfig, zap.NewNop(), filter.NoopFilter{})
 	defer closer()
 
 	assert.IsType(t, &filter.MultiFilter{}, f)
@@ -40,7 +41,7 @@ func TestAppendTraceableFilterWithTraceableFilterDisabled(t *testing.T) {
 
 	for name, cfg := range disabledConfigs {
 		t.Run(name, func(t *testing.T) {
-			f, closer := appendTraceableFilterPerConfig(cfg, filter.NoopFilter{})
+			f, closer := appendTraceableFilterPerConfig(cfg, zap.NewNop(), filter.NoopFilter{})
 			assert.IsType(t, filter.NoopFilter{}, f)
 			closer()
 		})

@@ -3,6 +3,7 @@ package goagent // import "github.com/Traceableai/goagent"
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/internal/logger"
@@ -27,16 +28,25 @@ func Init(cfg *config.AgentConfig) func() {
 
 func initLogger(logLevel string) func() {
 	var lvl zapcore.Level
-	switch logLevel {
+	switch strings.ToLower(logLevel) {
 	case "debug":
 		lvl = zap.DebugLevel
 	case "info":
 		lvl = zap.InfoLevel
+	case "warn":
+		lvl = zap.WarnLevel
 	default:
 		lvl = zap.ErrorLevel
 	}
 
-	l, err := zap.NewProduction(zap.IncreaseLevel(lvl))
+	l, err := zap.Config{
+		Level:            zap.NewAtomicLevelAt(lvl),
+		Development:      false,
+		Encoding:         "json",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stderr"},
+		ErrorOutputPaths: []string{"stderr"},
+	}.Build()
 	if err != nil {
 		log.Printf("Failed to init logger: %v", err)
 		return func() {}
