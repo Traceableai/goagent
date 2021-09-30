@@ -10,7 +10,6 @@ import (
 	internalstate "github.com/Traceableai/goagent/internal/state"
 	"github.com/hypertrace/goagent/instrumentation/hypertrace"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // Init initializes Traceable tracing and returns a shutdown function to flush data immediately
@@ -27,7 +26,7 @@ func Init(cfg *config.AgentConfig) func() {
 }
 
 func initLogger(logLevel string) func() {
-	var lvl zapcore.Level
+	var lvl = zap.ErrorLevel
 	switch strings.ToLower(logLevel) {
 	case "debug":
 		lvl = zap.DebugLevel
@@ -35,8 +34,6 @@ func initLogger(logLevel string) func() {
 		lvl = zap.InfoLevel
 	case "warn":
 		lvl = zap.WarnLevel
-	default:
-		lvl = zap.ErrorLevel
 	}
 
 	l, err := zap.Config{

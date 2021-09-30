@@ -26,7 +26,7 @@ func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, l *zap.Log
 		return f, func() {}
 	}
 
-	traceableFilter := traceable.NewFilter(cfg, logger.GetLogger())
+	traceableFilter := traceable.NewFilter(cfg, l)
 	if !traceableFilter.Start() {
 		return f, func() {}
 	}
