@@ -16,7 +16,7 @@ import (
 
 func main() {
     cfg := config.Load()
-    cfg.ServiceName = config.String("myservice")
+    cfg.Tracing.ServiceName = config.String("myservice")
 
     shutdown := goagent.Init(cfg)
     defer shutdown()
@@ -35,7 +35,7 @@ go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-down
 
 ...
 
-# Pull library
+# Pull library in the binary dir
 cd /path/to/myapp &&
 libtraceable-downloader pull-library
 ```
