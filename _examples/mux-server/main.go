@@ -7,7 +7,6 @@ import (
 
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/instrumentation/github.com/gorilla/traceablemux"
-	sdkhttp "github.com/hypertrace/goagent/sdk/instrumentation/net/http"
 
 	"github.com/Traceableai/goagent"
 	"github.com/gorilla/mux"
@@ -21,7 +20,7 @@ func main() {
 	defer flusher()
 
 	r := mux.NewRouter()
-	r.Use(traceablemux.NewMiddleware(&sdkhttp.Options{})) // here we use the mux middleware
+	r.Use(traceablemux.NewMiddleware()) // here we use the mux middleware
 	r.HandleFunc("/foo", http.HandlerFunc(fooHandler))
 	log.Fatal(http.ListenAndServe(":8081", r))
 }
