@@ -3,7 +3,7 @@ package traceablemux // import "github.com/Traceableai/goagent/instrumentation/g
 import (
 	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
 	"github.com/gorilla/mux"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry/github.com/gorilla/hypermux"
+	"github.com/hypertrace/goagent/instrumentation/hypertrace/github.com/gorilla/hypermux"
 )
 
 // NewMiddleware sets up a handler to start tracing the incoming requests.
@@ -14,5 +14,5 @@ func NewMiddleware(opts ...Option) mux.MiddlewareFunc {
 	}
 	o.Filter = traceablefilter.AppendTraceableFilter(o.Filter)
 
-	return hypermux.NewMiddleware(o.toHyperOptions())
+	return hypermux.NewMiddleware(o.translateOptions()...)
 }
