@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNilToHyperOptions(t *testing.T) {
+func TestTranslateOptionsForNil(t *testing.T) {
 	o := (*options)(nil)
 	assert.Len(t, o.translateOptions(), 0)
 }
 
-func TestToHyperOptions(t *testing.T) {
+func TestTranslateOptions(t *testing.T) {
 	o := options{}
 	assert.Len(t, o.translateOptions(), 0)
 
