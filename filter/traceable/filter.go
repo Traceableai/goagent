@@ -1,5 +1,5 @@
-//go:build linux
-// +build linux
+//go:build linux && traceable_blocking
+// +build linux,traceable_blocking
 
 package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 

@@ -16,10 +16,10 @@ RUN go get ./...
 COPY . .
 
 # Runs blocking package tests to make sure it works.
-RUN CGO_ENABLED=1 go test -c ./filter/traceable
+RUN CGO_ENABLED=1 go test --tags=traceable_blocking -c ./filter/traceable
 RUN ./traceable.test -test.v
 
-RUN CGO_ENABLED=1 go test -c ./instrumentation/internal/traceablefilter
+RUN CGO_ENABLED=1 go test --tags=traceable_blocking -c ./instrumentation/internal/traceablefilter
 RUN ./traceablefilter.test -test.v
 
 WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
