@@ -10,6 +10,18 @@ type AgentConfig struct {
 	Blocking *traceableconfig.AgentConfig
 }
 
+func LoadEnv(cfg *AgentConfig) {
+	cfg.Tracing.LoadFromEnv(
+		hyperconfig.WithEnvPrefix(envPrefix),
+		hyperconfig.WithDefaults(defaultConfig.Tracing),
+	)
+
+	cfg.Blocking.LoadFromEnv(
+		traceableconfig.WithEnvPrefix(envPrefix),
+		traceableconfig.WithDefaults(defaultConfig.Blocking),
+	)
+}
+
 func PropagationFormats(formats ...hyperconfig.PropagationFormat) []hyperconfig.PropagationFormat {
 	return formats
 }
