@@ -1,5 +1,5 @@
-//go:build !linux || !traceable_blocking
-// +build !linux !traceable_blocking
+//go:build !linux || !traceable_filter
+// +build !linux !traceable_filter
 
 package traceable
 

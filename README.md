@@ -31,10 +31,10 @@ By default, `goagent` includes the [Traceable filter](./filter/traceable) into s
 based on the [configuration features](https://github.com/Traceableai/agent-config/blob/main/proto/ai/traceable/agent/config/v1/config.proto#L29).
 To run Traceable filter we need to:
 
-Fist compile the binary using the build tag `traceable_blocking`, for example:
+Fist compile the binary using the build tag `traceable_filter`, for example:
 
 ```bash
-go build -tags 'traceable_blocking' -o myapp
+go build -tags 'traceable_filter' -o myapp
 ```
 
 Then, we need to download the library next to the application binary:
