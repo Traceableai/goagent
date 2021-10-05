@@ -13,12 +13,19 @@ RUN wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
 ENV GOROOT=/usr/local/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
-WORKDIR /usr/local/libtraceable-downloader
-
-COPY . .
-
-RUN go get ./...
-
-RUN go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
-
-RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable
+# This fix resolves the warning
+#
+# /bin/ld: warning: libc.musl-x86_64.so.1, needed by filter/traceable/libs/libtraceable.so, 
+# not found (try using -rpath or -rpath-link)
+#
+# See https://www.x-cellent.com/blog/cgo-bindings/
+RUN yum install -y make
+RUN curl -LSs https://www.musl-libc.org/releases/musl-1.1.21.tar.gz -o musl.tar.gz \
+    && tar -xvf musl.tar.gz \
+    && cd musl-1.1.21 \
+    && ./configure \
+    && make \
+    && make install \
+    && cd .. \
+    && rm -rf musl*
+RUN ln -s /usr/lib/ld-musl-x86_64.so.1  /usr/lib64/libc.musl-x86_64.so.1

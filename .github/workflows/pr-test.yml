@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Install missing deps
         run: |
-          sudo apt-get install musl-dev &&
+          sudo apt-get install -y musl-dev &&
           sudo ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
