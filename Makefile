@@ -12,6 +12,14 @@ build-test-linux:
 	--build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION) \
 	-t traceable_goagent_test:$(TRACEABLE_GOAGENT_DISTRO_VERSION) .
 
+build-test-linux-no-lib:
+	@$(MAKE) -C ./filter/traceable/cmd/libtraceable-downloader build-install-image \
+	TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION)
+	@docker build -f ./_tests/Dockerfile.no_lib.test \
+	--progress plain \
+	--build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=$(TRACEABLE_GOAGENT_DISTRO_VERSION) \
+	-t traceable_goagent_no_lib_test:$(TRACEABLE_GOAGENT_DISTRO_VERSION) .
+
 .PHONY: test-linux
 test-linux:
 	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=debian_10
@@ -25,6 +33,7 @@ test-linux:
 	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=amazonlinux_2
 	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=ubuntu_18.04
 	$(MAKE) build-test-linux TRACEABLE_GOAGENT_DISTRO_VERSION=ubuntu_20.04
+	$(MAKE) build-test-linux-no-lib TRACEABLE_GOAGENT_DISTRO_VERSION=ubuntu_20.04
 
 .PHONY: bench
 bench:

@@ -26,3 +26,9 @@ func CloserFn() Closer {
 		}
 	}
 }
+
+func reset() {
+	closerMux.Lock()
+	closers = nil
+	closerMux.Unlock()
+}

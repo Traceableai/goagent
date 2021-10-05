@@ -9,23 +9,16 @@ WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
 COPY go.mod go.mod
 COPY go.sum go.sum
 
-# Go get expects the library to be present when retrieving the dependencies
-RUN cp /usr/local/traceable/libtraceable.so .
 RUN go get ./...
 
 COPY . .
 
 # Runs blocking package tests to make sure it works.
-RUN CGO_ENABLED=1 go test --tags=traceable_filter -c ./filter/traceable
+RUN go test -c ./filter/traceable
 RUN ./traceable.test -test.v
-
-# Runs traceablefilter internal package tests to make sure it works.
-RUN CGO_ENABLED=1 go test -c ./instrumentation/internal/traceablefilter
-RUN ./traceablefilter.test -test.v
 
 WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
 
 # Runs the test app to make sure blocking filter works as expected.
-RUN cp /usr/local/traceable/libtraceable.so .
-RUN CGO_ENABLED=1 go build -o test-app .
+RUN go build -o test-app .
 RUN TA_LOG_LEVEL="debug" ./test-app
