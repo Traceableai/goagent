@@ -19,6 +19,8 @@ func TestAppendCloser(t *testing.T) {
 	CloserFn()()
 	assert.True(t, f1Called)
 	assert.True(t, f2Called)
+
+	reset()
 }
 
 func TestAppendCloserConcurrently(t *testing.T) {
@@ -39,4 +41,6 @@ func TestAppendCloserConcurrently(t *testing.T) {
 	wg.Wait()
 
 	assert.Len(t, closers, 2)
+
+	reset()
 }
