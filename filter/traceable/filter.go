@@ -35,6 +35,7 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 	if blockingConfig == nil ||
 		blockingConfig.Enabled == nil ||
 		blockingConfig.Enabled.Value == false {
+		logger.Debug("Traceable filter is disabled by config.")
 		return &Filter{logger: logger}
 	}
 
@@ -44,6 +45,7 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 	var blockingFilter Filter
 	ret := C.traceable_new_blocking_engine(libTraceableConfig, &blockingFilter.blockingEngine)
 	if ret != C.TRACEABLE_SUCCESS {
+		logger.Warn("Failed to initialize traceable filter.")
 		return &Filter{logger: logger}
 	}
 

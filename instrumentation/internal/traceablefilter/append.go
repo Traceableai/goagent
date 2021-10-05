@@ -25,7 +25,6 @@ func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, l *zap.Log
 		!cfg.BlockingConfig.Enabled.Value {
 		return f, func() {}
 	}
-
 	traceableFilter := traceable.NewFilter(cfg, l)
 	if !traceableFilter.Start() {
 		return f, func() {}
@@ -33,7 +32,6 @@ func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, l *zap.Log
 	closer := func() { traceableFilter.Stop() }
 
 	l.Debug("Traceable filter started successfully")
-
 	if f != nil {
 		return sdkfilter.NewMultiFilter(traceableFilter, f), closer
 	}

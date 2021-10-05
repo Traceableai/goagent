@@ -19,6 +19,5 @@ ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 # not found (try using -rpath or -rpath-link)
 #
 # See https://github.com/alexander-akhmetov/python-telegram/issues/3
-# See https://www.x-cellent.com/blog/cgo-bindings/
-RUN apt-get install -y musl-dev 
+RUN apt-get install -y musl-dev
 RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
