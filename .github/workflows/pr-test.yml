@@ -125,3 +125,50 @@ jobs:
           build-args: |
             TRACEABLE_GOAGENT_DISTRO_VERSION=${{ matrix.distro_version }}
           tags: traceable_goagent_test:${{ matrix.distro_version }}
+
+  test-linux-distro-no-lib:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        distro_version:
+          - ubuntu_20.04
+    steps:
+      # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
+      - name: Check out code
+        uses: actions/checkout@v2.3.4
+        with:
+          fetch-depth: 0
+
+      # Since we can't pass non scalar matrix values we pass two values concatenated
+      # and do some parsing to get them separatedly.
+      - uses: rishabhgupta/split-by@v1
+        id: split
+        with:
+          string: ${{ matrix.distro_version }}
+          split-by: "_"
+
+      - id: string
+        uses: ASzc/change-string-case-action@v1
+        with:
+          string: ${{ steps.split.outputs._0}}
+
+      - name: Build test images
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          context: ./filter/traceable/cmd/libtraceable-downloader
+          file: ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.${{ steps.split.outputs._0}}.test
+          build-args: |
+            ${{ steps.string.outputs.uppercase }}_VERSION=${{ steps.split.outputs._1}}
+            GO_VERSION=1.16.8
+          tags: traceable_goagent_test_base:${{ matrix.distro_version }}
+
+      - name: Run linux tests
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          context: .
+          file: ./_tests/Dockerfile.no_lib.test
+          build-args: |
+            TRACEABLE_GOAGENT_DISTRO_VERSION=${{ matrix.distro_version }}
+          tags: traceable_goagent_no_lib_test:${{ matrix.distro_version }}
