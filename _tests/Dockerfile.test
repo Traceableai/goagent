@@ -18,7 +18,12 @@ COPY . .
 RUN CGO_ENABLED=1 go test --tags=traceable_filter -c ./filter/traceable
 =======
 # Copies the libraries next to the test binaries to be run
-RUN cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/libtraceable.so .
+RUN if [ "${IS_ALPINE}" = "1" ]; then \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . ; \
+    else \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . ; \
+    fi
+RUN test -f libtraceable.so
 
 RUN CGO_ENABLED=1 go test -c ./filter/traceable
 >>>>>>> chore: fix build images on different distros.
@@ -31,6 +36,12 @@ RUN ./traceablefilter.test -test.v
 WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
 
 # Runs the test app to make sure blocking filter works as expected.
-RUN cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/libtraceable.so .
+RUN if [ "${IS_ALPINE}" = "1" ]; then \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . ; \
+    else \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . ; \
+    fi
+RUN test -f libtraceable.so
+
 RUN CGO_ENABLED=1 go build -o test-app .
 RUN TA_LOG_LEVEL="debug" ./test-app

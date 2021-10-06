@@ -1,5 +1,5 @@
-//go:build linux && traceable_filter
-// +build linux,traceable_filter
+//go:build linux && traceable_filter && !alpine
+// +build linux,traceable_filter,!alpine
 
 package traceable
 
