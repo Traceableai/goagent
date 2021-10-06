@@ -83,5 +83,5 @@ pull-libtraceable-headers: install-libtraceable-downloader
 
 .PHONY: pull-libtraceable-libs
 pull-libtraceable-libs: install-libtraceable-downloader
-	${GOPATH}/bin/libtraceable-downloader pull-library-lib ubuntu_18.04 "./filter/traceable/libs/linux_amd64"
+	${GOPATH}/bin/libtraceable-downloader pull-library-lib centos_7 "./filter/traceable/libs/linux_amd64"
 	${GOPATH}/bin/libtraceable-downloader pull-library-lib alpine_3.9 "./filter/traceable/libs/linux_amd64-alpine"
