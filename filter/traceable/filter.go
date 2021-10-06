@@ -72,6 +72,7 @@ func (f *Filter) Start() bool {
 
 		f.logger.Warn("Failed to start blocking engine")
 	}
+	f.logger.Debug("Failed to start with null blocking engine")
 	return false
 }
 
