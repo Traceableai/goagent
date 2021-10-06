@@ -18,4 +18,5 @@ ENV PATH=${GOPATH}/bin:/usr/local/go/bin:$PATH
 
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 
+# This is needed to include the alpine build tag in the test. See _tests/Dockerfile.test
 ENV IS_ALPINE="1"
