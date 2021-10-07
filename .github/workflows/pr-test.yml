@@ -46,7 +46,8 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          name: go-agent test reports
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: goagent-src test reports
           fail_ci_if_error: true
           files: ./coverage.txt
 
