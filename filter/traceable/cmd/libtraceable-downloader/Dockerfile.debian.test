@@ -12,13 +12,3 @@ RUN wget https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz && \
 
 ENV GOROOT=/usr/local/go
 ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-
-WORKDIR /usr/local/libtraceable-downloader
-
-COPY . .
-
-RUN go get ./...
-
-RUN go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
-
-RUN $(go env GOPATH)/bin/libtraceable-downloader pull-library /usr/local/traceable

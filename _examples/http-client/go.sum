@@ -5,8 +5,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/Traceableai/agent-config/gen/go v0.0.0-20210928113114-4045123cba5c h1:OD+GnCOJKvzbz5oveXhcXRpToTYMz1N0ix8eJUg3uuQ=
-github.com/Traceableai/agent-config/gen/go v0.0.0-20210928113114-4045123cba5c/go.mod h1:6QVyyi6IeqE3I4p5eKJDzZitZUcd+Fu7is8iRVaAcWM=
+github.com/Traceableai/agent-config/gen/go v0.0.0-20210928164718-dbda6f7a1ec6 h1:Mbv06j3TIPbhRCpDRqFpyXfRZcxsvDSu1fQv27jHreY=
+github.com/Traceableai/agent-config/gen/go v0.0.0-20210928164718-dbda6f7a1ec6/go.mod h1:6QVyyi6IeqE3I4p5eKJDzZitZUcd+Fu7is8iRVaAcWM=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=

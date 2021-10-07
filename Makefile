@@ -75,9 +75,13 @@ check-vanity-import:
 .PHONY: install-libtraceable-downloader
 install-libtraceable-downloader:
 	cd ./filter/traceable/cmd/libtraceable-downloader && \
-	go mod download && \
-	go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader
+	go build -o "${GOPATH}/bin/libtraceable-downloader" .
 
 .PHONY: pull-libtraceable-headers
-pull-libtraceable-headers:
-	$(go env GOPATH)/bin/libtraceable-downloader pull-library-headers "./filter/traceable"
+pull-libtraceable-headers: install-libtraceable-downloader
+	${GOPATH}/bin/libtraceable-downloader pull-library-headers "./filter/traceable"
+
+.PHONY: pull-libtraceable-libs
+pull-libtraceable-libs: install-libtraceable-downloader
+	${GOPATH}/bin/libtraceable-downloader pull-library-lib centos_7 "./filter/traceable/libs/linux_amd64"
+	${GOPATH}/bin/libtraceable-downloader pull-library-lib alpine_3.9 "./filter/traceable/libs/linux_amd64-alpine"

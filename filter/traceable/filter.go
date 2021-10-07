@@ -1,5 +1,5 @@
-//go:build linux && traceable_filter
-// +build linux,traceable_filter
+//go:build linux && traceable_filter && !alpine
+// +build linux,traceable_filter,!alpine
 
 package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
@@ -8,7 +8,7 @@ package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
 /*
 #cgo CFLAGS: -I./
-#cgo LDFLAGS: -L${SRCDIR}/../../ -Wl,-rpath=\$ORIGIN -ltraceable -ldl
+#cgo LDFLAGS: -L${SRCDIR}/libs/linux_amd64 -Wl,-rpath=\$ORIGIN -ltraceable -ldl
 #include "blocking.h"
 
 #include <stdlib.h>
@@ -35,6 +35,7 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 	if blockingConfig == nil ||
 		blockingConfig.Enabled == nil ||
 		blockingConfig.Enabled.Value == false {
+		logger.Debug("Traceable filter is disabled by config.")
 		return &Filter{logger: logger}
 	}
 
@@ -44,6 +45,7 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 	var blockingFilter Filter
 	ret := C.traceable_new_blocking_engine(libTraceableConfig, &blockingFilter.blockingEngine)
 	if ret != C.TRACEABLE_SUCCESS {
+		logger.Warn("Failed to initialize traceable filter.")
 		return &Filter{logger: logger}
 	}
 
@@ -70,6 +72,7 @@ func (f *Filter) Start() bool {
 
 		f.logger.Warn("Failed to start blocking engine")
 	}
+	f.logger.Debug("Failed to start with null blocking engine")
 	return false
 }
 

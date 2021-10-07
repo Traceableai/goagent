@@ -11,7 +11,8 @@ import (
 )
 
 // NewFilter creates libtraceable based blocking filter
-func NewFilter(_ *traceableconfig.AgentConfig, _ *zap.Logger) *Filter {
+func NewFilter(_ *traceableconfig.AgentConfig, l *zap.Logger) *Filter {
+	l.Debug("Using NOOP traceable filter.")
 	return &Filter{}
 }
 

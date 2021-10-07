@@ -58,7 +58,7 @@ func main() {
 		statusCode = helpCmd(out, cmdArgs)
 	case "pull-library-headers":
 		statusCode = pullLibraryHeadersCmd(out, cmdArgs)
-	case "pull-library":
+	case "pull-library-lib":
 		statusCode = pullLibraryCmd(out, cmdArgs)
 	default:
 		out.WriteString(fmt.Sprintf("Unknown command %q.", cmd))
@@ -78,7 +78,7 @@ The commands are:
 
 	help                    displays the help
 	pull-library-headers    pulls the library headers into the repository
-	pull-library         installs the library in the host
+	pull-library         	pulls the library libs into the repository
 	`, filepath.Base(os.Args[0]))
 	return 0
 }
@@ -105,28 +105,27 @@ Usage:
 }
 
 func pullLibraryCmd(out io.Writer, args []string) int {
-	if len(args) > 1 {
+	if len(args) > 2 {
 		writeStringf(out, `
 Usage: 
 
-	%s %s [<dst_folder>]
+	%s %s [<distro> [<dst_folder>]]
 			`, filepath.Base(os.Args[0]), os.Args[1])
 		return 1
 	}
 
-	os, err := getLinuxDistro()
-	if err != nil {
-		writeStringf(out, "Failed to resolve OS: %s", err)
-		return 1
+	os := "ubuntu_18.04"
+	if len(args) > 0 {
+		os = args[0]
 	}
 
 	dstDir := "."
-	if len(args) > 0 {
-		dstDir = args[0]
+	if len(args) > 1 {
+		dstDir = args[1]
 	}
 	absDstDir, _ := filepath.Abs(dstDir)
 
-	writeStringf(out, "Installing library file for %q to %q", os, absDstDir)
+	writeStringf(out, "Dumping library file for %q to %q", os, absDstDir)
 
 	return downloadFile(out, libraryInfo{
 		Name:    "libtraceable",
