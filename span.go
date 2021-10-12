@@ -50,3 +50,4 @@ func translateSpanStarter(s sdk.StartSpan) SpanStarter {
 }
 
 var StartSpan = translateSpanStarter(hypertrace.StartSpan)
+var NoopStartSpan = translateSpanStarter(hypertrace.NoopStartSpan)
