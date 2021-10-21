@@ -15,14 +15,15 @@ set -e
 DST_DIR=${1:-.}
 
 if [[ ! -f go.mod ]]; then
-    echo "go.mod file not found."
+    echo "go.mod file not found"
     exit 1
 fi
 
+set +e
 IS_GOAGENT_REQUIRED=$(cat go.mod | grep -ic "github.com/Traceableai/goagent v")
-
+set -e
 if [[ "$IS_GOAGENT_REQUIRED" == "0" ]]; then
-    echo "github.com/Traceableai/goagent isn't a required package."
+    echo "github.com/Traceableai/goagent isn't a required package in go.mod"
     exit 1
 fi
 
