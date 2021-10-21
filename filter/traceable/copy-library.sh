@@ -64,9 +64,9 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 if [[ "$IS_ALPINE" == "0" ]]; then # not alpine
-    echo "Copying linux library"
     cp ${GOAGENT_DIR}/filter/traceable/libs/linux_amd64/libtraceable.so $DST_DIR/libtraceable.so
+    echo "Linux library successfuly copied to $DST_DIR/libtraceable.so"
 else
-    echo "Copying alpine library"
     cp ${GOAGENT_DIR}/filter/traceable/libs/linux_amd64-alpine/libtraceable.so $DST_DIR/libtraceable.so
+    echo "Alpine library successfuly copied to $DST_DIR/libtraceable.so"
 fi
