@@ -34,7 +34,7 @@ fi
 
 # For compatibility issues we aim to use the same libtraceable library as the one
 # used in the build. To achieve that we look for the location of the library and
-# resolved by go modules. The obtained info from go mod download -json [pkg] looks
+# resolved by go modules. The obtained info from `go mod download -json <pkg>` looks
 # like this:
 #
 # {
