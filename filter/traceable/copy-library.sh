@@ -14,6 +14,11 @@ set -e
 
 DST_DIR=${1:-.}
 
+if [[ -f $DST_DIR/libtraceable.so ]]; then
+    echo "Library already present in \"$DST_DIR/libtraceable.so\", remove it before attempting to copy it."
+    exit 1
+fi
+
 if [[ ! -f go.mod ]]; then
     echo "go.mod file not found"
     exit 1
@@ -45,7 +50,7 @@ fi
 #
 # Hence we deal with this output to find the "Dir" value.
 #
-TRACEABLE_LIB=$(go mod download -json github.com/Traceableai/goagent \
+GOAGENT_DIR=$(go mod download -json github.com/Traceableai/goagent \
     | head -7 | tail -1 \
     | awk -F\" '{print $4}')
 
@@ -59,9 +64,9 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 if [[ "$IS_ALPINE" == "0" ]]; then # not alpine
-    echo "Copying linux library to ${DST_DIR}/libtraceable.so"
-    cp ${TRACEABLE_LIB}/filter/traceable/libs/linux_amd64/libtraceable.so $DST_DIR/libtraceable.so
+    echo "Copying linux library"
+    cp ${GOAGENT_DIR}/filter/traceable/libs/linux_amd64/libtraceable.so $DST_DIR/libtraceable.so
 else
-    echo "Copying alpine library to ${DST_DIR}/libtraceable.so"
-    cp ${TRACEABLE_LIB}/filter/traceable/libs/linux_amd64-alpine/libtraceable.so $DST_DIR/libtraceable.so
+    echo "Copying alpine library"
+    cp ${GOAGENT_DIR}/filter/traceable/libs/linux_amd64-alpine/libtraceable.so $DST_DIR/libtraceable.so
 fi
