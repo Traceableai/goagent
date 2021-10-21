@@ -40,7 +40,7 @@ go build -tags 'traceable_filter' -o /path-to-app/myapp
 Then, copy the library in the same folder as the compiled binary:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/Traceableai/goagent/main/filter/traceable/copy-library.sh | bash -s hello
+curl -sSL https://raw.githubusercontent.com/Traceableai/goagent-src/adds_copy_library_script/filter/traceable/copy-library.sh?token=AAXOYAQWDUI5OBITGX7KA7DBPKGM6 | bash -s -- ./path/to/my-app
 ...
 
 # Pull library in the binary directory
