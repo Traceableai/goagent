@@ -34,20 +34,13 @@ To run Traceable filter we need to:
 Fist compile the binary using the build tag `traceable_filter`, for example:
 
 ```bash
-go build -tags 'traceable_filter' -o myapp
+go build -tags 'traceable_filter' -o /path-to-app/myapp
 ```
 
-Then, we need to download the library next to the application binary:
+Then, copy the library in the same folder as the compiled binary:
 
 ```bash
-# Install libtraceable downloader (run this from a non go.mod folder)
-go install github.com/Traceableai/goagent/filter/traceable/cmd/libtraceable-downloader@latest
-
-...
-
-# Pull library in the binary directory
-cd /path/to/myapp &&
-libtraceable-downloader pull-library
+curl -sSL https://raw.githubusercontent.com/Traceableai/goagent/main/filter/traceable/copy-library.sh | bash -s -- /path-to-app
 ```
 
 ## Package net/traceablehttp
