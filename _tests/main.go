@@ -13,6 +13,7 @@ import (
 
 func main() {
 	cfg := config.Load()
+	cfg.Blocking.BlockingConfig.DebugLog = config.Bool(true)
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {
