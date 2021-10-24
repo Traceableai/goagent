@@ -299,13 +299,19 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		evaluateBody = C.int(0)
 	}
 
+	skipInternalRequest := C.int(1)
+	if blocking.SkipInternalRequest != nil && !blocking.SkipInternalRequest.Value {
+		skipInternalRequest = C.int(0)
+	}
+
 	return C.traceable_blocking_config{
-		log_config:         logConfig,
-		opa_config:         opaConfig,
-		modsecurity_config: modsecurityConfig,
-		rb_config:          regionBlockingConfig,
-		evaluate_body:      evaluateBody,
-		remote_config:      blockingRemoteConfig,
+		log_config:            logConfig,
+		opa_config:            opaConfig,
+		modsecurity_config:    modsecurityConfig,
+		rb_config:             regionBlockingConfig,
+		evaluate_body:         evaluateBody,
+		remote_config:         blockingRemoteConfig,
+		skip_internal_request: skipInternalRequest,
 	}
 }
 

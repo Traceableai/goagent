@@ -88,6 +88,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, int(libTraceableConfig.opa_config.skip_verify))
 	assert.Equal(t, 1, int(libTraceableConfig.modsecurity_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.evaluate_body))
+	assert.Equal(t, 1, int(libTraceableConfig.skip_internal_request))
 	assert.Equal(t, 1, int(libTraceableConfig.rb_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "localhost:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
@@ -102,7 +103,8 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				Modsecurity: &traceableconfig.ModsecurityConfig{
 					Enabled: traceableconfig.Bool(false),
 				},
-				EvaluateBody: traceableconfig.Bool(false),
+				EvaluateBody:        traceableconfig.Bool(false),
+				SkipInternalRequest: wrapperspb.Bool(false),
 				RegionBlocking: &traceableconfig.RegionBlockingConfig{
 					Enabled: traceableconfig.Bool(false),
 				},
@@ -126,6 +128,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, int(libTraceableConfig.opa_config.skip_verify))
 	assert.Equal(t, 0, int(libTraceableConfig.modsecurity_config.enabled))
 	assert.Equal(t, 0, int(libTraceableConfig.evaluate_body))
+	assert.Equal(t, 0, int(libTraceableConfig.skip_internal_request))
 	assert.Equal(t, 0, int(libTraceableConfig.rb_config.enabled))
 	assert.Equal(t, 0, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.remote_endpoint))
@@ -156,6 +159,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, int(libTraceableConfig.opa_config.skip_verify))
 	assert.Equal(t, 1, int(libTraceableConfig.modsecurity_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.evaluate_body))
+	assert.Equal(t, 1, int(libTraceableConfig.skip_internal_request))
 	assert.Equal(t, 1, int(libTraceableConfig.rb_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "agent.traceableai:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
