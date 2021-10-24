@@ -1,5 +1,5 @@
-//go:build linux && traceable_filter && !alpine
-// +build linux,traceable_filter,!alpine
+//go:build linux && traceable_filter
+// +build linux,traceable_filter
 
 package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
@@ -8,7 +8,8 @@ package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
 /*
 #cgo CFLAGS: -I./
-#cgo LDFLAGS: -L${SRCDIR}/libs/linux_amd64 -Wl,-rpath=\$ORIGIN -ltraceable -ldl
+#cgo alpine LDFLAGS: -L${SRCDIR}/libs/linux_amd64-alpine -Wl,-rpath=\$ORIGIN -ltraceable -ldl
+#cgo !alpine LDFLAGS: -L${SRCDIR}/libs/linux_amd64 -Wl,-rpath=\$ORIGIN -ltraceable -ldl
 #include "blocking.h"
 
 #include <stdlib.h>
