@@ -240,7 +240,7 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		log_to_console:      C.int(1),
 		logging_dir:         C.CString(""),
 		logging_file_prefix: C.CString(""),
-		cert_file:           C.CString(""),
+		cert_file:           C.CString(opa.CertFile.Value),
 		debug_log:           opaDebugLog,
 		skip_verify:         C.int(0),
 		min_delay:           C.int(opa.PollPeriodSeconds.Value),
