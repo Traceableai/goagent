@@ -9,28 +9,34 @@ import (
 func TestLoadWithDefaults(t *testing.T) {
 	cfg := Load()
 
-	assert.Equal(t, cfg.Tracing.Reporting.Endpoint.Value, "localhost:4317")
-	assert.Equal(t, cfg.Tracing.Reporting.Secure.Value, false)
-	assert.Equal(t, cfg.Tracing.Reporting.TraceReporterType, TraceReporterType_OTLP)
-	assert.Equal(t, cfg.Blocking.Opa.Enabled.Value, true)
-	assert.Equal(t, cfg.Blocking.Opa.Endpoint.Value, "http://localhost:8181/")
-	assert.Equal(t, cfg.Blocking.Opa.PollPeriodSeconds.Value, int32(30))
+	assert.Equal(t, "localhost:4317", cfg.Tracing.Reporting.Endpoint.Value)
+	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
+	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
+	assert.Equal(t, true, cfg.Blocking.Opa.Enabled.Value)
+	assert.Equal(t, "http://localhost:8181/", cfg.Blocking.Opa.Endpoint.Value)
+	assert.Equal(t, int32(30), cfg.Blocking.Opa.PollPeriodSeconds.Value)
 
-	assert.Equal(t, cfg.Tracing.DataCapture.HttpBody.Request.Value, true)
-	assert.Equal(t, cfg.Tracing.DataCapture.HttpBody.Response.Value, true)
+	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Request.Value)
+	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Response.Value)
 }
 
 func TestLoadFromFile(t *testing.T) {
 	cfg := LoadFromFile("./testdata/config.yaml")
 
-	assert.Equal(t, cfg.Tracing.ServiceName.Value, "goagent-example")
-	assert.Equal(t, cfg.Tracing.Reporting.Endpoint.Value, "traceable-agent:4317")
-	assert.Equal(t, cfg.Tracing.Reporting.Secure.Value, false)
-	assert.Equal(t, cfg.Tracing.Reporting.TraceReporterType, TraceReporterType_OTLP)
-	assert.Equal(t, cfg.Blocking.Opa.Enabled.Value, true)
-	assert.Equal(t, cfg.Blocking.Opa.Endpoint.Value, "http://traceable-agent:8181/")
-	assert.Equal(t, cfg.Blocking.Opa.PollPeriodSeconds.Value, int32(30))
+	assert.Equal(t, "goagent-example", cfg.Tracing.ServiceName.Value)
+	assert.Equal(t, "traceable-agent:4317", cfg.Tracing.Reporting.Endpoint.Value)
+	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
+	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
+	assert.Equal(t, true, cfg.Blocking.Opa.Enabled.Value)
+	assert.Equal(t, "http://traceable-agent:8181/", cfg.Blocking.Opa.Endpoint.Value)
+	assert.Equal(t, int32(30), cfg.Blocking.Opa.PollPeriodSeconds.Value)
+	assert.Equal(t, "/conf/tls.crt", cfg.Blocking.Opa.CertFile.Value)
+	assert.Equal(t, true, cfg.Blocking.BlockingConfig.Enabled.Value)
+	assert.Equal(t, true, cfg.Blocking.BlockingConfig.RemoteConfig.Enabled.Value)
+	assert.Equal(t, "http://traceable-agent:5441/", cfg.Blocking.BlockingConfig.RemoteConfig.Endpoint.Value)
+	assert.Equal(t, int32(60), cfg.Blocking.BlockingConfig.RemoteConfig.PollPeriodSeconds.Value)
+	assert.Equal(t, "/conf/tls.crt", cfg.Blocking.BlockingConfig.RemoteConfig.CertFile.Value)
 
-	assert.Equal(t, cfg.Tracing.DataCapture.HttpBody.Request.Value, true)
-	assert.Equal(t, cfg.Tracing.DataCapture.HttpBody.Response.Value, true)
+	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Request.Value)
+	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Response.Value)
 }
