@@ -224,15 +224,20 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 	blocking, opa := config.BlockingConfig, config.Opa
 
 	// debug log off by default
-	opaDebugLog := C.int(0)
+	opaDebugLog := 0
 	libTraceableLogMode := C.TRACEABLE_LOG_MODE(C.TRACEABLE_LOG_NONE)
 	if blocking.DebugLog != nil && blocking.DebugLog.Value {
 		libTraceableLogMode = C.TRACEABLE_LOG_MODE(C.TRACEABLE_LOG_STDOUT)
-		opaDebugLog = C.int(1)
+		opaDebugLog = 1
 	}
 
 	logConfig := C.traceable_log_configuration{
 		mode: libTraceableLogMode,
+	}
+
+	opaCertFile := ""
+	if opa.CertFile != nil {
+		opaCertFile = opa.CertFile.Value
 	}
 
 	opaConfig := C.traceable_opa_config{
@@ -240,8 +245,8 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		log_to_console:      C.int(1),
 		logging_dir:         C.CString(""),
 		logging_file_prefix: C.CString(""),
-		cert_file:           C.CString(opa.CertFile.Value),
-		debug_log:           opaDebugLog,
+		cert_file:           C.CString(opaCertFile),
+		debug_log:           C.int(opaDebugLog),
 		skip_verify:         C.int(0),
 		min_delay:           C.int(opa.PollPeriodSeconds.Value),
 		max_delay:           C.int(opa.PollPeriodSeconds.Value),

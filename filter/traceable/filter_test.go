@@ -109,14 +109,14 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					Enabled: traceableconfig.Bool(false),
 				},
 				RemoteConfig: &traceableconfig.RemoteConfig{
-					Enabled: traceableconfig.Bool(false),
-					Certfile: "/conf/tls.crt"
+					Enabled:  traceableconfig.Bool(false),
+					CertFile: traceableconfig.String("/conf/tls.crt"),
 				},
 			},
 			Opa: &traceableconfig.Opa{
-				Endpoint:          wrapperspb.String("http://opa:8181"),
-				PollPeriodSeconds: wrapperspb.Int32(10),
-				Certfile: "/conf/tls.crt"
+				Endpoint:          traceableconfig.String("http://opa:8181"),
+				PollPeriodSeconds: traceableconfig.Int32(10),
+				CertFile:          traceableconfig.String("/conf/tls.crt"),
 			},
 		},
 	)
@@ -168,23 +168,23 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "agent.traceableai:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
 	assert.Equal(t, 10, int(libTraceableConfig.remote_config.poll_period_sec))
-	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.remote_endpoint))
+	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.cert_file))
 
 	// verify for tls certs
 	libTraceableConfig = getLibTraceableConfig(
 		&traceableconfig.AgentConfig{
 			BlockingConfig: &traceableconfig.BlockingConfig{
-				Enabled:  traceableconfig.Bool(true),
+				Enabled: traceableconfig.Bool(true),
 				RemoteConfig: &traceableconfig.RemoteConfig{
-					Enabled: traceableconfig.Bool(true),
-					Endpoint: traceableconfig.String("https:://agent:5441")
-					Certfile: "/conf/tls.crt"
+					Enabled:  traceableconfig.Bool(true),
+					Endpoint: traceableconfig.String("https:://agent:5441"),
+					CertFile: traceableconfig.String("/conf/tls.crt"),
 				},
 			},
 			Opa: &traceableconfig.Opa{
 				Endpoint:          wrapperspb.String("https://opa:8181"),
 				PollPeriodSeconds: wrapperspb.Int32(10),
-				Certfile: "/conf/tls.crt"
+				CertFile:          traceableconfig.String("/conf/tls.crt"),
 			},
 		},
 	)
