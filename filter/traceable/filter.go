@@ -240,6 +240,7 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		log_to_console:      C.int(1),
 		logging_dir:         C.CString(""),
 		logging_file_prefix: C.CString(""),
+		cert_file:           C.CString(""),
 		debug_log:           opaDebugLog,
 		skip_verify:         C.int(0),
 		min_delay:           C.int(opa.PollPeriodSeconds.Value),
@@ -273,6 +274,7 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 	blockingRemoteConfigEnabled := 1
 	blockingRemoteConfigEndpoint := defaultAgentManagerEndpoint
 	blockingRemoteConfigPollPeriodSec := defaultPollPeriodSec
+	blockingRemoteConfigCertFile := ""
 	if blocking.GetRemoteConfig() != nil {
 		remoteConfig := blocking.GetRemoteConfig()
 		if remoteConfig.Enabled != nil && !remoteConfig.GetEnabled().GetValue() {
@@ -285,6 +287,9 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 			if remoteConfig.GetPollPeriodSeconds() != nil && remoteConfig.GetPollPeriodSeconds().GetValue() != 0 {
 				blockingRemoteConfigPollPeriodSec = int(remoteConfig.GetPollPeriodSeconds().GetValue())
 			}
+			if remoteConfig.GetCertFile() != nil {
+				blockingRemoteConfigCertFile = remoteConfig.GetCertFile().GetValue()
+			}
 		}
 	}
 
@@ -292,6 +297,7 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		enabled:         C.int(blockingRemoteConfigEnabled),
 		remote_endpoint: C.CString(blockingRemoteConfigEndpoint),
 		poll_period_sec: C.int(blockingRemoteConfigPollPeriodSec),
+		cert_file:       C.CString(blockingRemoteConfigCertFile),
 	}
 
 	evaluateBody := C.int(1)

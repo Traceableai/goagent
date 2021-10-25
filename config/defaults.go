@@ -50,6 +50,7 @@ var defaultConfig = &AgentConfig{
 			RegionBlocking: &traceableconfig.RegionBlockingConfig{
 				Enabled: traceableconfig.Bool(true),
 			},
+			SkipInternalRequest: traceableconfig.Bool(true),
 			RemoteConfig: &traceableconfig.RemoteConfig{
 				Enabled:           traceableconfig.Bool(true),
 				Endpoint:          traceableconfig.String("localhost:5441"),
