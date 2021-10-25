@@ -253,27 +253,27 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 	}
 
 	// modsec on by default
-	modsecEnabled := C.int(1)
+	modsecEnabled := 1
 	if blocking.Modsecurity != nil &&
 		blocking.Modsecurity.Enabled != nil &&
 		!blocking.Modsecurity.Enabled.Value {
-		modsecEnabled = C.int(0)
+		modsecEnabled = 0
 	}
 
 	modsecurityConfig := C.traceable_modsecurity_config{
-		enabled: modsecEnabled,
+		enabled: C.int(modsecEnabled),
 	}
 
 	// region blocking on by default
-	regionBlockingEnabled := C.int(1)
+	regionBlockingEnabled := 1
 	if blocking.RegionBlocking != nil &&
 		blocking.RegionBlocking.Enabled != nil &&
 		!blocking.RegionBlocking.Enabled.Value {
-		regionBlockingEnabled = C.int(0)
+		regionBlockingEnabled = 0
 	}
 
 	regionBlockingConfig := C.traceable_rangeblocking_config{
-		enabled: regionBlockingEnabled,
+		enabled: C.int(regionBlockingEnabled),
 	}
 
 	blockingRemoteConfigEnabled := 1
@@ -305,14 +305,14 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		cert_file:       C.CString(blockingRemoteConfigCertFile),
 	}
 
-	evaluateBody := C.int(1)
+	evaluateBody := 1
 	if blocking.EvaluateBody != nil && !blocking.EvaluateBody.Value {
-		evaluateBody = C.int(0)
+		evaluateBody = 0
 	}
 
-	skipInternalRequest := C.int(1)
+	skipInternalRequest := 1
 	if blocking.SkipInternalRequest != nil && !blocking.SkipInternalRequest.Value {
-		skipInternalRequest = C.int(0)
+		skipInternalRequest = 0
 	}
 
 	return C.traceable_blocking_config{
@@ -320,9 +320,9 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_bloc
 		opa_config:            opaConfig,
 		modsecurity_config:    modsecurityConfig,
 		rb_config:             regionBlockingConfig,
-		evaluate_body:         evaluateBody,
+		evaluate_body:         C.int(evaluateBody),
 		remote_config:         blockingRemoteConfig,
-		skip_internal_request: skipInternalRequest,
+		skip_internal_request: C.int(skipInternalRequest),
 	}
 }
 
