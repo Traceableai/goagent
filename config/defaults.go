@@ -32,6 +32,7 @@ var defaultConfig = &AgentConfig{
 			Endpoint:          hyperconfig.String("localhost:4317"),
 			Secure:            hyperconfig.Bool(false),
 			TraceReporterType: hyperconfig.TraceReporterType_OTLP,
+			CertFile:          hyperconfig.String(""),
 		},
 	},
 	Blocking: &traceableconfig.AgentConfig{
@@ -39,6 +40,7 @@ var defaultConfig = &AgentConfig{
 			Enabled:           traceableconfig.Bool(true),
 			Endpoint:          traceableconfig.String("http://localhost:8181/"),
 			PollPeriodSeconds: traceableconfig.Int32(30),
+			CertFile:          traceableconfig.String(""),
 		},
 		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled:  traceableconfig.Bool(true),
@@ -50,10 +52,12 @@ var defaultConfig = &AgentConfig{
 			RegionBlocking: &traceableconfig.RegionBlockingConfig{
 				Enabled: traceableconfig.Bool(true),
 			},
+			SkipInternalRequest: traceableconfig.Bool(true),
 			RemoteConfig: &traceableconfig.RemoteConfig{
 				Enabled:           traceableconfig.Bool(true),
 				Endpoint:          traceableconfig.String("localhost:5441"),
 				PollPeriodSeconds: traceableconfig.Int32(30),
+				CertFile:          traceableconfig.String(""),
 			},
 		},
 	},

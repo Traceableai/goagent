@@ -3,7 +3,7 @@ module github.com/Traceableai/goagent
 go 1.15
 
 require (
-	github.com/Traceableai/agent-config/gen/go v0.0.0-20210928164718-dbda6f7a1ec6
+	github.com/Traceableai/agent-config/gen/go v0.0.0-20211024200733-966247a6fba8
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hypertrace/agent-config/gen/go v0.0.0-20210928174043-f66d46bdfecb

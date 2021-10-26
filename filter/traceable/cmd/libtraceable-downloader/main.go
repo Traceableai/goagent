@@ -99,7 +99,7 @@ Usage:
 
 	return downloadFile(out, libraryInfo{
 		Name:    "libtraceable",
-		OS:      "ubuntu_20.04",
+		OS:      "centos_7",
 		Version: libVersion,
 	}, "blocking.h", dstDir)
 }

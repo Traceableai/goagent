@@ -9,3 +9,12 @@ opa:
   enabled: true
   endpoint: http://traceable-agent:8181/
   poll_period_seconds: 30
+  cert_file: "/conf/tls.crt"
+
+blocking_config:
+  enabled: true
+  remote_config:
+    enabled: true
+    endpoint: http://traceable-agent:5441/
+    poll_period_seconds: 60
+    cert_file: "/conf/tls.crt"

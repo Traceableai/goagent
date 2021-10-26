@@ -88,6 +88,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, int(libTraceableConfig.opa_config.skip_verify))
 	assert.Equal(t, 1, int(libTraceableConfig.modsecurity_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.evaluate_body))
+	assert.Equal(t, 1, int(libTraceableConfig.skip_internal_request))
 	assert.Equal(t, 1, int(libTraceableConfig.rb_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "localhost:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
@@ -102,17 +103,20 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				Modsecurity: &traceableconfig.ModsecurityConfig{
 					Enabled: traceableconfig.Bool(false),
 				},
-				EvaluateBody: traceableconfig.Bool(false),
+				EvaluateBody:        traceableconfig.Bool(false),
+				SkipInternalRequest: wrapperspb.Bool(false),
 				RegionBlocking: &traceableconfig.RegionBlockingConfig{
 					Enabled: traceableconfig.Bool(false),
 				},
 				RemoteConfig: &traceableconfig.RemoteConfig{
-					Enabled: traceableconfig.Bool(false),
+					Enabled:  traceableconfig.Bool(false),
+					CertFile: traceableconfig.String("/conf/tls.crt"),
 				},
 			},
 			Opa: &traceableconfig.Opa{
-				Endpoint:          wrapperspb.String("http://opa:8181"),
-				PollPeriodSeconds: wrapperspb.Int32(10),
+				Endpoint:          traceableconfig.String("http://opa:8181"),
+				PollPeriodSeconds: traceableconfig.Int32(10),
+				CertFile:          traceableconfig.String("/conf/tls.crt"),
 			},
 		},
 	)
@@ -124,11 +128,14 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 1, int(libTraceableConfig.opa_config.log_to_console))
 	assert.Equal(t, 1, int(libTraceableConfig.opa_config.debug_log))
 	assert.Equal(t, 0, int(libTraceableConfig.opa_config.skip_verify))
+	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.opa_config.cert_file))
 	assert.Equal(t, 0, int(libTraceableConfig.modsecurity_config.enabled))
 	assert.Equal(t, 0, int(libTraceableConfig.evaluate_body))
+	assert.Equal(t, 0, int(libTraceableConfig.skip_internal_request))
 	assert.Equal(t, 0, int(libTraceableConfig.rb_config.enabled))
 	assert.Equal(t, 0, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.remote_endpoint))
+	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.cert_file))
 
 	// verify for RemoteConfig
 	libTraceableConfig = getLibTraceableConfig(
@@ -156,10 +163,39 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, int(libTraceableConfig.opa_config.skip_verify))
 	assert.Equal(t, 1, int(libTraceableConfig.modsecurity_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.evaluate_body))
+	assert.Equal(t, 1, int(libTraceableConfig.skip_internal_request))
 	assert.Equal(t, 1, int(libTraceableConfig.rb_config.enabled))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "agent.traceableai:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
 	assert.Equal(t, 10, int(libTraceableConfig.remote_config.poll_period_sec))
+	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.cert_file))
+
+	// verify for tls certs
+	libTraceableConfig = getLibTraceableConfig(
+		&traceableconfig.AgentConfig{
+			BlockingConfig: &traceableconfig.BlockingConfig{
+				Enabled: traceableconfig.Bool(true),
+				RemoteConfig: &traceableconfig.RemoteConfig{
+					Enabled:  traceableconfig.Bool(true),
+					Endpoint: traceableconfig.String("https:://agent:5441"),
+					CertFile: traceableconfig.String("/conf/tls.crt"),
+				},
+			},
+			Opa: &traceableconfig.Opa{
+				Endpoint:          wrapperspb.String("https://opa:8181"),
+				PollPeriodSeconds: wrapperspb.Int32(10),
+				CertFile:          traceableconfig.String("/conf/tls.crt"),
+			},
+		},
+	)
+
+	assert.Equal(t, "https://opa:8181", getGoString(libTraceableConfig.opa_config.opa_server_url))
+	assert.Equal(t, 10, int(libTraceableConfig.opa_config.min_delay))
+	assert.Equal(t, 10, int(libTraceableConfig.opa_config.max_delay))
+	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.opa_config.cert_file))
+	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
+	assert.Equal(t, "https:://agent:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
+	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.remote_config.cert_file))
 }
 
 func TestIsGRPC(t *testing.T) {
