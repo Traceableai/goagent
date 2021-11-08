@@ -204,3 +204,15 @@ func TestIsGRPC(t *testing.T) {
 	assert.False(t, isGRPC(map[string][]string{"Content-Type": []string{"application/json"}}))
 	assert.True(t, isGRPC(map[string][]string{"Content-Type": []string{"application/grpc+proto"}}))
 }
+
+func TestToFQNHeaders(t *testing.T) {
+	assert.Empty(t, toFQNHeaders(nil, ""))
+	assert.Empty(t, toFQNHeaders(map[string][]string{}, ""))
+
+	fqnHeaders := toFQNHeaders(map[string][]string{"Content-Length": {"10"}}, "prefix.")
+	assert.Equal(t, "10", fqnHeaders["prefix.content-length"])
+
+	fqnHeaders = toFQNHeaders(map[string][]string{"Content-Type": {"a", "b"}}, "prefix2.")
+	assert.Equal(t, "a", fqnHeaders["prefix2.content-type[0]"])
+	assert.Equal(t, "b", fqnHeaders["prefix2.content-type[1]"])
+}

@@ -30,7 +30,7 @@ func main() {
 	_, s, ender := goagent.StartSpan(context.Background(), "test")
 	defer ender()
 
-	_ = f.EvaluateBody(s, []byte("my_body"))
+	_ = f.EvaluateBody(s, []byte("my_body"), nil)
 	if !f.Stop() {
 		log.Fatal("Failed to initialize traceable filter")
 	}

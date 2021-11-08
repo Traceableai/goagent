@@ -27,11 +27,11 @@ func (f Filter) Stop() bool { return true }
 
 // EvaluateURLAndHeaders calls into libtraceable to evaluate if request with URL should be blocked
 // or if request with headers should be blocked
-func (f Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) bool {
+func (Filter) EvaluateURLAndHeaders(_ sdk.Span, _ string, _ map[string][]string) bool {
 	return false
 }
 
 // EvaluateBody calls into libtraceable to evaluate if request with body should be blocked
-func (f Filter) EvaluateBody(span sdk.Span, body []byte) bool {
+func (Filter) EvaluateBody(_ sdk.Span, _ []byte, _ map[string][]string) bool {
 	return false
 }

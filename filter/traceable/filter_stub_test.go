@@ -31,5 +31,5 @@ func TestBlockingStub(t *testing.T) {
 	assert.IsType(t, Filter{}, *f)
 	assert.True(t, f.Start())
 	assert.False(t, f.EvaluateURLAndHeaders(noopSpan{}, "", map[string][]string{}))
-	assert.False(t, f.EvaluateBody(noopSpan{}, []byte{}))
+	assert.False(t, f.EvaluateBody(noopSpan{}, []byte{}, nil))
 }
