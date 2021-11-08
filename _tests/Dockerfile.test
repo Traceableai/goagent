@@ -9,6 +9,8 @@ WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
 COPY go.mod go.mod
 COPY go.sum go.sum
 
+RUN go mod download
+
 RUN go get ./...
 
 COPY . .
@@ -16,12 +18,12 @@ COPY . .
 # Runs blocking package tests to make sure it works.
 # Copies the libraries next to the test binaries to be run
 RUN if [ "${IS_ALPINE}" = "1" ]; then \
-    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . && \
-    CGO_ENABLED=1 go test --tags="traceable_filter" -c ./filter/traceable ; \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . ; \
     else \
-    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . && \
-    CGO_ENABLED=1 go test --tags="traceable_filter" -c ./filter/traceable ; \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . ; \
     fi
+
+RUN CGO_ENABLED=1 go test --tags="traceable_filter" -c ./filter/traceable
 
 RUN ./traceable.test -test.v
 
@@ -33,11 +35,17 @@ WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
 
 # Runs the test app to make sure blocking filter works as expected.
 RUN if [ "${IS_ALPINE}" = "1" ]; then \
-    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . && \
-    CGO_ENABLED=1 go build --tags="traceable_filter" -o test-app . ; \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . ; \
     else \
-    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . && \
-    CGO_ENABLED=1 go build --tags="traceable_filter" -o test-app . ; \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . ; \
     fi
+
+RUN CGO_ENABLED=1 go build --tags="traceable_filter" -o test-app .
+
 RUN test -f libtraceable.so
-RUN TA_LOG_LEVEL="debug" ./test-app
+
+# We change workdir to the test app so that the test app can be run from a different directory
+# and library loads correctly.
+WORKDIR /
+
+RUN TA_LOG_LEVEL="debug" ${GOPATH}/src/github.com/Traceableai/goagent/_tests/test-app

@@ -121,7 +121,8 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 	blockingLib := C.dlopen(C.CString(libPath), C.RTLD_NOW)
 	if err := C.dlerror(); err != nil {
 		logger.Warn(
-			"Traceable filter is disabled because library can't be loaded: %s",
+			"Traceable filter is disabled because library can't be loaded",
+			zap.String("traceableai.goagent.lib_path", libPath),
 			zap.Error(errors.New(C.GoString(err))),
 		)
 		return &Filter{logger: logger}
@@ -137,7 +138,10 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 		&blockingFilter.blockingEngine,
 	)
 	if res != C.TRACEABLE_SUCCESS {
-		logger.Warn("Traceable filter is disabled because engine can't be created.")
+		logger.Warn(
+			"Traceable filter is disabled because engine can't be created.",
+			zap.String("traceableai.goagent.lib_path", libPath),
+		)
 		return &Filter{logger: logger}
 	}
 
@@ -148,7 +152,10 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 		return &Filter{logger: logger}
 	}
 
-	logger.Debug("Traceable filter enabled successfuly")
+	logger.Debug(
+		"Traceable filter enabled successfuly",
+		zap.String("traceableai.goagent.lib_path", libPath),
+	)
 
 	return &blockingFilter
 }
