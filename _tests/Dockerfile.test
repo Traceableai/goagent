@@ -1,0 +1,43 @@
+# This dockerfile is only aimed to be used for testing the blocking filter
+
+ARG TRACEABLE_GOAGENT_DISTRO_VERSION
+
+FROM traceable_goagent_test_base:${TRACEABLE_GOAGENT_DISTRO_VERSION}
+
+WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+RUN go get ./...
+
+COPY . .
+
+# Runs blocking package tests to make sure it works.
+# Copies the libraries next to the test binaries to be run
+RUN if [ "${IS_ALPINE}" = "1" ]; then \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . && \
+    CGO_ENABLED=1 go test --tags="traceable_filter" -c ./filter/traceable ; \
+    else \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . && \
+    CGO_ENABLED=1 go test --tags="traceable_filter" -c ./filter/traceable ; \
+    fi
+
+RUN ./traceable.test -test.v
+
+# Runs traceablefilter internal package tests to make sure it works.
+RUN CGO_ENABLED=1 go test -c ./instrumentation/internal/traceablefilter
+RUN ./traceablefilter.test -test.v
+
+WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
+
+# Runs the test app to make sure blocking filter works as expected.
+RUN if [ "${IS_ALPINE}" = "1" ]; then \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . && \
+    CGO_ENABLED=1 go build --tags="traceable_filter" -o test-app . ; \
+    else \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . && \
+    CGO_ENABLED=1 go build --tags="traceable_filter" -o test-app . ; \
+    fi
+RUN test -f libtraceable.so
+RUN TA_LOG_LEVEL="debug" ./test-app

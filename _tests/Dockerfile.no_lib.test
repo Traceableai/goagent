@@ -1,0 +1,24 @@
+# This dockerfile is only aimed to be used for testing the blocking filter
+
+ARG TRACEABLE_GOAGENT_DISTRO_VERSION
+
+FROM traceable_goagent_test_base:${TRACEABLE_GOAGENT_DISTRO_VERSION}
+
+WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+RUN go get ./...
+
+COPY . .
+
+# Runs blocking package tests to make sure it works.
+RUN go test -c ./filter/traceable
+RUN ./traceable.test -test.v
+
+WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
+
+# Runs the test app to make sure blocking filter works as expected.
+RUN go build -o test-app .
+RUN TA_LOG_LEVEL="debug" ./test-app
