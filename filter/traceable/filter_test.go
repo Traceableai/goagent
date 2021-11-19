@@ -198,13 +198,6 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.remote_config.cert_file))
 }
 
-func TestIsGRPC(t *testing.T) {
-	assert.False(t, isGRPC(map[string][]string{}))
-	assert.False(t, isGRPC(map[string][]string{"Content-Type": []string{}}))
-	assert.False(t, isGRPC(map[string][]string{"Content-Type": []string{"application/json"}}))
-	assert.True(t, isGRPC(map[string][]string{"Content-Type": []string{"application/grpc+proto"}}))
-}
-
 func TestToFQNHeaders(t *testing.T) {
 	assert.Empty(t, toFQNHeaders(nil, ""))
 	assert.Empty(t, toFQNHeaders(map[string][]string{}, ""))

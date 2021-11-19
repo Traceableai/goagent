@@ -225,19 +225,7 @@ func (f *Filter) Stop() bool {
 const (
 	httpRequestHeaderPrefix   = "http.request.header."
 	grpcRequestMetadataPrefix = "rpc.request.metadata."
-	grpcContentType           = "application/grpc"
-	grpcContentTypeLen        = 16
 )
-
-// isGRPC determines whether a metadata set belongs to http or no
-func isGRPC(h map[string][]string) bool {
-	contentType, ok := h["Content-Type"]
-	if !ok || len(contentType) == 0 {
-		return false
-	}
-
-	return contentType[0][:grpcContentTypeLen] == grpcContentType
-}
 
 func toFQNHeaders(headers map[string][]string, prefix string) map[string]string {
 	headerAttributes := map[string]string{}

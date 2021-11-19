@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "github.com/Traceableai/goagent/filter/traceable/internal/empty";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+package empty;
+
+service Foo {
+    rpc Bar(google.protobuf.Empty) returns (google.protobuf.BoolValue);
+}
