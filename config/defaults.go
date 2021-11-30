@@ -8,6 +8,7 @@ import (
 // defaultConfig holds the default config values for agent.
 var defaultConfig = &AgentConfig{
 	Tracing: &hyperconfig.AgentConfig{
+		Enabled:            hyperconfig.Bool(true),
 		PropagationFormats: []hyperconfig.PropagationFormat{hyperconfig.PropagationFormat_TRACECONTEXT},
 		DataCapture: &hyperconfig.DataCapture{
 			HttpHeaders: &hyperconfig.Message{

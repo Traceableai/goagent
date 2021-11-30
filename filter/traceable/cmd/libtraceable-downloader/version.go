@@ -1,3 +1,3 @@
 package main
 
-var libVersion = "0.1.98-rc.21"
+var libVersion = "0.1.98"

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
@@ -12,13 +13,35 @@ import (
 	"go.uber.org/zap"
 )
 
+var disabledConfig = &traceableconfig.AgentConfig{
+	Opa: &traceableconfig.Opa{
+		Enabled: config.Bool(false),
+	},
+	BlockingConfig: &traceableconfig.BlockingConfig{
+		Enabled: config.Bool(false),
+		Modsecurity: &traceableconfig.ModsecurityConfig{
+			Enabled: config.Bool(false),
+		},
+		RemoteConfig: &traceableconfig.RemoteConfig{
+			Enabled: config.Bool(false),
+		},
+		RegionBlocking: &traceableconfig.RegionBlockingConfig{
+			Enabled: config.Bool(false),
+		},
+	},
+}
+
 // Init initializes Traceable tracing and returns a shutdown function to flush data immediately
 // on a termination signal.
 func Init(cfg *config.AgentConfig) func() {
 	loggerCloser := initLogger(os.Getenv("TA_LOG_LEVEL"))
 	internalstate.AppendCloser(loggerCloser)
 
-	internalstate.InitConfig(cfg.Blocking)
+	if cfg.Tracing.Enabled.Value {
+		internalstate.InitConfig(cfg.Blocking)
+	} else {
+		internalstate.InitConfig(disabledConfig)
+	}
 
 	tracingCloser := hypertrace.Init(cfg.Tracing)
 	internalstate.AppendCloser(tracingCloser)

@@ -30,7 +30,6 @@ func TestRegisterService(t *testing.T) {
 	cfg := config.Load()
 	shutdown := Init(cfg)
 	defer shutdown()
-
 	ss, err := RegisterService("myservice", nil)
 	require.NoError(t, err)
 

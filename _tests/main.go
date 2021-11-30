@@ -30,7 +30,9 @@ func main() {
 	_, s, ender := goagent.StartSpan(context.Background(), "test")
 	defer ender()
 
-	_ = f.EvaluateBody(s, []byte("my_body"), nil)
+	_ = f.EvaluateBody(s, []byte("my_body"), map[string][]string{
+		"x-forwarded-for": []string{"83.39.254.157"}, // arbitrary non local test IP
+	})
 	if !f.Stop() {
 		log.Fatal("Failed to initialize traceable filter")
 	}
