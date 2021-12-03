@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/Traceableai/agent-config/gen/go v0.0.0-20211024200733-966247a6fba8
+	github.com/gin-gonic/gin v1.7.2
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hypertrace/agent-config/gen/go v0.0.0-20210928174043-f66d46bdfecb

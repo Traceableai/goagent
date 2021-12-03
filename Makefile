@@ -66,6 +66,9 @@ check-examples:
 fmt:
 	gofmt -w -s ./
 
+porto:
+	porto -w .
+
 .PHONY: tidy
 tidy:
 	@find . -name "go.mod" \

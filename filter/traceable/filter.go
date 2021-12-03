@@ -76,6 +76,8 @@ import (
 	"unsafe"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64"
+	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
 	"go.uber.org/zap"
