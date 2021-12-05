@@ -1,4 +1,4 @@
-package linuxamd64alpine
+package linuxamd64alpine // import "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine"
 
 // The only purpose of this package is to include the libtraceable files
 // when it comes to vendoring.

@@ -8,10 +8,11 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hypertrace/agent-config/gen/go v0.0.0-20210928174043-f66d46bdfecb
-	github.com/hypertrace/goagent v0.4.1-0.20211123131332-a544bd429541
+	github.com/hypertrace/goagent v0.4.1-0.20211205192918-cb55456a1974
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.25.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.25.0
 	go.opentelemetry.io/contrib/propagators/b3 v1.0.0
 	go.opentelemetry.io/otel v1.0.1
 	go.opentelemetry.io/otel/sdk v1.0.1

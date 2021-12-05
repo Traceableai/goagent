@@ -1,7 +1,7 @@
 //go:build linux && traceable_filter
 // +build linux,traceable_filter
 
-package traceable
+package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
 const (
 	grpcContentType    = "application/grpc"
