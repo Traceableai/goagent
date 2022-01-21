@@ -24,7 +24,6 @@ TRACEABLE_RET w_traceable_new_libtraceable(
     traceable_libtraceable_config libtraceable_config,
     traceable_libtraceable* out_libtraceable
 ) {
-	printf("WTF\n");
 	return ((traceable_new_libtraceable_type) f)(libtraceable_config, out_libtraceable);
 }
 
@@ -422,9 +421,6 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_libt
 		opaDebugLog = 1
 	}
 
-	libTraceableLogMode = C.TRACEABLE_LOG_MODE(C.TRACEABLE_LOG_STDOUT)
-	opaDebugLog = 1
-
 	logConfig := C.traceable_log_configuration{
 		mode: libTraceableLogMode,
 	}
@@ -519,10 +515,16 @@ func getLibTraceableConfig(config *traceableconfig.AgentConfig) C.traceable_libt
 		skip_internal_request: C.int(skipInternalRequest),
 	}
 
+	serviceName := ""
+	agentConfig := C.traceable_agent_config{
+		service_name: C.CString(serviceName),
+	}
+
 	return C.traceable_libtraceable_config{
 		log_config:      logConfig,
 		remote_config:   remoteConfig,
 		blocking_config: blockingConfig,
+		agent_config:    agentConfig,
 	}
 
 }
@@ -534,6 +536,7 @@ func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
 	C.free(unsafe.Pointer(config.blocking_config.opa_config.logging_dir))
 	C.free(unsafe.Pointer(config.blocking_config.opa_config.logging_file_prefix))
 	C.free(unsafe.Pointer(config.blocking_config.opa_config.cert_file))
+	C.free(unsafe.Pointer(config.agent_config.service_name))
 }
 
 func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.traceable_attribute {
