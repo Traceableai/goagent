@@ -1,8 +1,13 @@
-#pragma once
+#ifndef LIBTRACEABLE_H
+#define LIBTRACEABLE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/*
+ * Traceable input and output structures
+ */
 
 typedef struct {
   const char* key;
@@ -48,48 +53,73 @@ typedef struct {
 } traceable_remote_config;
 
 typedef struct {
-  traceable_log_configuration log_config;
+  int enabled;
   traceable_opa_config opa_config;
   traceable_modsecurity_config modsecurity_config;
   traceable_rangeblocking_config rb_config;
-  traceable_remote_config remote_config;
   int evaluate_body;
   int skip_internal_request;
 } traceable_blocking_config;
 
 typedef struct {
+  const char* service_name;
+} traceable_agent_config;
+
+typedef struct {
   int block;
+  int sample;
   traceable_attributes attributes;
-} traceable_block_result;
+} traceable_process_request_result;
+
+typedef struct {
+  traceable_log_configuration log_config;
+  traceable_remote_config remote_config;
+  traceable_blocking_config blocking_config;
+  traceable_agent_config agent_config;
+} traceable_libtraceable_config;
+
+typedef struct {
+  int sample;
+  traceable_attributes attributes;
+} traceable_process_span_result;
 
 typedef enum { TRACEABLE_SUCCESS, TRACEABLE_FAIL } TRACEABLE_RET;
 
-typedef void* traceable_blocking_engine;
+typedef void* traceable_libtraceable;
 
-TRACEABLE_RET traceable_new_blocking_engine(
-    traceable_blocking_config blocking_config,
-    traceable_blocking_engine* out_blocking_engine);
+/*
+ * Traceable api functions
+ */
+TRACEABLE_RET traceable_new_libtraceable(
+    traceable_libtraceable_config libtraceable_config,
+    traceable_libtraceable* out_libtraceable);
+TRACEABLE_RET traceable_start_libtraceable(traceable_libtraceable libtraceable);
+TRACEABLE_RET traceable_delete_libtraceable(
+    traceable_libtraceable libtraceable);
 
-TRACEABLE_RET traceable_start_blocking_engine(
-    traceable_blocking_engine blocking_engine);
+TRACEABLE_RET traceable_process_request_headers(
+    traceable_libtraceable libtraceable, traceable_attributes attributes,
+    traceable_process_request_result* out_process_result);
+TRACEABLE_RET traceable_process_request_body(
+    traceable_libtraceable libtraceable, traceable_attributes attributes,
+    traceable_process_request_result* out_process_result);
+TRACEABLE_RET traceable_delete_process_request_result_data(
+    traceable_process_request_result result);
 
-TRACEABLE_RET traceable_block_request(traceable_blocking_engine blocking_engine,
-                                      traceable_attributes attributes,
-                                      traceable_block_result* out_block_result);
+/*
+ * traceable_decode_protobuf decodes a raw protobuf buffer into a null
+ *   terminated JSON string. The caller must free "out_string". depth controls
+ *   the number of nested groups that are decoded.
+ */
+TRACEABLE_RET traceable_decode_protobuf(const char* blob, int length, int depth,
+                                        char** out_string);
 
-TRACEABLE_RET traceable_block_request_headers(
-    traceable_blocking_engine blocking_engine, traceable_attributes attributes,
-    traceable_block_result* out_block_result);
-
-TRACEABLE_RET traceable_block_request_body(
-    traceable_blocking_engine blocking_engine, traceable_attributes attributes,
-    traceable_block_result* out_block_result);
-
-TRACEABLE_RET traceable_delete_block_result_data(traceable_block_result result);
-
-TRACEABLE_RET traceable_delete_blocking_engine(
-    traceable_blocking_engine blocking_engine);
+TRACEABLE_RET traceable_is_content_type_capturable(
+    const char* media_type, const char** supported_content_types,
+    int supported_content_types_size, int* out_should_capture);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
