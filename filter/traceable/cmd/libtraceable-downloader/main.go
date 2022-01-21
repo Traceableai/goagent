@@ -101,7 +101,7 @@ Usage:
 		Name:    "libtraceable",
 		OS:      "centos_7",
 		Version: libVersion,
-	}, "blocking.h", dstDir)
+	}, "libtraceable.h", dstDir)
 }
 
 func pullLibraryCmd(out io.Writer, args []string) int {
