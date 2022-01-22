@@ -14,17 +14,16 @@ package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 #cgo LDFLAGS: -Wl,-rpath=\$ORIGIN -ldl
 #include "libtraceable.h"
 #include <dlfcn.h>
-#include <stdio.h>
 #include <stdlib.h>
 
-typedef TRACEABLE_RET (*traceable_new_libtraceable_type)(traceable_libtraceable_config,traceable_libtraceable*);
+typedef TRACEABLE_RET (*traceable_new_libtraceable_type)(traceable_libtraceable_config, traceable_libtraceable*);
 
 TRACEABLE_RET w_traceable_new_libtraceable(
     void* f,
-    traceable_libtraceable_config libtraceable_config,
+    traceable_libtraceable_config config,
     traceable_libtraceable* out_libtraceable
 ) {
-	return ((traceable_new_libtraceable_type) f)(libtraceable_config, out_libtraceable);
+	return ((traceable_new_libtraceable_type) f)(config, out_libtraceable);
 }
 
 typedef TRACEABLE_RET (*traceable_start_libtraceable_type)(traceable_libtraceable);
@@ -55,9 +54,9 @@ TRACEABLE_RET w_traceable_process_request_headers (
 	traceable_process_request_headers_type f,
 	traceable_libtraceable libtraceable,
 	traceable_attributes attributes,
-	traceable_process_request_result* out_process_request_result
+	traceable_process_request_result* out_result
 ) {
-	return f(libtraceable, attributes, out_process_request_result);
+	return f(libtraceable, attributes, out_result);
 }
 
 typedef TRACEABLE_RET (*traceable_process_request_body_type)(
@@ -70,9 +69,9 @@ TRACEABLE_RET w_traceable_process_request_body (
 	traceable_process_request_body_type f,
 	traceable_libtraceable libtraceable,
 	traceable_attributes attributes,
-	traceable_process_request_result* out_process_request_result
+	traceable_process_request_result* out_result
 ) {
-	return f(libtraceable, attributes, out_process_request_result);
+	return f(libtraceable, attributes, out_result);
 }
 
 typedef TRACEABLE_RET (*traceable_delete_process_request_result_data_type)(traceable_process_request_result);
@@ -103,18 +102,18 @@ const defaultAgentManagerEndpoint = "localhost:5441"
 const defaultPollPeriodSec = 30
 
 type Filter struct {
-	blockingEngine C.traceable_libtraceable
-	blockingLib    *libtraceable
-	started        bool
-	logger         *zap.Logger
+	libtraceableHandle C.traceable_libtraceable
+	libtraceable       *libtraceableMethods
+	started            bool
+	logger             *zap.Logger
 }
 
-type libtraceable struct {
-	startEngine           C.traceable_start_libtraceable_type
-	deleteEngine          C.traceable_delete_libtraceable_type
-	processRequestHeaders C.traceable_process_request_headers_type
-	processRequestBody    C.traceable_process_request_body_type
-	deleteBlockResultData C.traceable_delete_process_request_result_data_type
+type libtraceableMethods struct {
+	startEngine             C.traceable_start_libtraceable_type
+	deleteEngine            C.traceable_delete_libtraceable_type
+	processRequestHeaders   C.traceable_process_request_headers_type
+	processRequestBody      C.traceable_process_request_body_type
+	deleteProcessResultData C.traceable_delete_process_request_result_data_type
 }
 
 var _ filter.Filter = (*Filter)(nil)
@@ -139,7 +138,7 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 
 	cStrLibPath := C.CString(libPath)
 	defer C.free(unsafe.Pointer(cStrLibPath))
-	blockingLib := C.dlopen(cStrLibPath, C.RTLD_NOW)
+	libHandle := C.dlopen(cStrLibPath, C.RTLD_NOW)
 	if err := C.dlerror(); err != nil {
 		logger.Warn(
 			"Traceable filter is disabled because library can't be loaded",
@@ -152,13 +151,13 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 	libTraceableConfig := getLibTraceableConfig(config)
 	defer freeLibTraceableConfig(libTraceableConfig)
 
-	var blockingFilter Filter
+	var traceableFilter Filter
 	cStrNewLibtraceable := C.CString("traceable_new_libtraceable")
 	defer C.free(unsafe.Pointer(cStrNewLibtraceable))
 	res := C.w_traceable_new_libtraceable(
-		C.dlsym(blockingLib, cStrNewLibtraceable),
+		C.dlsym(libHandle, cStrNewLibtraceable),
 		libTraceableConfig,
-		&blockingFilter.blockingEngine,
+		&traceableFilter.libtraceableHandle,
 	)
 	if res != C.TRACEABLE_SUCCESS {
 		logger.Warn(
@@ -168,8 +167,8 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 		return &Filter{logger: logger}
 	}
 
-	blockingFilter.logger = logger
-	blockingFilter.blockingLib, err = loadLibtraceableMethods(blockingLib)
+	traceableFilter.logger = logger
+	traceableFilter.libtraceable, err = loadLibtraceableMethods(libHandle)
 	if err != nil {
 		logger.Warn("Traceable filter is disabled.", zap.Error(err))
 		return &Filter{logger: logger}
@@ -180,15 +179,15 @@ func NewFilter(config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter 
 		zap.String("traceableai.goagent.lib_path", libPath),
 	)
 
-	return &blockingFilter
+	return &traceableFilter
 }
 
-func loadLibtraceableMethods(blockingLib unsafe.Pointer) (*libtraceable, error) {
-	b := libtraceable{}
+func loadLibtraceableMethods(libHandle unsafe.Pointer) (*libtraceableMethods, error) {
+	b := libtraceableMethods{}
 
 	cStrStartLibtraceable := C.CString("traceable_start_libtraceable")
 	defer C.free(unsafe.Pointer(cStrStartLibtraceable))
-	if startEngine := C.dlsym(blockingLib, cStrStartLibtraceable); startEngine == nil {
+	if startEngine := C.dlsym(libHandle, cStrStartLibtraceable); startEngine == nil {
 		return nil, errors.New("failed to load traceable_start_libtraceable")
 	} else {
 		b.startEngine = C.traceable_start_libtraceable_type(startEngine)
@@ -196,7 +195,7 @@ func loadLibtraceableMethods(blockingLib unsafe.Pointer) (*libtraceable, error) 
 
 	cStrDeleteLibtraceable := C.CString("traceable_delete_libtraceable")
 	defer C.free(unsafe.Pointer(cStrDeleteLibtraceable))
-	if deleteEngine := C.dlsym(blockingLib, cStrDeleteLibtraceable); deleteEngine == nil {
+	if deleteEngine := C.dlsym(libHandle, cStrDeleteLibtraceable); deleteEngine == nil {
 		return nil, errors.New("failed to load traceable_delete_libtraceable")
 	} else {
 		b.deleteEngine = C.traceable_delete_libtraceable_type(deleteEngine)
@@ -204,7 +203,7 @@ func loadLibtraceableMethods(blockingLib unsafe.Pointer) (*libtraceable, error) 
 
 	cStrProcessRequestHeaders := C.CString("traceable_process_request_headers")
 	defer C.free(unsafe.Pointer(cStrProcessRequestHeaders))
-	if processRequestHeaders := C.dlsym(blockingLib, cStrProcessRequestHeaders); processRequestHeaders == nil {
+	if processRequestHeaders := C.dlsym(libHandle, cStrProcessRequestHeaders); processRequestHeaders == nil {
 		return nil, errors.New("failed to load traceable_process_request_headers")
 	} else {
 		b.processRequestHeaders = C.traceable_process_request_headers_type(processRequestHeaders)
@@ -212,18 +211,18 @@ func loadLibtraceableMethods(blockingLib unsafe.Pointer) (*libtraceable, error) 
 
 	cStrProcessRequestBody := C.CString("traceable_process_request_body")
 	defer C.free(unsafe.Pointer(cStrProcessRequestBody))
-	if processRequestBody := C.dlsym(blockingLib, cStrProcessRequestBody); processRequestBody == nil {
+	if processRequestBody := C.dlsym(libHandle, cStrProcessRequestBody); processRequestBody == nil {
 		return nil, errors.New("failed to load traceable_process_request_body")
 	} else {
 		b.processRequestBody = C.traceable_process_request_body_type(processRequestBody)
 	}
 
-	cStrDeleteBlockResultData := C.CString("traceable_delete_process_request_result_data")
-	defer C.free(unsafe.Pointer(cStrDeleteBlockResultData))
-	if deleteBlockResultData := C.dlsym(blockingLib, cStrDeleteBlockResultData); deleteBlockResultData == nil {
+	cStrDeleteProcessRequestResultData := C.CString("traceable_delete_process_request_result_data")
+	defer C.free(unsafe.Pointer(cStrDeleteProcessRequestResultData))
+	if deleteProcessResultData := C.dlsym(libHandle, cStrDeleteProcessRequestResultData); deleteProcessResultData == nil {
 		return nil, errors.New("failed to load traceable_delete_process_request_result_data")
 	} else {
-		b.deleteBlockResultData = C.traceable_delete_process_request_result_data_type(deleteBlockResultData)
+		b.deleteProcessResultData = C.traceable_delete_process_request_result_data_type(deleteProcessResultData)
 	}
 
 	return &b, nil
@@ -231,8 +230,8 @@ func loadLibtraceableMethods(blockingLib unsafe.Pointer) (*libtraceable, error) 
 
 // Start() starts the threads to poll config
 func (f *Filter) Start() bool {
-	if f.blockingEngine != nil {
-		ret := C.w_traceable_start_libtraceable(f.blockingLib.startEngine, f.blockingEngine)
+	if f.libtraceableHandle != nil {
+		ret := C.w_traceable_start_libtraceable(f.libtraceable.startEngine, f.libtraceableHandle)
 		if ret == C.TRACEABLE_SUCCESS {
 			f.started = true
 			return true
@@ -247,8 +246,8 @@ func (f *Filter) Start() bool {
 }
 
 func (f *Filter) Stop() bool {
-	if f.blockingEngine != nil {
-		ret := C.w_traceable_delete_libtraceable(f.blockingLib.deleteEngine, f.blockingEngine)
+	if f.libtraceableHandle != nil {
+		ret := C.w_traceable_delete_libtraceable(f.libtraceable.deleteEngine, f.libtraceableHandle)
 		if ret == C.TRACEABLE_SUCCESS {
 			f.started = false
 			return true
@@ -334,8 +333,8 @@ func (f *Filter) evaluate(span sdk.Span, attributes map[string]string) bool {
 	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
 
 	var processHeadersResult C.traceable_process_request_result
-	ret := C.w_traceable_process_request_headers(f.blockingLib.processRequestHeaders, f.blockingEngine, inputLibTraceableAttributes, &processHeadersResult)
-	defer C.w_traceable_delete_process_request_result_data(f.blockingLib.deleteBlockResultData, processHeadersResult)
+	ret := C.w_traceable_process_request_headers(f.libtraceable.processRequestHeaders, f.libtraceableHandle, inputLibTraceableAttributes, &processHeadersResult)
+	defer C.w_traceable_delete_process_request_result_data(f.libtraceable.deleteProcessResultData, processHeadersResult)
 	// if call fails just return false
 	if ret != C.TRACEABLE_SUCCESS {
 		f.logger.Debug("Failed to evaluate attributes")
@@ -352,8 +351,8 @@ func (f *Filter) evaluate(span sdk.Span, attributes map[string]string) bool {
 	}
 
 	var processBodyResult C.traceable_process_request_result
-	ret = C.w_traceable_process_request_headers(f.blockingLib.processRequestBody, f.blockingEngine, inputLibTraceableAttributes, &processBodyResult)
-	defer C.w_traceable_delete_process_request_result_data(f.blockingLib.deleteBlockResultData, processBodyResult)
+	ret = C.w_traceable_process_request_headers(f.libtraceable.processRequestBody, f.libtraceableHandle, inputLibTraceableAttributes, &processBodyResult)
+	defer C.w_traceable_delete_process_request_result_data(f.libtraceable.deleteProcessResultData, processBodyResult)
 	// if call fails just return false
 	if ret != C.TRACEABLE_SUCCESS {
 		f.logger.Debug("Failed to evaluate attributes")
