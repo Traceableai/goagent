@@ -27,17 +27,17 @@ Config values can be declared in config file, env variables or code. For further
 
 ### Traceable filter
 
-By default, `goagent` includes the [Traceable filter](./filter/traceable) into server instrumentation (e.g. HTTP server or GRPC server)
+By default, `goagent` includes the [Traceable filter](./filter/traceable) into the server instrumentation (e.g. HTTP server or GRPC server)
 based on the [configuration features](https://github.com/Traceableai/agent-config/blob/main/proto/ai/traceable/agent/config/v1/config.proto#L29).
 To run Traceable filter we need to:
 
-Fist compile the binary using the build tag `traceable_filter`, for example:
+First compile the binary using the build tag `traceable_filter`, for example:
 
 ```bash
 go build -tags 'traceable_filter' -o /path-to-app/myapp
 ```
 
-Then, copy the library in the same folder as the compiled binary:
+Then, copy the library into the same folder as the compiled binary:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/Traceableai/goagent/main/filter/traceable/copy-library.sh | bash -s -- /path-to-app

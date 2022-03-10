@@ -27,7 +27,8 @@ var defaultConfig = &AgentConfig{
 				Request:  hyperconfig.Bool(true),
 				Response: hyperconfig.Bool(true),
 			},
-			BodyMaxSizeBytes: hyperconfig.Int32(131072),
+			BodyMaxSizeBytes:           hyperconfig.Int32(131072),
+			BodyMaxProcessingSizeBytes: hyperconfig.Int32(1048576),
 		},
 		Reporting: &hyperconfig.Reporting{
 			Endpoint:          hyperconfig.String("localhost:4317"),

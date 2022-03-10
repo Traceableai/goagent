@@ -83,17 +83,3 @@ install-tools: ## Install all the dependencies under the tools module
 .PHONY: check-vanity-import
 check-vanity-import:
 	@porto --skip-files "version.go" -l .
-
-.PHONY: install-libtraceable-downloader
-install-libtraceable-downloader:
-	cd ./filter/traceable/cmd/libtraceable-downloader && \
-	go build -o "${GOPATH}/bin/libtraceable-downloader" .
-
-.PHONY: pull-libtraceable-headers
-pull-libtraceable-headers: install-libtraceable-downloader
-	${GOPATH}/bin/libtraceable-downloader pull-library-headers "./filter/traceable"
-
-.PHONY: pull-libtraceable-libs
-pull-libtraceable-libs: install-libtraceable-downloader
-	${GOPATH}/bin/libtraceable-downloader pull-library-lib centos_7 "./filter/traceable/libs/linux_amd64"
-	${GOPATH}/bin/libtraceable-downloader pull-library-lib alpine_3.9 "./filter/traceable/libs/linux_amd64-alpine"
