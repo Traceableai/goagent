@@ -18,6 +18,8 @@ func TestLoadWithDefaults(t *testing.T) {
 
 	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Request.Value)
 	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Response.Value)
+	assert.Equal(t, int32(131072), cfg.Tracing.DataCapture.BodyMaxSizeBytes.Value)
+	assert.Equal(t, int32(1048576), cfg.Tracing.DataCapture.BodyMaxProcessingSizeBytes.Value)
 }
 
 func TestLoadFromFile(t *testing.T) {

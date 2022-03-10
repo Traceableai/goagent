@@ -30,7 +30,17 @@ func main() {
 	_, s, ender := goagent.StartSpan(context.Background(), "test")
 	defer ender()
 
-	_ = f.EvaluateBody(s, []byte("my_body"), map[string][]string{
+	// This run time test does not block because there isn't OPA. For now, we
+	// must eyeball that the libtraceable debug output passes the right
+	// attributes to the respective calls:
+	//   process_request_headers
+	//   process_request_body
+	_ = f.EvaluateURLAndHeaders(s, "http://abc.com", map[string][]string{
+		"x-forwarded-for":        []string{"83.39.254.157"}, // arbitrary non local test IP
+		"http.request.headers.a": []string{"/usr/bin/perl"},
+	})
+
+	_ = f.EvaluateBody(s, []byte("{\"bad_body\":\"/usr/bin/perl\""), map[string][]string{
 		"x-forwarded-for": []string{"83.39.254.157"}, // arbitrary non local test IP
 	})
 	if !f.Stop() {

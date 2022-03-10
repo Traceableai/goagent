@@ -67,8 +67,8 @@ jobs:
           - alpine_3.10
           - alpine_3.11
           - alpine_3.12
-          - centos_7
-          - centos_8
+          - rhel_7
+          - rhel_8
           - amazonlinux_2
           - ubuntu_18.04
           - ubuntu_20.04
