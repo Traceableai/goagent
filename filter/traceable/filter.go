@@ -95,6 +95,7 @@ import (
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.uber.org/zap"
 )
 
@@ -268,11 +269,15 @@ const (
 func toFQNHeaders(headers map[string][]string, prefix string) map[string]string {
 	headerAttributes := map[string]string{}
 	for k, v := range headers {
-		if len(v) == 1 {
-			headerAttributes[fmt.Sprintf("%s%s", prefix, strings.ToLower(k))] = v[0]
+		k = strings.ToLower(k)
+		// Do not prepend the prefix to some special attributes
+		if k == string(semconv.NetPeerIPKey) {
+			headerAttributes[k] = v[0]
+		} else if len(v) == 1 {
+			headerAttributes[fmt.Sprintf("%s%s", prefix, k)] = v[0]
 		} else {
 			for i, vv := range v {
-				headerAttributes[fmt.Sprintf("%s%s[%d]", prefix, strings.ToLower(k), i)] = vv
+				headerAttributes[fmt.Sprintf("%s%s[%d]", prefix, k, i)] = vv
 			}
 		}
 	}

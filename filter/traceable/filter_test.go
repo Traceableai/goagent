@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
-	"go.uber.org/zap"
-
 	"github.com/stretchr/testify/assert"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -208,4 +208,13 @@ func TestToFQNHeaders(t *testing.T) {
 	fqnHeaders = toFQNHeaders(map[string][]string{"Content-Type": {"a", "b"}}, "prefix2.")
 	assert.Equal(t, "a", fqnHeaders["prefix2.content-type[0]"])
 	assert.Equal(t, "b", fqnHeaders["prefix2.content-type[1]"])
+
+	// semconv.NetPeerIPKey is "net.peer.ip"
+	fqnHeaders = toFQNHeaders(map[string][]string{string(semconv.NetPeerIPKey): {"10.10.10.10"}}, "prefix.")
+	assert.Equal(t, "10.10.10.10", fqnHeaders[string(semconv.NetPeerIPKey)])
+
+	fqnHeaders = toFQNHeaders(map[string][]string{
+		"Net.Peer.Ip": {"10.20.10.20"},
+	}, "prefix.")
+	assert.Equal(t, "10.20.10.20", fqnHeaders[string(semconv.NetPeerIPKey)])
 }
