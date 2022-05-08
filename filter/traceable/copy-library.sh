@@ -65,8 +65,10 @@ fi
 
 if [[ "$IS_ALPINE" == "0" ]]; then # not alpine
     cp ${GOAGENT_DIR}/filter/traceable/libs/linux_$(go env GOARCH)/libtraceable.so $DST_DIR/libtraceable.so
+    cp ${GOAGENT_DIR}/filter/traceable/libtraceable.h $DST_DIR/libtraceable.h
     echo "Linux library successfuly copied to $DST_DIR/libtraceable.so"
 else
     cp ${GOAGENT_DIR}/filter/traceable/libs/linux_$(go env GOARCH)-alpine/libtraceable.so $DST_DIR/libtraceable.so
+    cp ${GOAGENT_DIR}/filter/traceable/libtraceable.h $DST_DIR/libtraceable.h
     echo "Alpine library successfuly copied to $DST_DIR/libtraceable.so"
 fi
