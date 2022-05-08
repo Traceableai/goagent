@@ -50,7 +50,7 @@ fi
 #
 # Hence we deal with this output to find the "Dir" value.
 #
-GOAGENT_DIR=$(go mod download -json github.com/Traceableai/goagent \
+GOAGENT_DIR=$(GOPRIVATE="github.com/Traceableai/goagent-src" go mod download -json github.com/Traceableai/goagent \
     | head -7 | tail -1 \
     | awk -F\" '{print $4}')
 
