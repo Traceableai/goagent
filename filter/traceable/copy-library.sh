@@ -53,7 +53,7 @@ fi
 GOAGENT_DIR=$(GOPRIVATE="github.com/Traceableai/goagent-src" go mod download -json github.com/Traceableai/goagent \
     | head -7 | tail -1 \
     | awk -F\" '{print $4}')
-
+echo $(GOPRIVATE="github.com/Traceableai/goagent-src" go mod download -json github.com/Traceableai/goagent)
 mkdir -p $DST_DIR
 echo "GOAGENT_DIR IS ${GOAGENT_DIR}"
 
