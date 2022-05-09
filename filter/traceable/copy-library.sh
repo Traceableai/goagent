@@ -19,10 +19,10 @@ if [[ -f $DST_DIR/libtraceable.so ]]; then
     exit 1
 fi
 
-if [[ ! -f go.mod ]]; then
-    echo "go.mod file not found"
-    exit 1
-fi
+#if [[ ! -f go.mod ]]; then
+#    echo "go.mod file not found"
+#    exit 1
+#fi
 
 set +e
 IS_GOAGENT_REQUIRED=$(cat go.mod | grep -ic "github.com/Traceableai/goagent v")
