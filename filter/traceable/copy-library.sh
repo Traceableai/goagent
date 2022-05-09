@@ -5,7 +5,7 @@ if [[ "$1" == "--help" ]]; then
     echo "Copies the required library from the github.com/Traceableai/goagent/filter/traceable package to dynamically link it in runtime."
     echo ""
     echo "Usage:"
-    echo "        $0 [<destination_dir>]"
+    echo "        $0 [<project_root>] [<destination_dir>]"
     echo ""
     exit 0
 fi
@@ -13,19 +13,20 @@ fi
 set -e
 
 DST_DIR=${1:-.}
+MOD_DIR=${2:-.}
 
 if [[ -f $DST_DIR/libtraceable.so ]]; then
     echo "Library already present in \"$DST_DIR/libtraceable.so\", remove it before attempting to copy it."
     exit 1
 fi
 
-#if [[ ! -f go.mod ]]; then
-#    echo "go.mod file not found"
-#    exit 1
-#fi
+if [[ ! -f $MOD_DIR/go.mod ]]; then
+   echo "go.mod file not found"
+   exit 1
+fi
 
 set +e
-IS_GOAGENT_REQUIRED=$(cat go.mod | grep -ic "github.com/Traceableai/goagent v")
+IS_GOAGENT_REQUIRED=$(cat $MOD_DIR/go.mod | grep -ic "github.com/Traceableai/goagent v")
 set -e
 if [[ "$IS_GOAGENT_REQUIRED" == "0" ]]; then
     echo "github.com/Traceableai/goagent isn't a required package in go.mod"
