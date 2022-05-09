@@ -55,6 +55,7 @@ GOAGENT_DIR=$(GOPRIVATE="github.com/Traceableai/goagent-src" go mod download -js
     | awk -F\" '{print $4}')
 
 mkdir -p $DST_DIR
+echo "GOAGENT_DIR IS ${GOAGENT_DIR}"
 
 IS_ALPINE="0"
 if [[ -f /etc/os-release ]]; then
