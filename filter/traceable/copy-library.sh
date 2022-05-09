@@ -50,10 +50,10 @@ fi
 #
 # Hence we deal with this output to find the "Dir" value.
 #
-GOAGENT_DIR=$(GOPRIVATE="github.com/Traceableai/goagent-src" go mod download -json github.com/Traceableai/goagent \
+GOAGENT_DIR=$(go mod download -json github.com/Traceableai/goagent \
     | head -7 | tail -1 \
     | awk -F\" '{print $4}')
-echo $(GOPRIVATE="github.com/Traceableai/goagent-src" go mod download -json github.com/Traceableai/goagent)
+echo $(go mod download -json github.com/Traceableai/goagent)
 mkdir -p $DST_DIR
 echo "GOAGENT_DIR IS ${GOAGENT_DIR}"
 
