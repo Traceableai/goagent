@@ -22,10 +22,10 @@ import (
 
 func TestIsGRPC(t *testing.T) {
 	assert.False(t, isGRPC(map[string][]string{}))
-	assert.False(t, isGRPC(map[string][]string{"content-type": []string{}}))
-	assert.False(t, isGRPC(map[string][]string{"content-type": []string{"text/html"}}))
-	assert.False(t, isGRPC(map[string][]string{"content-type": []string{"application/json"}}))
-	assert.True(t, isGRPC(map[string][]string{"content-type": []string{"application/grpc+proto"}}))
+	assert.False(t, isGRPC(map[string][]string{"content-type": {}}))
+	assert.False(t, isGRPC(map[string][]string{"content-type": {"text/html"}}))
+	assert.False(t, isGRPC(map[string][]string{"content-type": {"application/json"}}))
+	assert.True(t, isGRPC(map[string][]string{"content-type": {"application/grpc+proto"}}))
 }
 
 type FooServer struct {

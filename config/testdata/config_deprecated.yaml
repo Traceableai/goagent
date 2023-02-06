@@ -1,0 +1,33 @@
+service_name: goagent-example
+
+reporting:
+  endpoint: traceable-agent:4317
+  secure: false
+  trace_reporter_type: OTLP
+
+opa:
+  enabled: true
+  endpoint: http://traceable-agent:8181/
+  poll_period_seconds: 30
+  cert_file: "/conf/tls.crt"
+
+blocking_config:
+  enabled: true
+  # debug_log is deprecated here and should
+  # be at the top level
+  debug_log: true
+  # remote_config is deprecated here and should
+  # be at the top level
+  remote_config:
+    enabled: true
+    endpoint: http://traceable-agent:5441/
+    cert_file: "/conf/tls.crt"  
+  modsecurity:
+    enabled: false
+
+api_discovery:
+  enabled: true
+
+sampling:
+  enabled: true
+

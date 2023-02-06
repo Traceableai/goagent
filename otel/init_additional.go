@@ -19,7 +19,7 @@ func InitAsAdditional(cfg *config.AgentConfig) (trace.SpanProcessor, func()) {
 	internalstate.AppendCloser(loggerCloser)
 
 	if cfg.Tracing.Enabled.Value {
-		internalstate.InitConfig(cfg.Blocking)
+		internalstate.InitConfig(cfg)
 	} else {
 		internalstate.InitConfig(internalconfig.DisabledConfig)
 	}

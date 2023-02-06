@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc/internal/helloworld"
-	"github.com/Traceableai/goagent/instrumentation/internal/tracetesting"
+	"github.com/Traceableai/goagent/internal/tracetesting"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	otelcodes "go.opentelemetry.io/otel/codes"

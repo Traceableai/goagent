@@ -7,7 +7,8 @@ import (
 	internalconfig "github.com/Traceableai/goagent/internal/config"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
-	"github.com/hypertrace/goagent/instrumentation/hypertrace"
+	"github.com/hypertrace/goagent/instrumentation/opentelemetry"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Init initializes Traceable tracing and returns a shutdown function to flush data immediately
@@ -15,14 +16,13 @@ import (
 func Init(cfg *config.AgentConfig) func() {
 	loggerCloser := logger.InitLogger(os.Getenv("TA_LOG_LEVEL"))
 	internalstate.AppendCloser(loggerCloser)
-
 	if cfg.Tracing.Enabled.Value {
-		internalstate.InitConfig(cfg.Blocking)
+		internalstate.InitConfig(cfg)
 	} else {
 		internalstate.InitConfig(internalconfig.DisabledConfig)
 	}
 
-	tracingCloser := hypertrace.Init(cfg.Tracing)
+	tracingCloser := opentelemetry.InitWithSpanProcessorWrapper(cfg.Tracing, &traceableSpanProcessorWrapper{})
 	internalstate.AppendCloser(tracingCloser)
 	return internalstate.CloserFn()
 }
@@ -30,11 +30,11 @@ func Init(cfg *config.AgentConfig) func() {
 func RegisterService(
 	serviceName string,
 	resourceAttributes map[string]string,
-) (SpanStarter, error) {
-	s, err := hypertrace.RegisterService(serviceName, resourceAttributes)
+) (SpanStarter, trace.TracerProvider, error) {
+	s, tp, err := opentelemetry.RegisterServiceWithSpanProcessorWrapper(serviceName, resourceAttributes, &traceableSpanProcessorWrapper{})
 	if err != nil {
-		return nil, err
+		return nil, tp, err
 	}
 
-	return translateSpanStarter(s), nil
+	return translateSpanStarter(s), tp, nil
 }

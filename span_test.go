@@ -8,6 +8,7 @@ import (
 	"github.com/Traceableai/goagent/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestStartSpan(t *testing.T) {
@@ -30,9 +31,9 @@ func TestRegisterService(t *testing.T) {
 	cfg := config.Load()
 	shutdown := Init(cfg)
 	defer shutdown()
-	ss, err := RegisterService("myservice", nil)
+	ss, tp, err := RegisterService("myservice", nil)
 	require.NoError(t, err)
-
+	assert.NotEqual(t, trace.NewNoopTracerProvider(), tp)
 	_, _, closer := ss(context.Background(), "test")
 	closer()
 }

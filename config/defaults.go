@@ -3,7 +3,16 @@ package config // import "github.com/Traceableai/goagent/config"
 import (
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
+
+var defaultRemoteConfig = &traceableconfig.RemoteConfig{
+	Enabled:                traceableconfig.Bool(true),
+	Endpoint:               traceableconfig.String("localhost:5441"),
+	PollPeriodSeconds:      traceableconfig.Int32(30),
+	CertFile:               traceableconfig.String(""),
+	GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
+}
 
 // defaultConfig holds the default config values for agent.
 var defaultConfig = &AgentConfig{
@@ -29,6 +38,8 @@ var defaultConfig = &AgentConfig{
 			},
 			BodyMaxSizeBytes:           hyperconfig.Int32(131072),
 			BodyMaxProcessingSizeBytes: hyperconfig.Int32(1048576),
+			AllowedContentTypes: []*wrapperspb.StringValue{wrapperspb.String("json"),
+				wrapperspb.String("x-www-form-urlencoded")},
 		},
 		Reporting: &hyperconfig.Reporting{
 			Endpoint:          hyperconfig.String("localhost:4317"),
@@ -37,7 +48,7 @@ var defaultConfig = &AgentConfig{
 			CertFile:          hyperconfig.String(""),
 		},
 	},
-	Blocking: &traceableconfig.AgentConfig{
+	TraceableConfig: &traceableconfig.AgentConfig{
 		Opa: &traceableconfig.Opa{
 			Enabled:           traceableconfig.Bool(true),
 			Endpoint:          traceableconfig.String("http://localhost:8181/"),
@@ -55,12 +66,20 @@ var defaultConfig = &AgentConfig{
 				Enabled: traceableconfig.Bool(true),
 			},
 			SkipInternalRequest: traceableconfig.Bool(true),
-			RemoteConfig: &traceableconfig.RemoteConfig{
-				Enabled:           traceableconfig.Bool(true),
-				Endpoint:          traceableconfig.String("localhost:5441"),
-				PollPeriodSeconds: traceableconfig.Int32(30),
-				CertFile:          traceableconfig.String(""),
-			},
+			RemoteConfig:        defaultRemoteConfig,
+			ResponseStatusCode:  traceableconfig.Int32(403),
+		},
+		DebugLog:     traceableconfig.Bool(false),
+		RemoteConfig: defaultRemoteConfig,
+		ApiDiscovery: &traceableconfig.ApiDiscoveryConfig{
+			Enabled: traceableconfig.Bool(true),
+		},
+		Sampling: &traceableconfig.SamplingConfig{
+			Enabled: traceableconfig.Bool(true),
 		},
 	},
+}
+
+func GetDefaultRemoteConfig() *traceableconfig.RemoteConfig {
+	return defaultRemoteConfig
 }
