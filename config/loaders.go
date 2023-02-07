@@ -13,9 +13,9 @@ func Load() *AgentConfig {
 			hyperconfig.WithEnvPrefix(envPrefix),
 			hyperconfig.WithDefaults(defaultConfig.Tracing),
 		),
-		Blocking: traceableconfig.Load(
+		TraceableConfig: traceableconfig.Load(
 			traceableconfig.WithEnvPrefix(envPrefix),
-			traceableconfig.WithDefaults(defaultConfig.Blocking),
+			traceableconfig.WithDefaults(defaultConfig.TraceableConfig),
 		),
 	}
 }
@@ -27,10 +27,10 @@ func LoadFromFile(configFile string) *AgentConfig {
 			hyperconfig.WithEnvPrefix(envPrefix),
 			hyperconfig.WithDefaults(defaultConfig.Tracing),
 		),
-		Blocking: traceableconfig.LoadFromFile(
+		TraceableConfig: traceableconfig.LoadFromFile(
 			configFile,
 			traceableconfig.WithEnvPrefix(envPrefix),
-			traceableconfig.WithDefaults(defaultConfig.Blocking),
+			traceableconfig.WithDefaults(defaultConfig.TraceableConfig),
 		),
 	}
 }

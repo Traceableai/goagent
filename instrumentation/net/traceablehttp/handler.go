@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
-
 	"github.com/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
 )
 

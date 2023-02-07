@@ -1,7 +1,7 @@
 package traceablefilter
 
 import (
-	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/filter/traceable"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
@@ -19,14 +19,8 @@ func AppendTraceableFilter(f sdkfilter.Filter) sdkfilter.Filter {
 	return f
 }
 
-func appendTraceableFilterPerConfig(cfg *traceableconfig.AgentConfig, l *zap.Logger, f sdkfilter.Filter) (sdkfilter.Filter, func()) {
-	if cfg.BlockingConfig == nil ||
-		cfg.BlockingConfig.Enabled == nil ||
-		!cfg.BlockingConfig.Enabled.Value {
-		l.Debug("Traceable filter is disabled by config.")
-		return f, func() {}
-	}
-	traceableFilter := traceable.NewFilter(cfg, l)
+func appendTraceableFilterPerConfig(cfg *config.AgentConfig, l *zap.Logger, f sdkfilter.Filter) (sdkfilter.Filter, func()) {
+	traceableFilter := traceable.NewFilter(cfg.Tracing.ServiceName.Value, cfg.TraceableConfig, l)
 	if !traceableFilter.Start() {
 		return f, func() {}
 	}

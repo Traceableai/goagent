@@ -7,11 +7,12 @@ import (
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
+	"github.com/hypertrace/goagent/sdk/filter/result"
 	"go.uber.org/zap"
 )
 
 // NewFilter creates libtraceable based blocking filter
-func NewFilter(_ *traceableconfig.AgentConfig, l *zap.Logger) *Filter {
+func NewFilter(_ string, _ *traceableconfig.AgentConfig, l *zap.Logger) *Filter {
 	l.Debug("Using NOOP traceable filter.")
 	return &Filter{}
 }
@@ -27,11 +28,16 @@ func (f Filter) Stop() bool { return true }
 
 // EvaluateURLAndHeaders calls into libtraceable to evaluate if request with URL should be blocked
 // or if request with headers should be blocked
-func (Filter) EvaluateURLAndHeaders(_ sdk.Span, _ string, _ map[string][]string) bool {
-	return false
+func (Filter) EvaluateURLAndHeaders(_ sdk.Span, _ string, _ map[string][]string) result.FilterResult {
+	return result.FilterResult{}
 }
 
 // EvaluateBody calls into libtraceable to evaluate if request with body should be blocked
-func (Filter) EvaluateBody(_ sdk.Span, _ []byte, _ map[string][]string) bool {
-	return false
+func (Filter) EvaluateBody(_ sdk.Span, _ []byte, _ map[string][]string) result.FilterResult {
+	return result.FilterResult{}
+}
+
+// EvaluateBody calls into libtraceable to evaluate if request with body should be blocked
+func (Filter) Evaluate(_ sdk.Span, _ string, _ []byte, _ map[string][]string) result.FilterResult {
+	return result.FilterResult{}
 }

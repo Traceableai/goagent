@@ -6,8 +6,8 @@ import (
 )
 
 type AgentConfig struct {
-	Tracing  *hyperconfig.AgentConfig
-	Blocking *traceableconfig.AgentConfig
+	Tracing         *hyperconfig.AgentConfig
+	TraceableConfig *traceableconfig.AgentConfig
 }
 
 func LoadEnv(cfg *AgentConfig) {
@@ -16,9 +16,9 @@ func LoadEnv(cfg *AgentConfig) {
 		hyperconfig.WithDefaults(defaultConfig.Tracing),
 	)
 
-	cfg.Blocking.LoadFromEnv(
+	cfg.TraceableConfig.LoadFromEnv(
 		traceableconfig.WithEnvPrefix(envPrefix),
-		traceableconfig.WithDefaults(defaultConfig.Blocking),
+		traceableconfig.WithDefaults(defaultConfig.TraceableConfig),
 	)
 }
 

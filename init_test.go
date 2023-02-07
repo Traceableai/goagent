@@ -15,7 +15,7 @@ func TestInitAgentIsDisabled(t *testing.T) {
 		Tracing: &hyperconfig.AgentConfig{
 			Enabled: config.Bool(false),
 		},
-		Blocking: &traceableconfig.AgentConfig{
+		TraceableConfig: &traceableconfig.AgentConfig{
 			BlockingConfig: &traceableconfig.BlockingConfig{
 				Enabled: config.Bool(true),
 			},
@@ -23,5 +23,5 @@ func TestInitAgentIsDisabled(t *testing.T) {
 	})
 	defer shutdown()
 
-	assert.False(t, internalstate.GetConfig().BlockingConfig.Enabled.Value)
+	assert.False(t, internalstate.GetConfig().TraceableConfig.BlockingConfig.Enabled.Value)
 }

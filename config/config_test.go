@@ -18,7 +18,7 @@ func TestConfigLoadIsNotOverridenByDefaults(t *testing.T) {
 				},
 			},
 		},
-		Blocking: &traceableconfig.AgentConfig{
+		TraceableConfig: &traceableconfig.AgentConfig{
 			Opa: &traceableconfig.Opa{
 				Enabled: traceableconfig.Bool(false),
 			},
@@ -26,11 +26,11 @@ func TestConfigLoadIsNotOverridenByDefaults(t *testing.T) {
 	}
 
 	assert.Equal(t, false, cfg.Tracing.DataCapture.RpcMetadata.Request.Value)
-	assert.Equal(t, false, cfg.Blocking.Opa.Enabled.Value)
+	assert.Equal(t, false, cfg.TraceableConfig.Opa.Enabled.Value)
 
 	LoadEnv(cfg)
 	// we verify here the value isn't overridden by default value (true)
 	assert.Equal(t, false, cfg.Tracing.DataCapture.RpcMetadata.Request.Value)
 	// we verify default value is used for undefined value (true)
-	assert.Equal(t, false, cfg.Blocking.Opa.Enabled.Value)
+	assert.Equal(t, false, cfg.TraceableConfig.Opa.Enabled.Value)
 }

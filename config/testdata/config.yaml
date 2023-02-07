@@ -13,8 +13,17 @@ opa:
 
 blocking_config:
   enabled: true
-  remote_config:
-    enabled: true
-    endpoint: http://traceable-agent:5441/
-    poll_period_seconds: 60
-    cert_file: "/conf/tls.crt"
+  modsecurity:
+    enabled: false
+  responseStatusCode: 472
+
+remote_config:
+  enabled: true
+  endpoint: http://traceable-agent:5441/
+  cert_file: "/conf/tls.crt"
+
+api_discovery:
+  enabled: true
+
+sampling:
+  enabled: true
