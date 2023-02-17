@@ -27,11 +27,13 @@ func PropagationFormats(formats ...hyperconfig.PropagationFormat) []hyperconfig.
 }
 
 var (
-	Bool                           = traceableconfig.Bool
-	String                         = traceableconfig.String
-	Int32                          = traceableconfig.Int32
-	TraceReporterType_OTLP         = hyperconfig.TraceReporterType_OTLP
-	TraceReporterType_ZIPKIN       = hyperconfig.TraceReporterType_ZIPKIN
-	PropagationFormat_B3           = hyperconfig.PropagationFormat_B3
-	PropagationFormat_TRACECONTEXT = hyperconfig.PropagationFormat_TRACECONTEXT
+	Bool                                            = traceableconfig.Bool
+	String                                          = traceableconfig.String
+	Int32                                           = traceableconfig.Int32
+	TraceReporterType_OTLP                          = hyperconfig.TraceReporterType_OTLP
+	TraceReporterType_ZIPKIN                        = hyperconfig.TraceReporterType_ZIPKIN
+	PropagationFormat_B3                            = hyperconfig.PropagationFormat_B3
+	PropagationFormat_TRACECONTEXT                  = hyperconfig.PropagationFormat_TRACECONTEXT
+	MetricReporterType_METRIC_REPORTER_TYPE_LOGGING = hyperconfig.MetricReporterType_METRIC_REPORTER_TYPE_LOGGING
+	MetricReporterType_METRIC_REPORTER_TYPE_OTLP    = hyperconfig.MetricReporterType_METRIC_REPORTER_TYPE_OTLP
 )
