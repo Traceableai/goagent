@@ -125,8 +125,12 @@ import (
 	"go.uber.org/zap"
 )
 
-const defaultAgentManagerEndpoint = "localhost:5441"
-const defaultPollPeriodSec = 30
+const (
+	defaultAgentManagerEndpoint = "localhost:5441"
+	defaultPollPeriodSec        = 30
+	httpUrlKey                  = "http.url"
+	httpTargetKey               = "http.target"
+)
 
 type Filter struct {
 	libtraceableHandle C.traceable_libtraceable
@@ -145,6 +149,8 @@ type libtraceableMethods struct {
 	deleteProcessResultData C.traceable_delete_process_request_result_data_type
 	initLibtraceableConfig  C.init_libtraceable_config_type
 }
+
+var URL_ATTRIBUTES = []string{"http.scheme", "net.host.name", "net.host.port", httpTargetKey}
 
 var _ filter.Filter = (*Filter)(nil)
 
@@ -319,7 +325,7 @@ const (
 	grpcRequestMetadataPrefix = "rpc.request.metadata."
 )
 
-func toFQNHeaders(headers map[string][]string, prefix string) map[string]string {
+func toFQNHeaders(headers map[string][]string, prefix string, span sdk.Span) map[string]string {
 	headerAttributes := map[string]string{}
 	for k, v := range headers {
 		k = strings.ToLower(k)
@@ -334,6 +340,27 @@ func toFQNHeaders(headers map[string][]string, prefix string) map[string]string 
 			}
 		}
 	}
+
+	// add url attributes so that libtraceable can construct the url if needed
+	attributes := span.GetAttributes()
+	if url := attributes.GetValue(httpUrlKey); url != nil {
+		value := fmt.Sprintf("%s", url)
+		if strings.Contains(value, "://") {
+			headerAttributes[httpUrlKey] = value
+		} else {
+			// TODO remove after updating ht goagent
+			// special case when the span attribute  http.url set is http.target
+			if _, found := headerAttributes[httpTargetKey]; !found {
+				headerAttributes[httpTargetKey] = value
+			}
+			for _, key := range URL_ATTRIBUTES {
+				if value := attributes.GetValue(key); value != nil {
+					headerAttributes[key] = fmt.Sprintf("%v", value)
+				}
+			}
+		}
+	}
+
 	return headerAttributes
 }
 
@@ -350,7 +377,7 @@ func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[st
 		prefix = grpcRequestMetadataPrefix
 	}
 
-	headerAttributes := toFQNHeaders(headers, prefix)
+	headerAttributes := toFQNHeaders(headers, prefix, span)
 	headerAttributes["http.url"] = url
 
 	inputLibTraceableAttributes := createLibTraceableAttributes(headerAttributes)
@@ -396,7 +423,7 @@ func (f *Filter) EvaluateBody(span sdk.Span, body []byte, headers map[string][]s
 		bodyAttributeName = "rpc.request.body"
 	}
 
-	headerAttributes := toFQNHeaders(headers, headerPrefix)
+	headerAttributes := toFQNHeaders(headers, headerPrefix, span)
 	headerAttributes[bodyAttributeName] = string(body)
 
 	inputLibTraceableAttributes := createLibTraceableAttributes(headerAttributes)
@@ -437,7 +464,7 @@ func (f *Filter) Evaluate(span sdk.Span, url string, body []byte, headers map[st
 		bodyAttributeName = "rpc.request.body"
 	}
 
-	headerAttributes := toFQNHeaders(headers, headerPrefix)
+	headerAttributes := toFQNHeaders(headers, headerPrefix, span)
 	headerAttributes["http.url"] = url
 	if len(body) > 0 {
 		headerAttributes[bodyAttributeName] = string(body)
@@ -540,6 +567,7 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	libtraceableConfig.remote_config.poll_period_sec = C.int(remoteConfigPb.PollPeriodSeconds.Value)
 	libtraceableConfig.remote_config.cert_file = C.CString(remoteConfigPb.CertFile.Value)
 	libtraceableConfig.remote_config.grpc_max_call_recv_msg_size = C.long(remoteConfigPb.GrpcMaxCallRecvMsgSize.Value)
+	libtraceableConfig.remote_config.use_secure_connection = getCBool(remoteConfigPb.UseSecureConnection.Value)
 
 	libtraceableConfig.blocking_config.opa_config.enabled = getCBool(config.Opa.Enabled.Value)
 	libtraceableConfig.blocking_config.opa_config.opa_server_url = C.CString(config.Opa.Endpoint.Value)
@@ -548,12 +576,14 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	libtraceableConfig.blocking_config.opa_config.debug_log = getCBool(debugLog)
 	libtraceableConfig.blocking_config.opa_config.min_delay = C.int(config.Opa.PollPeriodSeconds.Value)
 	libtraceableConfig.blocking_config.opa_config.max_delay = C.int(config.Opa.PollPeriodSeconds.Value)
+	libtraceableConfig.blocking_config.opa_config.use_secure_connection = getCBool(config.Opa.UseSecureConnection.Value)
 
 	libtraceableConfig.blocking_config.enabled = getCBool(config.BlockingConfig.Enabled.Value)
 	libtraceableConfig.blocking_config.modsecurity_config.enabled = getCBool(config.BlockingConfig.Modsecurity.Enabled.Value)
 	libtraceableConfig.blocking_config.rb_config.enabled = getCBool(config.BlockingConfig.RegionBlocking.Enabled.Value)
 	libtraceableConfig.blocking_config.evaluate_body = getCBool(config.BlockingConfig.EvaluateBody.Value)
 	libtraceableConfig.blocking_config.skip_internal_request = getCBool(config.BlockingConfig.SkipInternalRequest.Value)
+	libtraceableConfig.blocking_config.max_recursion_depth = C.int(config.BlockingConfig.MaxRecursionDepth.Value)
 
 	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
 

@@ -30,13 +30,13 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 }
 
 func main() {
-	cfg := config.Load()
-	cfg.Tracing.ServiceName = config.String("grpc-server")
+	cfg := config.LoadFromFile("./config.yaml")
 
 	closer := goagent.Init(cfg)
 	defer closer()
 
-	lis, err := net.Listen("tcp", port)
+	// gosec: "G102: Binds to all network interfaces". Ignore this error.
+	lis, err := net.Listen("tcp", port) // #nosec
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

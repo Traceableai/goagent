@@ -12,6 +12,7 @@ var defaultRemoteConfig = &traceableconfig.RemoteConfig{
 	PollPeriodSeconds:      traceableconfig.Int32(30),
 	CertFile:               traceableconfig.String(""),
 	GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
+	UseSecureConnection:    traceableconfig.Bool(false),
 }
 
 // defaultConfig holds the default config values for agent.
@@ -50,10 +51,11 @@ var defaultConfig = &AgentConfig{
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
 		Opa: &traceableconfig.Opa{
-			Enabled:           traceableconfig.Bool(true),
-			Endpoint:          traceableconfig.String("http://localhost:8181/"),
-			PollPeriodSeconds: traceableconfig.Int32(30),
-			CertFile:          traceableconfig.String(""),
+			Enabled:             traceableconfig.Bool(false),
+			Endpoint:            traceableconfig.String("http://localhost:8181/"),
+			PollPeriodSeconds:   traceableconfig.Int32(30),
+			CertFile:            traceableconfig.String(""),
+			UseSecureConnection: traceableconfig.Bool(false),
 		},
 		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled:  traceableconfig.Bool(true),
@@ -68,6 +70,7 @@ var defaultConfig = &AgentConfig{
 			SkipInternalRequest: traceableconfig.Bool(true),
 			RemoteConfig:        defaultRemoteConfig,
 			ResponseStatusCode:  traceableconfig.Int32(403),
+			MaxRecursionDepth:   traceableconfig.Int32(20),
 		},
 		DebugLog:     traceableconfig.Bool(false),
 		RemoteConfig: defaultRemoteConfig,

@@ -59,5 +59,9 @@ func InitLogger(logLevel string) func() {
 
 	setLogger(l)
 
-	return func() { l.Sync() }
+	return func() {
+		if err := l.Sync(); err != nil {
+			log.Printf("Failed sync logger: %v", err)
+		}
+	}
 }

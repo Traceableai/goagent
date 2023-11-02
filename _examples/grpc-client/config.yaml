@@ -1,0 +1,3 @@
+service_name: grpc-client
+opa:
+  enabled: false

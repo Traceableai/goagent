@@ -33,6 +33,7 @@ typedef struct {
   const char* logging_dir;
   const char* logging_file_prefix;
   const char* cert_file;
+  int use_secure_connection;
   int log_to_console;
   int skip_verify;
   int min_delay;
@@ -53,6 +54,7 @@ typedef struct {
   const char* remote_endpoint;
   int poll_period_sec;
   const char* cert_file;
+  int use_secure_connection;
   int64_t grpc_max_call_recv_msg_size;
 } traceable_remote_config;
 
@@ -63,6 +65,7 @@ typedef struct {
   traceable_rangeblocking_config rb_config;
   int evaluate_body;
   int skip_internal_request;
+  int max_recursion_depth;
 } traceable_blocking_config;
 
 typedef struct {

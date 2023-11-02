@@ -12,7 +12,7 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.Equal(t, "localhost:4317", cfg.Tracing.Reporting.Endpoint.Value)
 	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
 	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
-	assert.Equal(t, true, cfg.TraceableConfig.Opa.Enabled.Value)
+	assert.Equal(t, false, cfg.TraceableConfig.Opa.Enabled.Value)
 	assert.Equal(t, "http://localhost:8181/", cfg.TraceableConfig.Opa.Endpoint.Value)
 	assert.Equal(t, int32(30), cfg.TraceableConfig.Opa.PollPeriodSeconds.Value)
 

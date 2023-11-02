@@ -6,5 +6,5 @@ replace github.com/Traceableai/goagent => ../
 
 require (
 	github.com/Traceableai/goagent v0.0.0-00010101000000-000000000000
-	go.uber.org/zap v1.19.1
+	go.uber.org/zap v1.26.0
 )

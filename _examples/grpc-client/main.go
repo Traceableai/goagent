@@ -19,8 +19,7 @@ const (
 )
 
 func main() {
-	cfg := config.Load()
-	cfg.Tracing.ServiceName = config.String("grpc-client")
+	cfg := config.LoadFromFile("./config.yaml")
 
 	closer := goagent.Init(cfg)
 	defer closer()

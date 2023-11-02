@@ -1,5 +1,16 @@
-service_name: http_server
+service_name: http-server
+
+reporting:
+  endpoint: localhost:4317
+  secure: false
+  trace_reporter_type: OTLP
+
 opa:
+  enabled: false
+
+debug_log: true
+
+remote_config:
   enabled: true
-  endpoint: http://localhost:8181/
-  pollPeriodSeconds: 30
+  endpoint: localhost:5441
+  poll_period_seconds: 30
