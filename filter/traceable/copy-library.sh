@@ -25,7 +25,7 @@ if [[ ! -f go.mod ]]; then
 fi
 
 set +e
-IS_GOAGENT_REQUIRED=$(cat go.mod | grep -ic "github.com/Traceableai/goagent v")
+IS_GOAGENT_REQUIRED=$(grep -ic "github.com/Traceableai/goagent v" go.mod)
 set -e
 if [[ "$IS_GOAGENT_REQUIRED" == "0" ]]; then
     echo "github.com/Traceableai/goagent isn't a required package in go.mod"
@@ -54,19 +54,19 @@ GOAGENT_DIR=$(go mod download -json github.com/Traceableai/goagent \
     | head -7 | tail -1 \
     | awk -F\" '{print $4}')
 
-mkdir -p $DST_DIR
+mkdir -p "$DST_DIR"
 
 IS_ALPINE="0"
 if [[ -f /etc/os-release ]]; then
     set +e
-    IS_ALPINE=$(cat /etc/os-release | grep "NAME=" | grep -ic "Alpine")
+    IS_ALPINE=$(grep "NAME=" /etc/os-release | grep -ic "Alpine")
     set -e
 fi
 
 if [[ "$IS_ALPINE" == "0" ]]; then # not alpine
-    cp ${GOAGENT_DIR}/filter/traceable/libs/linux_$(go env GOARCH)/libtraceable.so $DST_DIR/libtraceable.so
-    echo "Linux library successfuly copied to $DST_DIR/libtraceable.so"
+    cp "${GOAGENT_DIR}/filter/traceable/libs/linux_$(go env GOARCH)/libtraceable.so" $DST_DIR/libtraceable.so
+    echo "Linux library successfully copied to $DST_DIR/libtraceable.so"
 else
-    cp ${GOAGENT_DIR}/filter/traceable/libs/linux_$(go env GOARCH)-alpine/libtraceable.so $DST_DIR/libtraceable.so
-    echo "Alpine library successfuly copied to $DST_DIR/libtraceable.so"
+    cp "${GOAGENT_DIR}/filter/traceable/libs/linux_$(go env GOARCH)-alpine/libtraceable.so" $DST_DIR/libtraceable.so
+    echo "Alpine library successfully copied to $DST_DIR/libtraceable.so"
 fi

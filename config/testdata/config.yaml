@@ -5,17 +5,12 @@ reporting:
   secure: false
   trace_reporter_type: OTLP
 
-opa:
-  enabled: true
-  endpoint: http://traceable-agent:8181/
-  poll_period_seconds: 30
-  cert_file: "/conf/tls.crt"
-
 blocking_config:
   enabled: true
   modsecurity:
     enabled: false
-  responseStatusCode: 472
+  response_status_code: 472
+  response_message: "Custom Forbidden Message"
 
 remote_config:
   enabled: true
@@ -27,3 +22,18 @@ api_discovery:
 
 sampling:
   enabled: true
+  default_rate_limit_config:
+    enabled: true
+    # maximum value supported by Int64, ref: https://go.dev/ref/spec#Numeric_types[
+    max_count_global: 9223372036854775807
+    max_count_per_endpoint: 3
+    refresh_period: "30s"
+    value_expiration_period: "168h"
+    span_type: SPAN_TYPE_NO_SPAN
+
+logging:
+  log_mode: LOG_MODE_FILE
+  log_level: LOG_LEVEL_DEBUG
+  log_file:
+    max_files: 1
+    max_file_size: 104857600

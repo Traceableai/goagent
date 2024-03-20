@@ -110,7 +110,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"unsafe"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
@@ -121,15 +120,7 @@ import (
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
 	filterresult "github.com/hypertrace/goagent/sdk/filter/result"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.uber.org/zap"
-)
-
-const (
-	defaultAgentManagerEndpoint = "localhost:5441"
-	defaultPollPeriodSec        = 30
-	httpUrlKey                  = "http.url"
-	httpTargetKey               = "http.target"
 )
 
 type Filter struct {
@@ -138,6 +129,7 @@ type Filter struct {
 	started            bool
 	logger             *zap.Logger
 	responseStatusCode int32
+	responseMessage    string
 }
 
 type libtraceableMethods struct {
@@ -149,8 +141,6 @@ type libtraceableMethods struct {
 	deleteProcessResultData C.traceable_delete_process_request_result_data_type
 	initLibtraceableConfig  C.init_libtraceable_config_type
 }
-
-var URL_ATTRIBUTES = []string{"http.scheme", "net.host.name", "net.host.port", httpTargetKey}
 
 var _ filter.Filter = (*Filter)(nil)
 
@@ -219,6 +209,8 @@ func NewFilter(serviceName string, config *traceableconfig.AgentConfig, logger *
 	} else {
 		traceableFilter.responseStatusCode = config.BlockingConfig.ResponseStatusCode.Value
 	}
+
+	traceableFilter.responseMessage = config.BlockingConfig.ResponseMessage.Value
 
 	traceableFilter.libtraceable, err = loadTraceableConfigMethods(libHandle)
 	if err != nil {
@@ -320,157 +312,23 @@ func (f *Filter) Stop() bool {
 	return true
 }
 
-const (
-	httpRequestHeaderPrefix   = "http.request.header."
-	grpcRequestMetadataPrefix = "rpc.request.metadata."
-)
-
-func toFQNHeaders(headers map[string][]string, prefix string, span sdk.Span) map[string]string {
-	headerAttributes := map[string]string{}
-	for k, v := range headers {
-		k = strings.ToLower(k)
-		// Do not prepend the prefix to some special attributes
-		if k == string(semconv.NetPeerIPKey) || k == string(semconv.HTTPMethodKey) {
-			headerAttributes[k] = v[0]
-		} else if len(v) == 1 {
-			headerAttributes[fmt.Sprintf("%s%s", prefix, k)] = v[0]
-		} else {
-			for i, vv := range v {
-				headerAttributes[fmt.Sprintf("%s%s[%d]", prefix, k, i)] = vv
-			}
-		}
-	}
-
-	// add url attributes so that libtraceable can construct the url if needed
-	attributes := span.GetAttributes()
-	if url := attributes.GetValue(httpUrlKey); url != nil {
-		value := fmt.Sprintf("%s", url)
-		if strings.Contains(value, "://") {
-			headerAttributes[httpUrlKey] = value
-		} else {
-			// TODO remove after updating ht goagent
-			// special case when the span attribute  http.url set is http.target
-			if _, found := headerAttributes[httpTargetKey]; !found {
-				headerAttributes[httpTargetKey] = value
-			}
-			for _, key := range URL_ATTRIBUTES {
-				if value := attributes.GetValue(key); value != nil {
-					headerAttributes[key] = fmt.Sprintf("%v", value)
-				}
-			}
-		}
-	}
-
-	return headerAttributes
-}
-
-// EvaluateURLAndHeaders calls into libtraceable to evaluate if request with URL should be blocked
-// or if request with headers should be blocked
-func (f *Filter) EvaluateURLAndHeaders(span sdk.Span, url string, headers map[string][]string) filterresult.FilterResult {
-	if !f.started {
-		f.logger.Debug("No evaluation of URL or headers as engine isn't started")
-		return filterresult.FilterResult{}
-	}
-
-	prefix := httpRequestHeaderPrefix
-	if isGRPC(headers) {
-		prefix = grpcRequestMetadataPrefix
-	}
-
-	headerAttributes := toFQNHeaders(headers, prefix, span)
-	headerAttributes["http.url"] = url
-
-	inputLibTraceableAttributes := createLibTraceableAttributes(headerAttributes)
-	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
-
-	var processHeadersResult C.traceable_process_request_result
-	ret := C.w_traceable_process_request_headers(f.libtraceable.processRequestHeaders, f.libtraceableHandle, inputLibTraceableAttributes, &processHeadersResult)
-	defer C.w_traceable_delete_process_request_result_data(f.libtraceable.deleteProcessResultData, processHeadersResult)
-	// if call fails just return false
-	if ret != C.TRACEABLE_SUCCESS {
-		f.logger.Debug("Failed to evaluate header attributes")
-		return filterresult.FilterResult{}
-	}
-
-	outputAttributes := fromLibTraceableAttributes(processHeadersResult.attributes)
-	for k, v := range outputAttributes {
-		span.SetAttribute(k, v)
-	}
-
-	if processHeadersResult.block == 0 {
-		return filterresult.FilterResult{}
-	}
-	return filterresult.FilterResult{Block: true, ResponseStatusCode: f.responseStatusCode}
-}
-
-// EvaluateBody calls into libtraceable to evaluate if request with body should be blocked. We need to pass
-// the headers as well to still evaluate the body but block in case the headers decide to.
-func (f *Filter) EvaluateBody(span sdk.Span, body []byte, headers map[string][]string) filterresult.FilterResult {
-	if !f.started {
-		f.logger.Debug("No evaluation of body as engine isn't started")
-		return filterresult.FilterResult{}
-	}
-
-	// no need to call into libtraceable if no body, cgo is expensive.
-	if len(body) == 0 {
-		return filterresult.FilterResult{}
-	}
-
-	headerPrefix := httpRequestHeaderPrefix
-	bodyAttributeName := "http.request.body"
-	if isGRPC(headers) {
-		headerPrefix = grpcRequestMetadataPrefix
-		bodyAttributeName = "rpc.request.body"
-	}
-
-	headerAttributes := toFQNHeaders(headers, headerPrefix, span)
-	headerAttributes[bodyAttributeName] = string(body)
-
-	inputLibTraceableAttributes := createLibTraceableAttributes(headerAttributes)
-	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
-
-	var processBodyResult C.traceable_process_request_result
-	ret := C.w_traceable_process_request_body(f.libtraceable.processRequestBody, f.libtraceableHandle, inputLibTraceableAttributes, &processBodyResult)
-	defer C.w_traceable_delete_process_request_result_data(f.libtraceable.deleteProcessResultData, processBodyResult)
-	// if call fails just return false
-	if ret != C.TRACEABLE_SUCCESS {
-		f.logger.Debug("Failed to evaluate body attributes")
-		return filterresult.FilterResult{}
-	}
-
-	outputAttributes := fromLibTraceableAttributes(processBodyResult.attributes)
-	for k, v := range outputAttributes {
-		span.SetAttribute(k, v)
-	}
-
-	if processBodyResult.block == 0 {
-		return filterresult.FilterResult{}
-	}
-	return filterresult.FilterResult{Block: true, ResponseStatusCode: f.responseStatusCode}
-}
-
 // Evaluate calls into libtraceable to evaluate if request url, body and headers. It is
 // EvaluateURLAndHeaders and EvaluateBody combined into one call.
-func (f *Filter) Evaluate(span sdk.Span, url string, body []byte, headers map[string][]string) filterresult.FilterResult {
+func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
 	if !f.started {
 		f.logger.Debug("No evaluation as engine isn't started")
 		return filterresult.FilterResult{}
 	}
 
-	headerPrefix := httpRequestHeaderPrefix
-	bodyAttributeName := "http.request.body"
-	if isGRPC(headers) {
-		headerPrefix = grpcRequestMetadataPrefix
-		bodyAttributeName = "rpc.request.body"
-	}
+	attributes := map[string]string{}
+	span.GetAttributes().Iterate(func(key string, value interface{}) bool {
+		attributes[key] = fmt.Sprintf("%v", value)
 
-	headerAttributes := toFQNHeaders(headers, headerPrefix, span)
-	headerAttributes["http.url"] = url
-	if len(body) > 0 {
-		headerAttributes[bodyAttributeName] = string(body)
-	}
+		// the iterator from ht agent sends values based on this return value
+		return true
+	})
 
-	inputLibTraceableAttributes := createLibTraceableAttributes(headerAttributes)
+	inputLibTraceableAttributes := createLibTraceableAttributes(attributes)
 	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
 
 	var processResult C.traceable_process_request_result
@@ -490,7 +348,10 @@ func (f *Filter) Evaluate(span sdk.Span, url string, body []byte, headers map[st
 	if processResult.block == 0 {
 		return filterresult.FilterResult{}
 	}
-	return filterresult.FilterResult{Block: true, ResponseStatusCode: f.responseStatusCode}
+	return filterresult.FilterResult{Block: true,
+		ResponseStatusCode: f.responseStatusCode,
+		ResponseMessage:    f.responseMessage,
+	}
 }
 
 // createTraceableAttributes converts map of attributes into C.traceable_attributes
@@ -535,48 +396,21 @@ func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]st
 	return m
 }
 
-// For unit test only
-func getLibTraceableConfig(serviceName string, config *traceableconfig.AgentConfig) C.traceable_libtraceable_config {
-	libtraceableConfig := C.traceable_libtraceable_config{}
-	populateLibtraceableConfig(&libtraceableConfig, serviceName, config)
-	return libtraceableConfig
-}
-
 func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_config, serviceName string, config *traceableconfig.AgentConfig) {
-	debugLog := config.DebugLog.Value ||
-		// check debug_log in deprecated location too
-		config.BlockingConfig.DebugLog.Value
+	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
 
-	// debug log off by default
-	libTraceableLogMode := C.TRACEABLE_LOG_MODE(C.TRACEABLE_LOG_NONE)
-	if debugLog {
-		libTraceableLogMode = C.TRACEABLE_LOG_MODE(C.TRACEABLE_LOG_STDOUT)
-	}
-	libtraceableConfig.log_config.mode = libTraceableLogMode
-
-	// remote_config under blocking is deprecated
-	// but need to honor that
+	// remote_config under blocking is deprecated but need to honor that
 	remoteConfigPb := config.BlockingConfig.GetRemoteConfig()
 	// if it's not there then look at new location
 	if remoteConfigPb.String() == goagentconfig.GetDefaultRemoteConfig().String() {
 		remoteConfigPb = config.RemoteConfig
 	}
-
 	libtraceableConfig.remote_config.enabled = getCBool(remoteConfigPb.Enabled.Value)
 	libtraceableConfig.remote_config.remote_endpoint = C.CString(remoteConfigPb.Endpoint.Value)
 	libtraceableConfig.remote_config.poll_period_sec = C.int(remoteConfigPb.PollPeriodSeconds.Value)
 	libtraceableConfig.remote_config.cert_file = C.CString(remoteConfigPb.CertFile.Value)
 	libtraceableConfig.remote_config.grpc_max_call_recv_msg_size = C.long(remoteConfigPb.GrpcMaxCallRecvMsgSize.Value)
 	libtraceableConfig.remote_config.use_secure_connection = getCBool(remoteConfigPb.UseSecureConnection.Value)
-
-	libtraceableConfig.blocking_config.opa_config.enabled = getCBool(config.Opa.Enabled.Value)
-	libtraceableConfig.blocking_config.opa_config.opa_server_url = C.CString(config.Opa.Endpoint.Value)
-	libtraceableConfig.blocking_config.opa_config.log_to_console = C.int(1)
-	libtraceableConfig.blocking_config.opa_config.cert_file = C.CString(config.Opa.CertFile.Value)
-	libtraceableConfig.blocking_config.opa_config.debug_log = getCBool(debugLog)
-	libtraceableConfig.blocking_config.opa_config.min_delay = C.int(config.Opa.PollPeriodSeconds.Value)
-	libtraceableConfig.blocking_config.opa_config.max_delay = C.int(config.Opa.PollPeriodSeconds.Value)
-	libtraceableConfig.blocking_config.opa_config.use_secure_connection = getCBool(config.Opa.UseSecureConnection.Value)
 
 	libtraceableConfig.blocking_config.enabled = getCBool(config.BlockingConfig.Enabled.Value)
 	libtraceableConfig.blocking_config.modsecurity_config.enabled = getCBool(config.BlockingConfig.Modsecurity.Enabled.Value)
@@ -585,18 +419,32 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	libtraceableConfig.blocking_config.skip_internal_request = getCBool(config.BlockingConfig.SkipInternalRequest.Value)
 	libtraceableConfig.blocking_config.max_recursion_depth = C.int(config.BlockingConfig.MaxRecursionDepth.Value)
 
-	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
-
 	libtraceableConfig.api_discovery_config.enabled = getCBool(config.ApiDiscovery.Enabled.Value)
 
 	libtraceableConfig.sampling_config.enabled = getCBool(config.Sampling.Enabled.Value)
+	libtraceableConfig.sampling_config.default_rate_limit_config.enabled =
+		getCBool(config.Sampling.DefaultRateLimitConfig.Enabled.Value)
+	libtraceableConfig.sampling_config.default_rate_limit_config.max_count_global =
+		C.int64_t(config.Sampling.DefaultRateLimitConfig.MaxCountGlobal.Value)
+	libtraceableConfig.sampling_config.default_rate_limit_config.max_count_per_endpoint =
+		C.int64_t(config.Sampling.DefaultRateLimitConfig.MaxCountPerEndpoint.Value)
+	libtraceableConfig.sampling_config.default_rate_limit_config.refresh_period =
+		C.CString(config.Sampling.DefaultRateLimitConfig.RefreshPeriod.Value)
+	libtraceableConfig.sampling_config.default_rate_limit_config.value_expiration_period =
+		C.CString(config.Sampling.DefaultRateLimitConfig.ValueExpirationPeriod.Value)
+	libtraceableConfig.sampling_config.default_rate_limit_config.span_type =
+		getCTraceableSpanType(config.Sampling.DefaultRateLimitConfig.SpanType)
+
+	libtraceableConfig.log_config.mode = getCTraceableLogMode(config.Logging.LogMode)
+	libtraceableConfig.log_config.level = getCTraceableLogLevel(config.Logging.LogLevel)
+	libtraceableConfig.log_config.file_config.max_files = C.int(config.Logging.LogFile.MaxFiles.Value)
+	libtraceableConfig.log_config.file_config.max_file_size = C.int(config.Logging.LogFile.MaxFileSize.Value)
+	libtraceableConfig.log_config.file_config.log_file = C.CString(config.Logging.LogFile.FilePath.Value)
 }
 
 func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
 	C.free(unsafe.Pointer(config.remote_config.remote_endpoint))
 	C.free(unsafe.Pointer(config.remote_config.cert_file))
-	C.free(unsafe.Pointer(config.blocking_config.opa_config.opa_server_url))
-	C.free(unsafe.Pointer(config.blocking_config.opa_config.cert_file))
 	C.free(unsafe.Pointer(config.agent_config.service_name))
 }
 
@@ -606,6 +454,48 @@ func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.tra
 	}
 	// https://stackoverflow.com/questions/48756732/what-does-1-30c-yourtype-do-exactly-in-cgo
 	return (*[1 << 30]C.traceable_attribute)(unsafe.Pointer(attributes.attribute_array))[:attributes.count:attributes.count]
+}
+
+func getCTraceableLogMode(logMode traceableconfig.LogMode) C.TRACEABLE_LOG_MODE {
+	switch logMode {
+	case traceableconfig.LogMode_LOG_MODE_NONE:
+		return C.TRACEABLE_LOG_NONE
+	case traceableconfig.LogMode_LOG_MODE_STDOUT:
+		return C.TRACEABLE_LOG_STDOUT
+	case traceableconfig.LogMode_LOG_MODE_FILE:
+		return C.TRACEABLE_LOG_FILE
+	}
+	return C.TRACEABLE_LOG_STDOUT
+}
+
+func getCTraceableLogLevel(logLevel traceableconfig.LogLevel) C.TRACEABLE_LOG_LEVEL {
+	switch logLevel {
+	case traceableconfig.LogLevel_LOG_LEVEL_TRACE:
+		return C.TRACEABLE_LOG_LEVEL_TRACE
+	case traceableconfig.LogLevel_LOG_LEVEL_DEBUG:
+		return C.TRACEABLE_LOG_LEVEL_DEBUG
+	case traceableconfig.LogLevel_LOG_LEVEL_INFO:
+		return C.TRACEABLE_LOG_LEVEL_INFO
+	case traceableconfig.LogLevel_LOG_LEVEL_WARN:
+		return C.TRACEABLE_LOG_LEVEL_WARN
+	case traceableconfig.LogLevel_LOG_LEVEL_ERROR:
+		return C.TRACEABLE_LOG_LEVEL_ERROR
+	case traceableconfig.LogLevel_LOG_LEVEL_CRITICAL:
+		return C.TRACEABLE_LOG_LEVEL_CRITICAL
+	}
+	return C.TRACEABLE_LOG_LEVEL_INFO
+}
+
+func getCTraceableSpanType(spanType traceableconfig.SpanType) C.TRACEABLE_SPAN_TYPE {
+	switch spanType {
+	case traceableconfig.SpanType_SPAN_TYPE_NO_SPAN:
+		return C.TRACEABLE_NO_SPAN
+	case traceableconfig.SpanType_SPAN_TYPE_BARE_SPAN:
+		return C.TRACEABLE_BARE_SPAN
+	case traceableconfig.SpanType_SPAN_TYPE_FULL_SPAN:
+		return C.TRACEABLE_FULL_SPAN
+	}
+	return C.TRACEABLE_FULL_SPAN
 }
 
 func getGoString(cStr *C.char) string {

@@ -21,6 +21,14 @@ func (l noopAttributes) GetValue(key string) interface{} {
 	return nil
 }
 
+func (l noopAttributes) Iterate(yield func(key string, value interface{}) bool) {
+	return
+}
+
+func (l noopAttributes) Len() int {
+	return 0
+}
+
 var _ sdk.AttributeList = noopAttributes{}
 
 type noopSpan struct{}
@@ -45,10 +53,6 @@ func TestBlockingStub(t *testing.T) {
 	f := NewFilter("", &traceableconfig.AgentConfig{}, zap.NewNop())
 	assert.IsType(t, Filter{}, *f)
 	assert.True(t, f.Start())
-	filterResult := f.EvaluateURLAndHeaders(noopSpan{}, "", map[string][]string{})
-	assert.False(t, filterResult.Block)
-	filterResult = f.EvaluateBody(noopSpan{}, []byte{}, nil)
-	assert.False(t, filterResult.Block)
-	filterResult = f.Evaluate(noopSpan{}, "", []byte{}, nil)
+	filterResult := f.Evaluate(noopSpan{})
 	assert.False(t, filterResult.Block)
 }

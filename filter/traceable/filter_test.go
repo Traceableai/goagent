@@ -4,13 +4,10 @@
 package traceable
 
 import (
-	"context"
 	"testing"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry"
 	"github.com/stretchr/testify/assert"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -29,7 +26,7 @@ func TestLibTraceableAttributes(t *testing.T) {
 	freeLibTraceableAttributes(libTraceableAttributes)
 
 	// one element
-	m["http.url"] = "http://www.foo.com/checkout?order_id=1"
+	m["http.url"] = "https://www.foo.com/checkout?order_id=1"
 	libTraceableAttributes = createLibTraceableAttributes(m)
 	mFromLibTraceableAttributes = fromLibTraceableAttributes(libTraceableAttributes)
 	assert.Equal(t, 1, int(libTraceableAttributes.count))
@@ -71,7 +68,6 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	libTraceableConfig := getLibTraceableConfig(
 		"test-service",
 		&traceableconfig.AgentConfig{
-			DebugLog: traceableconfig.Bool(true),
 			BlockingConfig: &traceableconfig.BlockingConfig{
 				Enabled: traceableconfig.Bool(true),
 				Modsecurity: &traceableconfig.ModsecurityConfig{
@@ -92,13 +88,6 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					UseSecureConnection:    traceableconfig.Bool(false),
 				},
 			},
-			Opa: &traceableconfig.Opa{
-				Enabled:             traceableconfig.Bool(true),
-				Endpoint:            traceableconfig.String("http://opa:8181"),
-				PollPeriodSeconds:   traceableconfig.Int32(10),
-				CertFile:            traceableconfig.String("/conf/tls.crt"),
-				UseSecureConnection: traceableconfig.Bool(true),
-			},
 			RemoteConfig: &traceableconfig.RemoteConfig{
 				Enabled:                traceableconfig.Bool(true),
 				Endpoint:               traceableconfig.String("localhost:5441"),
@@ -112,49 +101,67 @@ func TestGetLibTraceableConfig(t *testing.T) {
 			},
 			Sampling: &traceableconfig.SamplingConfig{
 				Enabled: traceableconfig.Bool(true),
+				DefaultRateLimitConfig: &traceableconfig.RateLimitConfig{
+					Enabled:               traceableconfig.Bool(false),
+					MaxCountGlobal:        &wrapperspb.Int64Value{Value: 2},
+					MaxCountPerEndpoint:   &wrapperspb.Int64Value{Value: 1},
+					RefreshPeriod:         traceableconfig.String("30s"),
+					ValueExpirationPeriod: traceableconfig.String("200h"),
+					SpanType:              traceableconfig.SpanType_SPAN_TYPE_NO_SPAN,
+				},
+			},
+			Logging: &traceableconfig.LogConfig{
+				LogMode:  traceableconfig.LogMode_LOG_MODE_FILE,
+				LogLevel: traceableconfig.LogLevel_LOG_LEVEL_WARN,
+				LogFile: &traceableconfig.LogFileConfig{
+					MaxFiles:    traceableconfig.Int32(10),
+					MaxFileSize: traceableconfig.Int32(100 * 1024 * 1024),
+					FilePath:    traceableconfig.String("/etc/libtraceable.log"),
+				},
 			},
 		},
 	)
 
-	assert.Equal(t, "http://opa:8181", getGoString(libTraceableConfig.blocking_config.opa_config.opa_server_url))
-	assert.Equal(t, 1, int(libTraceableConfig.log_config.mode))
 	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.enabled))
-	assert.Equal(t, 10, int(libTraceableConfig.blocking_config.opa_config.min_delay))
-	assert.Equal(t, 10, int(libTraceableConfig.blocking_config.opa_config.max_delay))
-	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.opa_config.log_to_console))
-	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.opa_config.debug_log))
-	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.opa_config.skip_verify))
-	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.opa_config.use_secure_connection))
-	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.blocking_config.opa_config.cert_file))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.modsecurity_config.enabled))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.evaluate_body))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.skip_internal_request))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.rb_config.enabled))
 	assert.Equal(t, 10, int(libTraceableConfig.blocking_config.max_recursion_depth))
+
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "localhost:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
 	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.remote_config.cert_file))
-	assert.Equal(t, int(64*1024*1024), int(libTraceableConfig.remote_config.grpc_max_call_recv_msg_size))
+	assert.Equal(t, int64(64*1024*1024), int64(libTraceableConfig.remote_config.grpc_max_call_recv_msg_size))
 	assert.Equal(t, 60, int(libTraceableConfig.remote_config.poll_period_sec))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.use_secure_connection))
-	assert.Equal(t, 1, int(libTraceableConfig.api_discovery_config.enabled))
-	assert.Equal(t, 1, int(libTraceableConfig.sampling_config.enabled))
 
-	// verify for deprecated RemoteConfig and debug log
+	assert.Equal(t, 1, int(libTraceableConfig.api_discovery_config.enabled))
+
+	assert.Equal(t, 1, int(libTraceableConfig.sampling_config.enabled))
+	assert.Equal(t, 0, int(libTraceableConfig.sampling_config.default_rate_limit_config.enabled))
+	assert.Equal(t, 2, int(libTraceableConfig.sampling_config.default_rate_limit_config.max_count_global))
+	assert.Equal(t, 1, int(libTraceableConfig.sampling_config.default_rate_limit_config.max_count_per_endpoint))
+	assert.Equal(t, "30s", getGoString(libTraceableConfig.sampling_config.default_rate_limit_config.refresh_period))
+	assert.Equal(t, "200h",
+		getGoString(libTraceableConfig.sampling_config.default_rate_limit_config.value_expiration_period))
+	assert.Equal(t, traceableconfig.SpanType_SPAN_TYPE_NO_SPAN,
+		getGoSpanType(libTraceableConfig.sampling_config.default_rate_limit_config.span_type))
+
+	assert.Equal(t, traceableconfig.LogMode_LOG_MODE_FILE, getGoLogMode(libTraceableConfig.log_config.mode))
+	assert.Equal(t, traceableconfig.LogLevel_LOG_LEVEL_WARN, getGoLogLevel(libTraceableConfig.log_config.level))
+	assert.Equal(t, 10, int(libTraceableConfig.log_config.file_config.max_files))
+	assert.Equal(t, 100*1024*1024, int(libTraceableConfig.log_config.file_config.max_file_size))
+	assert.Equal(t, "/etc/libtraceable.log", getGoString(libTraceableConfig.log_config.file_config.log_file))
+
+	// verify for deprecated RemoteConfig
 	libTraceableConfig = getLibTraceableConfig(
 		"test-service",
 		&traceableconfig.AgentConfig{
-			Opa: &traceableconfig.Opa{
-				Enabled:             traceableconfig.Bool(true),
-				Endpoint:            traceableconfig.String("http://localhost:8181/"),
-				PollPeriodSeconds:   traceableconfig.Int32(30),
-				CertFile:            traceableconfig.String(""),
-				UseSecureConnection: traceableconfig.Bool(false),
-			},
-			DebugLog: traceableconfig.Bool(false),
+			DebugLog: traceableconfig.Bool(true), // ignored during parsing
 			BlockingConfig: &traceableconfig.BlockingConfig{
 				Enabled:  traceableconfig.Bool(true),
-				DebugLog: traceableconfig.Bool(true),
+				DebugLog: traceableconfig.Bool(true), //ignored during parsing
 				Modsecurity: &traceableconfig.ModsecurityConfig{
 					Enabled: traceableconfig.Bool(true),
 				},
@@ -164,14 +171,23 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				},
 				MaxRecursionDepth:   traceableconfig.Int32(10),
 				SkipInternalRequest: traceableconfig.Bool(true),
+				// takes precedence over top-level RemoteConfig
 				RemoteConfig: &traceableconfig.RemoteConfig{
 					Enabled:                traceableconfig.Bool(true),
 					Endpoint:               traceableconfig.String("agent.traceableai:5441"),
 					PollPeriodSeconds:      traceableconfig.Int32(10),
-					CertFile:               traceableconfig.String(""),
+					CertFile:               traceableconfig.String("/etc/tls.crt"),
 					GrpcMaxCallRecvMsgSize: traceableconfig.Int32(64 * 1024 * 1024),
 					UseSecureConnection:    traceableconfig.Bool(true),
 				},
+			},
+			// ignored during parsing
+			Opa: &traceableconfig.Opa{
+				Enabled:             traceableconfig.Bool(true),
+				Endpoint:            traceableconfig.String("http://opa:8181"),
+				PollPeriodSeconds:   traceableconfig.Int32(10),
+				CertFile:            traceableconfig.String("/conf/tls.crt"),
+				UseSecureConnection: traceableconfig.Bool(true),
 			},
 			RemoteConfig: &traceableconfig.RemoteConfig{
 				Enabled:                traceableconfig.Bool(true),
@@ -186,42 +202,31 @@ func TestGetLibTraceableConfig(t *testing.T) {
 			},
 			Sampling: &traceableconfig.SamplingConfig{
 				Enabled: traceableconfig.Bool(false),
+				DefaultRateLimitConfig: &traceableconfig.RateLimitConfig{
+					Enabled:               traceableconfig.Bool(false),
+					MaxCountGlobal:        &wrapperspb.Int64Value{Value: 2},
+					MaxCountPerEndpoint:   &wrapperspb.Int64Value{Value: 1},
+					RefreshPeriod:         traceableconfig.String("30s"),
+					ValueExpirationPeriod: traceableconfig.String("200h"),
+					SpanType:              traceableconfig.SpanType_SPAN_TYPE_NO_SPAN,
+				},
+			},
+			Logging: &traceableconfig.LogConfig{
+				LogMode:  traceableconfig.LogMode_LOG_MODE_STDOUT,
+				LogLevel: traceableconfig.LogLevel_LOG_LEVEL_INFO,
+				LogFile: &traceableconfig.LogFileConfig{
+					MaxFiles:    traceableconfig.Int32(3),
+					MaxFileSize: traceableconfig.Int32(10 * 1024 * 1024),
+					FilePath:    traceableconfig.String("/var/log/traceable/libtraceable-goagent.log"),
+				},
 			},
 		},
 	)
 
-	assert.Equal(t, 1, int(libTraceableConfig.log_config.mode))
-	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.opa_config.debug_log))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
 	assert.Equal(t, "agent.traceableai:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
 	assert.Equal(t, 10, int(libTraceableConfig.remote_config.poll_period_sec))
-	assert.Equal(t, "", getGoString(libTraceableConfig.remote_config.cert_file))
-	assert.Equal(t, int(64*1024*1024), int(libTraceableConfig.remote_config.grpc_max_call_recv_msg_size))
+	assert.Equal(t, "/etc/tls.crt", getGoString(libTraceableConfig.remote_config.cert_file))
+	assert.Equal(t, int64(64*1024*1024), int64(libTraceableConfig.remote_config.grpc_max_call_recv_msg_size))
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.use_secure_connection))
-}
-
-func TestToFQNHeaders(t *testing.T) {
-	tempSpan := opentelemetry.SpanFromContext(context.Background())
-
-	assert.Empty(t, toFQNHeaders(nil, "", tempSpan))
-	assert.Empty(t, toFQNHeaders(map[string][]string{}, "", tempSpan))
-
-	fqnHeaders := toFQNHeaders(map[string][]string{"Content-Length": {"10"}}, "prefix.", tempSpan)
-	assert.Equal(t, "10", fqnHeaders["prefix.content-length"])
-
-	fqnHeaders = toFQNHeaders(map[string][]string{"Content-Type": {"a", "b"}}, "prefix2.", tempSpan)
-	assert.Equal(t, "a", fqnHeaders["prefix2.content-type[0]"])
-	assert.Equal(t, "b", fqnHeaders["prefix2.content-type[1]"])
-
-	// semconv.NetPeerIPKey is "net.peer.ip" and semconv.HTTPMethodKey is "http.method"
-	fqnHeaders = toFQNHeaders(map[string][]string{string(semconv.NetPeerIPKey): {"10.10.10.10"}, string(semconv.HTTPMethodKey): {"GET"}}, "prefix.", tempSpan)
-	assert.Equal(t, "10.10.10.10", fqnHeaders[string(semconv.NetPeerIPKey)])
-	assert.Equal(t, "GET", fqnHeaders[string(semconv.HTTPMethodKey)])
-	fqnHeaders = toFQNHeaders(map[string][]string{
-		"Net.Peer.Ip": {"10.20.10.20"},
-		"HTTP.method": {"GET"},
-	}, "prefix.", tempSpan)
-	assert.Equal(t, "10.20.10.20", fqnHeaders[string(semconv.NetPeerIPKey)])
-	assert.Equal(t, "GET", fqnHeaders[string(semconv.HTTPMethodKey)])
-
 }

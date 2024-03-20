@@ -13,7 +13,7 @@ import (
 
 func main() {
 	cfg := config.Load()
-	cfg.TraceableConfig.BlockingConfig.DebugLog = config.Bool(true)
+	cfg.TraceableConfig.DebugLog = config.Bool(true)
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -35,18 +35,12 @@ func main() {
 	// attributes to the respective calls:
 	//   process_request_headers
 	//   process_request_body
-	_ = f.EvaluateURLAndHeaders(s, "http://abc.com", map[string][]string{
-		"x-forwarded-for":        {"83.39.254.157"}, // arbitrary non local test IP
-		"http.request.headers.a": {"/usr/bin/perl"},
-	})
+	s.SetAttribute("http.url", "https://abc.com")
+	s.SetAttribute("http.request.header.x-forwarded-for", "83.39.254.157")
+	s.SetAttribute("http.request.header.a", "/usr/bin/perl")
+	s.SetAttribute("http.request.body", []byte("{\"bad_body\":\"/usr/bin/perl\""))
 
-	_ = f.EvaluateBody(s, []byte("{\"bad_body\":\"/usr/bin/perl\""), map[string][]string{
-		"x-forwarded-for": {"83.39.254.157"}, // arbitrary non local test IP
-	})
-
-	_ = f.Evaluate(s, "http://abc.com", []byte("{\"bad_body\":\"/usr/bin/perl\""), map[string][]string{
-		"x-forwarded-for": {"83.39.254.157"}, // arbitrary non local test IP
-	})
+	_ = f.Evaluate(s)
 
 	if !f.Stop() {
 		log.Fatal("Failed to initialize traceable filter")

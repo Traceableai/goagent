@@ -11,6 +11,27 @@ extern "C" {
  * Traceable input and output structures
  */
 
+typedef enum {
+  TRACEABLE_LOG_NONE,
+  TRACEABLE_LOG_STDOUT,
+  TRACEABLE_LOG_FILE
+} TRACEABLE_LOG_MODE;
+
+typedef enum {
+  TRACEABLE_LOG_LEVEL_TRACE,
+  TRACEABLE_LOG_LEVEL_DEBUG,
+  TRACEABLE_LOG_LEVEL_INFO,
+  TRACEABLE_LOG_LEVEL_WARN,
+  TRACEABLE_LOG_LEVEL_ERROR,
+  TRACEABLE_LOG_LEVEL_CRITICAL
+} TRACEABLE_LOG_LEVEL;
+
+typedef enum {
+  TRACEABLE_NO_SPAN,
+  TRACEABLE_BARE_SPAN,
+  TRACEABLE_FULL_SPAN
+} TRACEABLE_SPAN_TYPE;
+
 typedef struct {
   const char* key;
   const char* value;
@@ -21,25 +42,17 @@ typedef struct {
   const traceable_attribute* attribute_array;
 } traceable_attributes;
 
-typedef enum { TRACEABLE_LOG_NONE, TRACEABLE_LOG_STDOUT } TRACEABLE_LOG_MODE;
+typedef struct {
+  int max_files;
+  int max_file_size;
+  const char* log_file;
+} traceable_log_file_config;
 
 typedef struct {
   TRACEABLE_LOG_MODE mode;
-} traceable_log_configuration;
-
-typedef struct {
-  int enabled;
-  const char* opa_server_url;
-  const char* logging_dir;
-  const char* logging_file_prefix;
-  const char* cert_file;
-  int use_secure_connection;
-  int log_to_console;
-  int skip_verify;
-  int min_delay;
-  int max_delay;
-  int debug_log;
-} traceable_opa_config;
+  TRACEABLE_LOG_LEVEL level;
+  traceable_log_file_config file_config;
+} traceable_log_config;
 
 typedef struct {
   int enabled;
@@ -56,11 +69,11 @@ typedef struct {
   const char* cert_file;
   int use_secure_connection;
   int64_t grpc_max_call_recv_msg_size;
+  const char* cert_string;
 } traceable_remote_config;
 
 typedef struct {
   int enabled;
-  traceable_opa_config opa_config;
   traceable_modsecurity_config modsecurity_config;
   traceable_rangeblocking_config rb_config;
   int evaluate_body;
@@ -78,13 +91,35 @@ typedef struct {
 
 typedef struct {
   int enabled;
+  int64_t max_count_global;
+  int64_t max_count_per_endpoint;
+  const char* refresh_period;
+  const char* value_expiration_period;
+  TRACEABLE_SPAN_TYPE span_type;
+} traceable_rate_limit_config;
+
+typedef struct {
+  int enabled;
+  traceable_rate_limit_config default_rate_limit_config;
 } traceable_sampling_config;
 
-typedef enum {
-  TRACEABLE_NO_SPAN,
-  TRACEABLE_BARE_SPAN,
-  TRACEABLE_FULL_SPAN
-} TRACEABLE_SPAN_TYPE;
+typedef struct {
+  int enabled;
+  const char* frequency;
+} traceable_metrics_log_config;
+
+typedef struct {
+  int enabled;
+  int max_endpoints;
+  traceable_metrics_log_config logging;
+} traceable_endpoint_metrics_config;
+
+typedef struct {
+  int enabled;
+  traceable_endpoint_metrics_config endpoint_config;
+  traceable_metrics_log_config logging;
+} traceable_metrics_config;
+
 
 typedef struct {
   int block;
@@ -94,12 +129,13 @@ typedef struct {
 } traceable_process_request_result;
 
 typedef struct {
-  traceable_log_configuration log_config;
+  traceable_log_config log_config;
   traceable_remote_config remote_config;
   traceable_blocking_config blocking_config;
   traceable_agent_config agent_config;
   traceable_api_discovery_config api_discovery_config;
   traceable_sampling_config sampling_config;
+  traceable_metrics_config metrics_config;
 } traceable_libtraceable_config;
 
 typedef enum { TRACEABLE_SUCCESS, TRACEABLE_FAIL } TRACEABLE_RET;

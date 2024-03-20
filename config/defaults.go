@@ -17,6 +17,7 @@ var defaultRemoteConfig = &traceableconfig.RemoteConfig{
 
 // defaultConfig holds the default config values for agent.
 var defaultConfig = &AgentConfig{
+	// TODO update ht agent config so that we can refer that directly
 	Tracing: &hyperconfig.AgentConfig{
 		Enabled:            hyperconfig.Bool(true),
 		PropagationFormats: []hyperconfig.PropagationFormat{hyperconfig.PropagationFormat_TRACECONTEXT},
@@ -39,27 +40,23 @@ var defaultConfig = &AgentConfig{
 			},
 			BodyMaxSizeBytes:           hyperconfig.Int32(131072),
 			BodyMaxProcessingSizeBytes: hyperconfig.Int32(1048576),
-			AllowedContentTypes: []*wrapperspb.StringValue{wrapperspb.String("json"),
-				wrapperspb.String("x-www-form-urlencoded")},
+			AllowedContentTypes: []*wrapperspb.StringValue{
+				wrapperspb.String("json"),
+				wrapperspb.String("x-www-form-urlencoded"),
+				wrapperspb.String("xml"),
+			},
 		},
 		Reporting: &hyperconfig.Reporting{
-			Endpoint:          hyperconfig.String("localhost:4317"),
-			Secure:            hyperconfig.Bool(false),
-			TraceReporterType: hyperconfig.TraceReporterType_OTLP,
-			CertFile:          hyperconfig.String(""),
+			Endpoint:                hyperconfig.String("localhost:4317"),
+			Secure:                  hyperconfig.Bool(false),
+			TraceReporterType:       hyperconfig.TraceReporterType_OTLP,
+			CertFile:                hyperconfig.String(""),
+			EnableGrpcLoadbalancing: hyperconfig.Bool(true),
 		},
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
-		Opa: &traceableconfig.Opa{
-			Enabled:             traceableconfig.Bool(false),
-			Endpoint:            traceableconfig.String("http://localhost:8181/"),
-			PollPeriodSeconds:   traceableconfig.Int32(30),
-			CertFile:            traceableconfig.String(""),
-			UseSecureConnection: traceableconfig.Bool(false),
-		},
 		BlockingConfig: &traceableconfig.BlockingConfig{
-			Enabled:  traceableconfig.Bool(true),
-			DebugLog: traceableconfig.Bool(false),
+			Enabled: traceableconfig.Bool(true),
 			Modsecurity: &traceableconfig.ModsecurityConfig{
 				Enabled: traceableconfig.Bool(true),
 			},
@@ -70,15 +67,27 @@ var defaultConfig = &AgentConfig{
 			SkipInternalRequest: traceableconfig.Bool(true),
 			RemoteConfig:        defaultRemoteConfig,
 			ResponseStatusCode:  traceableconfig.Int32(403),
+			ResponseMessage:     traceableconfig.String("Access Forbidden"),
 			MaxRecursionDepth:   traceableconfig.Int32(20),
 		},
-		DebugLog:     traceableconfig.Bool(false),
 		RemoteConfig: defaultRemoteConfig,
 		ApiDiscovery: &traceableconfig.ApiDiscoveryConfig{
 			Enabled: traceableconfig.Bool(true),
 		},
 		Sampling: &traceableconfig.SamplingConfig{
 			Enabled: traceableconfig.Bool(true),
+			DefaultRateLimitConfig: &traceableconfig.RateLimitConfig{
+				Enabled: traceableconfig.Bool(false),
+			},
+		},
+		Logging: &traceableconfig.LogConfig{
+			LogMode:  traceableconfig.LogMode_LOG_MODE_STDOUT,
+			LogLevel: traceableconfig.LogLevel_LOG_LEVEL_INFO,
+			LogFile: &traceableconfig.LogFileConfig{
+				MaxFiles:    traceableconfig.Int32(3),
+				MaxFileSize: traceableconfig.Int32(10485760),
+				FilePath:    traceableconfig.String("/var/traceable/log/libtraceable-goagent.log"),
+			},
 		},
 	},
 }
