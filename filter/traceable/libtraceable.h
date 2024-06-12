@@ -32,6 +32,13 @@ typedef enum {
   TRACEABLE_FULL_SPAN
 } TRACEABLE_SPAN_TYPE;
 
+typedef enum {
+  LOGGING,
+  OTLP,
+  OTLP_HTTP,
+  ZIPKIN
+} TRACEABLE_TRACE_REPORTER_TYPE;
+
 typedef struct {
   const char* key;
   const char* value;
@@ -82,12 +89,11 @@ typedef struct {
 } traceable_blocking_config;
 
 typedef struct {
+  const char* environment;
   const char* service_name;
+  const char* service_instance_id;
+  const char* host_name;
 } traceable_agent_config;
-
-typedef struct {
-  int enabled;
-} traceable_api_discovery_config;
 
 typedef struct {
   int enabled;
@@ -115,11 +121,31 @@ typedef struct {
 } traceable_endpoint_metrics_config;
 
 typedef struct {
+  int secure;
+  const char* endpoint;
+  const char* cert_file;
+  int export_interval_ms;
+  int export_timeout_ms;
+} traceable_exporter_config;
+
+typedef struct {
+  int enabled;
+  traceable_exporter_config server;
+} traceable_metrics_exporter_config;
+
+typedef struct {
   int enabled;
   traceable_endpoint_metrics_config endpoint_config;
   traceable_metrics_log_config logging;
+  traceable_metrics_exporter_config exporter;
 } traceable_metrics_config;
 
+typedef struct {
+  int enabled;
+  int max_batch_size;
+  TRACEABLE_TRACE_REPORTER_TYPE trace_reporter_type;
+  traceable_exporter_config server;
+} traceable_traces_exporter_config;
 
 typedef struct {
   int block;
@@ -133,9 +159,9 @@ typedef struct {
   traceable_remote_config remote_config;
   traceable_blocking_config blocking_config;
   traceable_agent_config agent_config;
-  traceable_api_discovery_config api_discovery_config;
   traceable_sampling_config sampling_config;
   traceable_metrics_config metrics_config;
+  traceable_traces_exporter_config trace_exporter_config;
 } traceable_libtraceable_config;
 
 typedef enum { TRACEABLE_SUCCESS, TRACEABLE_FAIL } TRACEABLE_RET;
@@ -193,6 +219,12 @@ TRACEABLE_RET traceable_process_request_body(
 TRACEABLE_RET traceable_process_request(
     traceable_libtraceable libtraceable, traceable_attributes attributes,
     traceable_process_request_result* out_process_result);
+
+/*
+ * Export a request as a span to Traceable Platform Agent.
+ */
+TRACEABLE_RET traceable_export_request(traceable_libtraceable libtraceable,
+                                       traceable_attributes attributes);
 
 TRACEABLE_RET traceable_delete_process_request_result_data(
     traceable_process_request_result result);

@@ -11,6 +11,7 @@ var DisabledConfig = &config.AgentConfig{
 		Enabled: config.Bool(false),
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
+		Environment: config.String(""),
 		Opa: &traceableconfig.Opa{
 			Enabled: config.Bool(false),
 		},
@@ -25,9 +26,6 @@ var DisabledConfig = &config.AgentConfig{
 			},
 		},
 		RemoteConfig: &traceableconfig.RemoteConfig{
-			Enabled: config.Bool(false),
-		},
-		ApiDiscovery: &traceableconfig.ApiDiscoveryConfig{
 			Enabled: config.Bool(false),
 		},
 		Sampling: &traceableconfig.SamplingConfig{

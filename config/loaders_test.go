@@ -36,8 +36,6 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
 	assert.Equal(t, false, cfg.TraceableConfig.RemoteConfig.UseSecureConnection.Value)
 
-	assert.Equal(t, true, cfg.TraceableConfig.ApiDiscovery.Enabled.Value)
-
 	assert.Equal(t, true, cfg.TraceableConfig.Sampling.Enabled.Value)
 	assert.Equal(t, false, cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.Enabled.Value)
 
@@ -47,6 +45,14 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.Equal(t, int32(10485760), cfg.TraceableConfig.Logging.LogFile.MaxFileSize.Value)
 	assert.Equal(t, "/var/traceable/log/libtraceable-goagent.log", cfg.TraceableConfig.Logging.LogFile.FilePath.Value)
 
+	assert.False(t, cfg.TraceableConfig.MetricsConfig.Enabled.Value)
+	assert.False(t, cfg.TraceableConfig.MetricsConfig.EndpointConfig.Enabled.Value)
+	assert.Equal(t, int32(5000), cfg.TraceableConfig.MetricsConfig.EndpointConfig.MaxEndpoints.Value)
+	assert.True(t, cfg.TraceableConfig.MetricsConfig.EndpointConfig.Logging.Enabled.Value)
+	assert.Equal(t, "30m", cfg.TraceableConfig.MetricsConfig.EndpointConfig.Logging.Frequency.Value)
+	assert.True(t, cfg.TraceableConfig.MetricsConfig.Logging.Enabled.Value)
+	assert.Equal(t, "30m", cfg.TraceableConfig.MetricsConfig.Logging.Frequency.Value)
+
 	// deprecated defaults
 	assert.Equal(t, true, cfg.TraceableConfig.BlockingConfig.RemoteConfig.Enabled.Value)
 	assert.Equal(t, "localhost:5441", cfg.TraceableConfig.BlockingConfig.RemoteConfig.Endpoint.Value)
@@ -54,6 +60,9 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.Equal(t, "", cfg.TraceableConfig.BlockingConfig.RemoteConfig.CertFile.Value)
 	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.BlockingConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
 	assert.Equal(t, false, cfg.TraceableConfig.BlockingConfig.RemoteConfig.UseSecureConnection.Value)
+
+	// environment field check, has to be default
+	assert.Equal(t, "", cfg.TraceableConfig.Environment.Value)
 }
 
 func TestLoadFromFile(t *testing.T) {
@@ -81,7 +90,29 @@ func TestLoadFromFile(t *testing.T) {
 	assert.Equal(t, "/conf/tls.crt", cfg.TraceableConfig.RemoteConfig.CertFile.Value)
 	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
 
-	assert.Equal(t, true, cfg.TraceableConfig.ApiDiscovery.Enabled.Value)
+	assert.Equal(t, true, cfg.TraceableConfig.Sampling.Enabled.Value)
+	assert.Equal(t, true, cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.Enabled.Value)
+	assert.Equal(t, int64(9223372036854775807), cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.MaxCountGlobal.Value)
+	assert.Equal(t, int64(3), cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.MaxCountPerEndpoint.Value)
+	assert.Equal(t, "30s", cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.RefreshPeriod.Value)
+	assert.Equal(t, "168h", cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.ValueExpirationPeriod.Value)
+	assert.Equal(t, traceableconfig.SpanType_SPAN_TYPE_NO_SPAN, cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.SpanType)
+
+	assert.Equal(t, traceableconfig.LogMode_LOG_MODE_FILE, cfg.TraceableConfig.Logging.LogMode)
+	assert.Equal(t, traceableconfig.LogLevel_LOG_LEVEL_DEBUG, cfg.TraceableConfig.Logging.LogLevel)
+	assert.Equal(t, int32(1), cfg.TraceableConfig.Logging.LogFile.MaxFiles.Value)
+	assert.Equal(t, int32(104857600), cfg.TraceableConfig.Logging.LogFile.MaxFileSize.Value)
+	assert.Equal(t, "/var/traceable/log/libtraceable-goagent.log", cfg.TraceableConfig.Logging.LogFile.FilePath.Value)
+
+	// environment field check
+	assert.Equal(t, "goagent-env", cfg.TraceableConfig.Environment.Value)
+}
+
+// To check if environment field is not provided in config file it should get default value
+func TestLoadFromFileWithoutEnvironmentInConfig(t *testing.T) {
+	cfg := LoadFromFile("./testdata/config-no-env.yaml")
+
+	assert.Equal(t, "goagent-example", cfg.Tracing.ServiceName.Value)
 
 	assert.Equal(t, true, cfg.TraceableConfig.Sampling.Enabled.Value)
 	assert.Equal(t, true, cfg.TraceableConfig.Sampling.DefaultRateLimitConfig.Enabled.Value)
@@ -96,6 +127,9 @@ func TestLoadFromFile(t *testing.T) {
 	assert.Equal(t, int32(1), cfg.TraceableConfig.Logging.LogFile.MaxFiles.Value)
 	assert.Equal(t, int32(104857600), cfg.TraceableConfig.Logging.LogFile.MaxFileSize.Value)
 	assert.Equal(t, "/var/traceable/log/libtraceable-goagent.log", cfg.TraceableConfig.Logging.LogFile.FilePath.Value)
+
+	// environment field check to be default
+	assert.Equal(t, "", cfg.TraceableConfig.Environment.Value)
 }
 
 func TestLoadFromFileDeprecated(t *testing.T) {

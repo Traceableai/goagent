@@ -123,6 +123,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var envSet = false
+
 type Filter struct {
 	libtraceableHandle C.traceable_libtraceable
 	libtraceable       *libtraceableMethods
@@ -147,7 +149,6 @@ var _ filter.Filter = (*Filter)(nil)
 // NewFilter creates libtraceable based filter
 func NewFilter(serviceName string, config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter {
 	if !config.BlockingConfig.Enabled.Value &&
-		!config.ApiDiscovery.Enabled.Value &&
 		!config.Sampling.Enabled.Value {
 		logger.Debug("Traceable filter is disabled by config.")
 		return &Filter{logger: logger}
@@ -397,8 +398,13 @@ func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]st
 }
 
 func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_config, serviceName string, config *traceableconfig.AgentConfig) {
-	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
+	environment := config.Environment
+	if environment != nil && environment.Value != "" {
+		libtraceableConfig.agent_config.environment = C.CString(environment.Value)
+		envSet = true
+	}
 
+	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
 	// remote_config under blocking is deprecated but need to honor that
 	remoteConfigPb := config.BlockingConfig.GetRemoteConfig()
 	// if it's not there then look at new location
@@ -419,8 +425,6 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	libtraceableConfig.blocking_config.skip_internal_request = getCBool(config.BlockingConfig.SkipInternalRequest.Value)
 	libtraceableConfig.blocking_config.max_recursion_depth = C.int(config.BlockingConfig.MaxRecursionDepth.Value)
 
-	libtraceableConfig.api_discovery_config.enabled = getCBool(config.ApiDiscovery.Enabled.Value)
-
 	libtraceableConfig.sampling_config.enabled = getCBool(config.Sampling.Enabled.Value)
 	libtraceableConfig.sampling_config.default_rate_limit_config.enabled =
 		getCBool(config.Sampling.DefaultRateLimitConfig.Enabled.Value)
@@ -440,12 +444,31 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	libtraceableConfig.log_config.file_config.max_files = C.int(config.Logging.LogFile.MaxFiles.Value)
 	libtraceableConfig.log_config.file_config.max_file_size = C.int(config.Logging.LogFile.MaxFileSize.Value)
 	libtraceableConfig.log_config.file_config.log_file = C.CString(config.Logging.LogFile.FilePath.Value)
+
+	libtraceableConfig.metrics_config.enabled =
+		getCBool(config.MetricsConfig.Enabled.Value)
+	libtraceableConfig.metrics_config.endpoint_config.enabled =
+		getCBool(config.MetricsConfig.EndpointConfig.Enabled.Value)
+	libtraceableConfig.metrics_config.endpoint_config.max_endpoints =
+		C.int(config.MetricsConfig.EndpointConfig.MaxEndpoints.Value)
+	libtraceableConfig.metrics_config.endpoint_config.logging.enabled =
+		getCBool(config.MetricsConfig.EndpointConfig.Logging.Enabled.Value)
+	libtraceableConfig.metrics_config.endpoint_config.logging.frequency =
+		C.CString(config.MetricsConfig.EndpointConfig.Logging.Frequency.Value)
+	libtraceableConfig.metrics_config.logging.enabled =
+		getCBool(config.MetricsConfig.Logging.Enabled.Value)
+	libtraceableConfig.metrics_config.logging.frequency =
+		C.CString(config.MetricsConfig.Logging.Frequency.Value)
 }
 
 func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
 	C.free(unsafe.Pointer(config.remote_config.remote_endpoint))
 	C.free(unsafe.Pointer(config.remote_config.cert_file))
 	C.free(unsafe.Pointer(config.agent_config.service_name))
+
+	if envSet {
+		C.free(unsafe.Pointer(config.agent_config.environment))
+	}
 }
 
 func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.traceable_attribute {

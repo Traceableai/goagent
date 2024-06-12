@@ -53,8 +53,12 @@ var defaultConfig = &AgentConfig{
 			CertFile:                hyperconfig.String(""),
 			EnableGrpcLoadbalancing: hyperconfig.Bool(true),
 		},
+		Goagent: &hyperconfig.GoAgent{
+			UseCustomBsp: hyperconfig.Bool(true),
+		},
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
+		Environment: traceableconfig.String(""),
 		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled: traceableconfig.Bool(true),
 			Modsecurity: &traceableconfig.ModsecurityConfig{
@@ -71,9 +75,6 @@ var defaultConfig = &AgentConfig{
 			MaxRecursionDepth:   traceableconfig.Int32(20),
 		},
 		RemoteConfig: defaultRemoteConfig,
-		ApiDiscovery: &traceableconfig.ApiDiscoveryConfig{
-			Enabled: traceableconfig.Bool(true),
-		},
 		Sampling: &traceableconfig.SamplingConfig{
 			Enabled: traceableconfig.Bool(true),
 			DefaultRateLimitConfig: &traceableconfig.RateLimitConfig{
@@ -87,6 +88,22 @@ var defaultConfig = &AgentConfig{
 				MaxFiles:    traceableconfig.Int32(3),
 				MaxFileSize: traceableconfig.Int32(10485760),
 				FilePath:    traceableconfig.String("/var/traceable/log/libtraceable-goagent.log"),
+			},
+		},
+		MetricsConfig: &traceableconfig.MetricsConfig{
+			Enabled: traceableconfig.Bool(false),
+			EndpointConfig: &traceableconfig.EndpointMetricsConfig{
+				Enabled: traceableconfig.Bool(false),
+				// same values from libtraceable defaults
+				MaxEndpoints: traceableconfig.Int32(5000),
+				Logging: &traceableconfig.MetricsLogConfig{
+					Enabled:   traceableconfig.Bool(true),
+					Frequency: traceableconfig.String("30m"),
+				},
+			},
+			Logging: &traceableconfig.MetricsLogConfig{
+				Enabled:   traceableconfig.Bool(true),
+				Frequency: traceableconfig.String("30m"),
 			},
 		},
 	},

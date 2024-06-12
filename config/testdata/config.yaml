@@ -1,3 +1,4 @@
+environment: goagent-env
 service_name: goagent-example
 
 reporting:
@@ -16,9 +17,6 @@ remote_config:
   enabled: true
   endpoint: http://traceable-agent:5441/
   cert_file: "/conf/tls.crt"
-
-api_discovery:
-  enabled: true
 
 sampling:
   enabled: true

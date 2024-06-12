@@ -29,9 +29,6 @@ blocking_config:
 # debug_log is deprecated, use logging config
 debug_log: true
 
-api_discovery:
-  enabled: true
-
 sampling:
   enabled: true
 
