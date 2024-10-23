@@ -1,5 +1,4 @@
 //go:build linux && traceable_filter
-// +build linux,traceable_filter
 
 package traceable // import "github.com/Traceableai/goagent/filter/traceable"
 
@@ -122,8 +121,6 @@ import (
 	filterresult "github.com/hypertrace/goagent/sdk/filter/result"
 	"go.uber.org/zap"
 )
-
-var envSet = false
 
 type Filter struct {
 	libtraceableHandle C.traceable_libtraceable
@@ -346,12 +343,11 @@ func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
 		span.SetAttribute(k, v)
 	}
 
-	if processResult.block == 0 {
-		return filterresult.FilterResult{}
-	}
-	return filterresult.FilterResult{Block: true,
+	return filterresult.FilterResult{
+		Block:              processResult.block == 1,
 		ResponseStatusCode: f.responseStatusCode,
 		ResponseMessage:    f.responseMessage,
+		Decorations:        fromLibTraceableDecorations(processResult.decorations),
 	}
 }
 
@@ -397,12 +393,20 @@ func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]st
 	return m
 }
 
-func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_config, serviceName string, config *traceableconfig.AgentConfig) {
-	environment := config.Environment
-	if environment != nil && environment.Value != "" {
-		libtraceableConfig.agent_config.environment = C.CString(environment.Value)
-		envSet = true
+func fromLibTraceableDecorations(decorations C.traceable_decorations) *filterresult.Decorations {
+	ret := &filterresult.Decorations{}
+	s := getSliceFromCTraceableHeaderInjections(decorations.request_header_injections)
+	for _, header := range s {
+		ret.RequestHeaderInjections = append(ret.RequestHeaderInjections, filterresult.KeyValueString{
+			Key:   getGoString(header.key),
+			Value: getGoString(header.value),
+		})
 	}
+	return ret
+}
+
+func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_config, serviceName string, config *traceableconfig.AgentConfig) {
+	libtraceableConfig.agent_config.environment = C.CString(config.GetEnvironment().GetValue())
 
 	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
 	// remote_config under blocking is deprecated but need to honor that
@@ -411,6 +415,12 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	if remoteConfigPb.String() == goagentconfig.GetDefaultRemoteConfig().String() {
 		remoteConfigPb = config.RemoteConfig
 	}
+
+	// disable traces pipeline
+	libtraceableConfig.trace_exporter_config.enabled = C.int(0)
+	// disable metrics exporter pipeline
+	libtraceableConfig.metrics_config.exporter.enabled = C.int(0)
+
 	libtraceableConfig.remote_config.enabled = getCBool(remoteConfigPb.Enabled.Value)
 	libtraceableConfig.remote_config.remote_endpoint = C.CString(remoteConfigPb.Endpoint.Value)
 	libtraceableConfig.remote_config.poll_period_sec = C.int(remoteConfigPb.PollPeriodSeconds.Value)
@@ -459,24 +469,26 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 		getCBool(config.MetricsConfig.Logging.Enabled.Value)
 	libtraceableConfig.metrics_config.logging.frequency =
 		C.CString(config.MetricsConfig.Logging.Frequency.Value)
+
 }
 
 func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
 	C.free(unsafe.Pointer(config.remote_config.remote_endpoint))
 	C.free(unsafe.Pointer(config.remote_config.cert_file))
 	C.free(unsafe.Pointer(config.agent_config.service_name))
-
-	if envSet {
-		C.free(unsafe.Pointer(config.agent_config.environment))
-	}
+	C.free(unsafe.Pointer(config.agent_config.environment))
 }
 
 func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.traceable_attribute {
-	if attributes.count == 0 {
-		return []C.traceable_attribute{}
-	}
-	// https://stackoverflow.com/questions/48756732/what-does-1-30c-yourtype-do-exactly-in-cgo
-	return (*[1 << 30]C.traceable_attribute)(unsafe.Pointer(attributes.attribute_array))[:attributes.count:attributes.count]
+	return unsafe.Slice(
+		(*C.traceable_attribute)(unsafe.Pointer(attributes.attribute_array)),
+		int(attributes.count))
+}
+
+func getSliceFromCTraceableHeaderInjections(headers C.traceable_header_injections) []C.traceable_key_value_string {
+	return unsafe.Slice(
+		(*C.traceable_key_value_string)(unsafe.Pointer(headers.header_injections_array)),
+		int(headers.count))
 }
 
 func getCTraceableLogMode(logMode traceableconfig.LogMode) C.TRACEABLE_LOG_MODE {

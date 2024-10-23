@@ -32,13 +32,9 @@ typedef enum {
   TRACEABLE_FULL_SPAN
 } TRACEABLE_SPAN_TYPE;
 
-typedef enum {
-  LOGGING,
-  OTLP,
-  OTLP_HTTP,
-  ZIPKIN
-} TRACEABLE_TRACE_REPORTER_TYPE;
+typedef enum { LOGGING, OTLP, OTLP_HTTP } TRACEABLE_TRACE_REPORTER_TYPE;
 
+// TODO remove this and use traceable_key_value_string
 typedef struct {
   const char* key;
   const char* value;
@@ -143,15 +139,31 @@ typedef struct {
 typedef struct {
   int enabled;
   int max_batch_size;
+  int max_queue_size;
   TRACEABLE_TRACE_REPORTER_TYPE trace_reporter_type;
   traceable_exporter_config server;
 } traceable_traces_exporter_config;
+
+typedef struct {
+  const char* key;
+  const char* value;
+} traceable_key_value_string;
+
+typedef struct {
+  int count;
+  const traceable_key_value_string* header_injections_array;
+} traceable_header_injections;
+
+typedef struct {
+  traceable_header_injections request_header_injections;
+} traceable_decorations;
 
 typedef struct {
   int block;
   TRACEABLE_SPAN_TYPE span_type;
   int propagate;
   traceable_attributes attributes;
+  traceable_decorations decorations;
 } traceable_process_request_result;
 
 typedef struct {

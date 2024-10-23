@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 )
 
 var versionInfoAttributes = []attribute.KeyValue{
@@ -22,19 +23,19 @@ var versionInfoAttributes = []attribute.KeyValue{
 // Init initializes Traceable tracing and returns a shutdown function to flush data immediately
 // on a termination signal.
 func Init(cfg *config.AgentConfig) func() {
-	return InitWithAttributes(cfg, versionInfoAttributes)
-}
-
-func InitWithAttributes(cfg *config.AgentConfig, attributes []attribute.KeyValue) func() {
 	loggerCloser := logger.InitLogger(os.Getenv("TA_LOG_LEVEL"))
 	internalstate.AppendCloser(loggerCloser)
+	return InitWithAttributesAndZap(cfg, versionInfoAttributes, logger.GetLogger())
+}
+
+func InitWithAttributesAndZap(cfg *config.AgentConfig, attributes []attribute.KeyValue, logger *zap.Logger) func() {
 	if cfg.Tracing.Enabled.Value {
 		internalstate.InitConfig(cfg)
 	} else {
 		internalstate.InitConfig(internalconfig.DisabledConfig)
 	}
 
-	tracingCloser := opentelemetry.InitWithSpanProcessorWrapper(cfg.Tracing, &traceableSpanProcessorWrapper{}, attributes)
+	tracingCloser := opentelemetry.InitWithSpanProcessorWrapperAndZap(cfg.Tracing, &traceableSpanProcessorWrapper{}, attributes, logger)
 	internalstate.AppendCloser(tracingCloser)
 	return internalstate.CloserFn()
 }
