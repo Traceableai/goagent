@@ -10,8 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// NewFilter creates libtraceable based blocking filter
-func NewFilter(_ string, _ *traceableconfig.AgentConfig, l *zap.Logger) *Filter {
+// NewFilter creates libtraceable based blocking filter.
+// It takes tenant id, service name, agent config and logger as parameters for creating a corresponding filter.
+// Library consumers which doesn't have access to tenant id should pass an empty string.
+func NewFilter(_ string, _ string, _ *traceableconfig.AgentConfig, l *zap.Logger) *Filter {
 	l.Debug("Using NOOP traceable filter.")
 	return &Filter{}
 }

@@ -58,6 +58,14 @@ var defaultConfig = &AgentConfig{
 		},
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
+		Reporting: &traceableconfig.Reporting{
+			Token:                   traceableconfig.String(""),
+			Endpoint:                traceableconfig.String("localhost:4317"),
+			Secure:                  traceableconfig.Bool(false),
+			TraceReporterType:       traceableconfig.TraceReporterType_OTLP,
+			CertFile:                traceableconfig.String(""),
+			EnableGrpcLoadbalancing: traceableconfig.Bool(true),
+		},
 		Environment: traceableconfig.String(""),
 		BlockingConfig: &traceableconfig.BlockingConfig{
 			Enabled: traceableconfig.Bool(true),
@@ -73,6 +81,11 @@ var defaultConfig = &AgentConfig{
 			ResponseStatusCode:  traceableconfig.Int32(403),
 			ResponseMessage:     traceableconfig.String("Access Forbidden"),
 			MaxRecursionDepth:   traceableconfig.Int32(20),
+			EdgeDecisionService: &traceableconfig.EdgeDecisionServiceConfig{
+				Enabled:   traceableconfig.Bool(false),
+				Endpoint:  traceableconfig.String("localhost:62060"),
+				TimeoutMs: traceableconfig.Int32(15),
+			},
 		},
 		RemoteConfig: defaultRemoteConfig,
 		Sampling: &traceableconfig.SamplingConfig{
@@ -92,9 +105,10 @@ var defaultConfig = &AgentConfig{
 		},
 		MetricsConfig: &traceableconfig.MetricsConfig{
 			Enabled: traceableconfig.Bool(false),
+			// same values from libtraceable defaults
+			MaxQueueSize: traceableconfig.Int32(9216),
 			EndpointConfig: &traceableconfig.EndpointMetricsConfig{
-				Enabled: traceableconfig.Bool(false),
-				// same values from libtraceable defaults
+				Enabled:      traceableconfig.Bool(false),
 				MaxEndpoints: traceableconfig.Int32(5000),
 				Logging: &traceableconfig.MetricsLogConfig{
 					Enabled:   traceableconfig.Bool(true),
@@ -104,6 +118,11 @@ var defaultConfig = &AgentConfig{
 			Logging: &traceableconfig.MetricsLogConfig{
 				Enabled:   traceableconfig.Bool(true),
 				Frequency: traceableconfig.String("30m"),
+			},
+			Exporter: &traceableconfig.MetricsExporterConfig{
+				Enabled:          traceableconfig.Bool(false),
+				ExportIntervalMs: traceableconfig.Int32(60000),
+				ExportTimeoutMs:  traceableconfig.Int32(30000),
 			},
 		},
 	},

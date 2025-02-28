@@ -116,10 +116,12 @@ import (
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64"
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine"
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_arm64"
+	"github.com/hypertrace/goagent/instrumentation/opentelemetry/identifier"
 	"github.com/hypertrace/goagent/sdk"
 	"github.com/hypertrace/goagent/sdk/filter"
 	filterresult "github.com/hypertrace/goagent/sdk/filter/result"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Filter struct {
@@ -143,8 +145,14 @@ type libtraceableMethods struct {
 
 var _ filter.Filter = (*Filter)(nil)
 
-// NewFilter creates libtraceable based filter
-func NewFilter(serviceName string, config *traceableconfig.AgentConfig, logger *zap.Logger) *Filter {
+// NewFilter creates libtraceable based filter.
+// It takes tenant id, service name, agent config and logger as parameters for creating a corresponding filter.
+// Library consumers which doesn't have access to tenant id should pass an empty string.
+func NewFilter(
+	tenantId string,
+	serviceName string,
+	config *traceableconfig.AgentConfig,
+	logger *zap.Logger) *Filter {
 	if !config.BlockingConfig.Enabled.Value &&
 		!config.Sampling.Enabled.Value {
 		logger.Debug("Traceable filter is disabled by config.")
@@ -179,7 +187,7 @@ func NewFilter(serviceName string, config *traceableconfig.AgentConfig, logger *
 	}
 
 	libTraceableConfig := C.w_init_libtraceable_config(C.init_libtraceable_config_type(initLibtraceableConfig))
-	populateLibtraceableConfig(&libTraceableConfig, serviceName, config)
+	populateLibtraceableConfig(&libTraceableConfig, tenantId, serviceName, config)
 	defer freeLibTraceableConfig(libTraceableConfig)
 
 	var traceableFilter Filter
@@ -374,6 +382,28 @@ func createLibTraceableAttributes(attributes map[string]string) C.traceable_attr
 	return inputAttributes
 }
 
+// createLibTraceableStringArray converts a slice of wrapperspb.StringValue to C.traceable_string_array
+func createLibTraceableStringArray(values []*wrapperspb.StringValue) C.traceable_string_array {
+	if len(values) == 0 {
+		return C.traceable_string_array{
+			count:  C.int(0),
+			values: (**C.char)(nil),
+		}
+	}
+	charPtrSize := unsafe.Sizeof((*C.char)(nil))
+	var arr C.traceable_string_array
+	arr.count = C.int(len(values))
+	arr.values = (**C.char)(C.malloc(C.size_t(charPtrSize) * C.size_t(len(values))))
+	i := 0
+	for _, value := range values {
+		inputPtr := (**C.char)(unsafe.Pointer(uintptr(unsafe.Pointer(arr.values)) + uintptr(i*int(charPtrSize))))
+		*inputPtr = C.CString(value.Value)
+		i++
+	}
+
+	return arr
+}
+
 // freeLibTraceableAttributes deletes allocated data in C.traceable_attributes
 func freeLibTraceableAttributes(attributes C.traceable_attributes) {
 	s := getSliceFromCTraceableAttributes(attributes)
@@ -382,6 +412,15 @@ func freeLibTraceableAttributes(attributes C.traceable_attributes) {
 		C.free(unsafe.Pointer(attribute.value))
 	}
 	C.free(unsafe.Pointer(attributes.attribute_array))
+}
+
+// freeLibTraceableStringArray deletes allocated data in C.traceable_string_array
+func freeLibTraceableStringArray(arr C.traceable_string_array) {
+	s := getSliceFromCTraceableStringArray(arr)
+	for _, val := range s {
+		C.free(unsafe.Pointer(val))
+	}
+	C.free(unsafe.Pointer((**C.char)(arr.values)))
 }
 
 func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]string {
@@ -405,10 +444,17 @@ func fromLibTraceableDecorations(decorations C.traceable_decorations) *filterres
 	return ret
 }
 
-func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_config, serviceName string, config *traceableconfig.AgentConfig) {
+func populateLibtraceableConfig(
+	libtraceableConfig *C.traceable_libtraceable_config,
+	tenantId string,
+	serviceName string,
+	config *traceableconfig.AgentConfig) {
+	libtraceableConfig.agent_config.tenant_id = C.CString(tenantId)
 	libtraceableConfig.agent_config.environment = C.CString(config.GetEnvironment().GetValue())
-
 	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
+	libtraceableConfig.agent_config.agent_token = C.CString(config.GetReporting().GetToken().GetValue())
+	libtraceableConfig.agent_config.service_instance_id = C.CString(identifier.ServiceInstanceIDAttr.AsString())
+	libtraceableConfig.agent_config.host_name = C.CString(getHostName(config.GetResourceAttributes()))
 	// remote_config under blocking is deprecated but need to honor that
 	remoteConfigPb := config.BlockingConfig.GetRemoteConfig()
 	// if it's not there then look at new location
@@ -434,6 +480,13 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 	libtraceableConfig.blocking_config.evaluate_body = getCBool(config.BlockingConfig.EvaluateBody.Value)
 	libtraceableConfig.blocking_config.skip_internal_request = getCBool(config.BlockingConfig.SkipInternalRequest.Value)
 	libtraceableConfig.blocking_config.max_recursion_depth = C.int(config.BlockingConfig.MaxRecursionDepth.Value)
+	libtraceableConfig.blocking_config.eds_config.enabled = getCBool(config.BlockingConfig.EdgeDecisionService.Enabled.Value)
+	libtraceableConfig.blocking_config.eds_config.endpoint = C.CString(config.BlockingConfig.EdgeDecisionService.Endpoint.Value)
+	libtraceableConfig.blocking_config.eds_config.timeout_ms = C.int(config.BlockingConfig.EdgeDecisionService.TimeoutMs.Value)
+	includePathRegexes := createLibTraceableStringArray(config.BlockingConfig.GetEdgeDecisionService().GetIncludePathRegexes())
+	libtraceableConfig.blocking_config.eds_config.include_path_regexes = includePathRegexes
+	excludePathRegexes := createLibTraceableStringArray(config.BlockingConfig.GetEdgeDecisionService().GetExcludePathRegexes())
+	libtraceableConfig.blocking_config.eds_config.exclude_path_regexes = excludePathRegexes
 
 	libtraceableConfig.sampling_config.enabled = getCBool(config.Sampling.Enabled.Value)
 	libtraceableConfig.sampling_config.default_rate_limit_config.enabled =
@@ -457,6 +510,8 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 
 	libtraceableConfig.metrics_config.enabled =
 		getCBool(config.MetricsConfig.Enabled.Value)
+	libtraceableConfig.metrics_config.max_queue_size =
+		C.int(config.MetricsConfig.MaxQueueSize.Value)
 	libtraceableConfig.metrics_config.endpoint_config.enabled =
 		getCBool(config.MetricsConfig.EndpointConfig.Enabled.Value)
 	libtraceableConfig.metrics_config.endpoint_config.max_endpoints =
@@ -469,7 +524,18 @@ func populateLibtraceableConfig(libtraceableConfig *C.traceable_libtraceable_con
 		getCBool(config.MetricsConfig.Logging.Enabled.Value)
 	libtraceableConfig.metrics_config.logging.frequency =
 		C.CString(config.MetricsConfig.Logging.Frequency.Value)
-
+	libtraceableConfig.metrics_config.exporter.enabled =
+		getCBool(config.MetricsConfig.Exporter.Enabled.Value)
+	libtraceableConfig.metrics_config.exporter.server.secure =
+		getCBool(config.Reporting.Secure.Value)
+	libtraceableConfig.metrics_config.exporter.server.endpoint =
+		C.CString(config.Reporting.Endpoint.Value)
+	libtraceableConfig.metrics_config.exporter.server.cert_file =
+		C.CString(config.Reporting.CertFile.Value)
+	libtraceableConfig.metrics_config.exporter.server.export_interval_ms =
+		C.int(config.MetricsConfig.Exporter.ExportIntervalMs.Value)
+	libtraceableConfig.metrics_config.exporter.server.export_timeout_ms =
+		C.int(config.MetricsConfig.Exporter.ExportTimeoutMs.Value)
 }
 
 func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
@@ -477,6 +543,13 @@ func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
 	C.free(unsafe.Pointer(config.remote_config.cert_file))
 	C.free(unsafe.Pointer(config.agent_config.service_name))
 	C.free(unsafe.Pointer(config.agent_config.environment))
+	C.free(unsafe.Pointer(config.agent_config.agent_token))
+	C.free(unsafe.Pointer(config.agent_config.service_instance_id))
+	C.free(unsafe.Pointer(config.agent_config.host_name))
+	C.free(unsafe.Pointer(config.metrics_config.exporter.server.endpoint))
+	C.free(unsafe.Pointer(config.metrics_config.exporter.server.cert_file))
+	freeLibTraceableStringArray(config.blocking_config.eds_config.include_path_regexes)
+	freeLibTraceableStringArray(config.blocking_config.eds_config.exclude_path_regexes)
 }
 
 func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.traceable_attribute {
@@ -489,6 +562,10 @@ func getSliceFromCTraceableHeaderInjections(headers C.traceable_header_injection
 	return unsafe.Slice(
 		(*C.traceable_key_value_string)(unsafe.Pointer(headers.header_injections_array)),
 		int(headers.count))
+}
+
+func getSliceFromCTraceableStringArray(arr C.traceable_string_array) []*C.char {
+	return unsafe.Slice((**C.char)(unsafe.Pointer(arr.values)), int(arr.count))
 }
 
 func getCTraceableLogMode(logMode traceableconfig.LogMode) C.TRACEABLE_LOG_MODE {
@@ -543,4 +620,11 @@ func getCBool(b bool) C.int {
 	}
 
 	return C.int(0)
+}
+
+func getHostName(resourceAttrs map[string]string) string {
+	if val, found := resourceAttrs["host.name"]; found {
+		return val
+	}
+	return ""
 }

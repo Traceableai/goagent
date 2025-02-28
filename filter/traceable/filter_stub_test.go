@@ -49,8 +49,10 @@ func (s noopSpan) IsNoop() bool { return true }
 
 func (s noopSpan) AddEvent(_ string, _ time.Time, _ map[string]interface{}) {}
 
+func (s noopSpan) GetSpanId() string { return "" }
+
 func TestBlockingStub(t *testing.T) {
-	f := NewFilter("", &traceableconfig.AgentConfig{}, zap.NewNop())
+	f := NewFilter("", "", &traceableconfig.AgentConfig{}, zap.NewNop())
 	assert.IsType(t, Filter{}, *f)
 	assert.True(t, f.Start())
 	filterResult := f.Evaluate(noopSpan{})

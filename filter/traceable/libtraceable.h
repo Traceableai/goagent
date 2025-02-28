@@ -41,6 +41,11 @@ typedef struct {
 } traceable_attribute;
 
 typedef struct {
+  const char** values;
+  int count;
+} traceable_string_array;
+
+typedef struct {
   int count;
   const traceable_attribute* attribute_array;
 } traceable_attributes;
@@ -67,6 +72,14 @@ typedef struct {
 
 typedef struct {
   int enabled;
+  int timeout_ms;
+  const char* endpoint;
+  traceable_string_array include_path_regexes;
+  traceable_string_array exclude_path_regexes;
+} traceable_edge_decision_service_config;
+
+typedef struct {
+  int enabled;
   const char* remote_endpoint;
   int poll_period_sec;
   const char* cert_file;
@@ -79,6 +92,7 @@ typedef struct {
   int enabled;
   traceable_modsecurity_config modsecurity_config;
   traceable_rangeblocking_config rb_config;
+  traceable_edge_decision_service_config eds_config;
   int evaluate_body;
   int skip_internal_request;
   int max_recursion_depth;
@@ -89,6 +103,8 @@ typedef struct {
   const char* service_name;
   const char* service_instance_id;
   const char* host_name;
+  const char* agent_token;
+  const char* tenant_id;
 } traceable_agent_config;
 
 typedef struct {
@@ -131,6 +147,7 @@ typedef struct {
 
 typedef struct {
   int enabled;
+  int max_queue_size;
   traceable_endpoint_metrics_config endpoint_config;
   traceable_metrics_log_config logging;
   traceable_metrics_exporter_config exporter;

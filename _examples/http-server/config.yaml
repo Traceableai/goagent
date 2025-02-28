@@ -5,12 +5,24 @@ reporting:
   secure: false
   trace_reporter_type: OTLP
 
-opa:
-  enabled: false
-
-debug_log: true
-
 remote_config:
   enabled: true
   endpoint: localhost:5441
   poll_period_seconds: 30
+
+blocking_config:
+  enabled: true
+  region_blocking:
+    enabled: true
+  modsecurity:
+    enabled: true
+  evaluate_body: true
+  skip_internal_request: false
+  edge_decision_service:
+    enabled: true
+    endpoint: localhost:62060
+    timeout_ms: 30
+    include_path_regexes:
+      - foo
+logging:
+  log_level: LOG_LEVEL_INFO

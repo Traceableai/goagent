@@ -22,7 +22,7 @@ func main() {
 
 	logger.Debug("Logging is working!")
 
-	f := traceable.NewFilter(cfg.Tracing.ServiceName.Value, cfg.TraceableConfig, logger)
+	f := traceable.NewFilter("", cfg.Tracing.ServiceName.Value, cfg.TraceableConfig, logger)
 	if !f.Start() {
 		log.Fatal("Failed to initialize traceable filter")
 	}

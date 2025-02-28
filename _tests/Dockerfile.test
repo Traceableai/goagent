@@ -3,6 +3,7 @@
 ARG TRACEABLE_GOAGENT_DISTRO_VERSION
 
 FROM traceable_goagent_test_base:${TRACEABLE_GOAGENT_DISTRO_VERSION}
+ARG ARCH
 
 WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
 
@@ -20,7 +21,7 @@ COPY . .
 RUN if [ "${IS_ALPINE}" = "1" ]; then \
     cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . ; \
     else \
-    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . ; \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_${ARCH}/libtraceable.so . ; \
     fi
 
 RUN CGO_ENABLED=1 go test --tags="traceable_filter" -c ./filter/traceable
@@ -37,7 +38,7 @@ WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent/_tests
 RUN if [ "${IS_ALPINE}" = "1" ]; then \
     cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine/libtraceable.so . ; \
     else \
-    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64/libtraceable.so . ; \
+    cp ${GOPATH}/src/github.com/Traceableai/goagent/filter/traceable/libs/linux_${ARCH}/libtraceable.so . ; \
     fi
 
 RUN CGO_ENABLED=1 go build --tags="traceable_filter" -o test-app .

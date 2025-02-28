@@ -124,6 +124,13 @@ In terminal 1 run the client:
 go run ./_examples/http-client/main.go
 ```
 
+For running the server with libtraceable running on a docker based environment
+
+```bash
+docker build -f _examples/http-server/Dockerfile .  -t http-server:dev  
+docker run -it --rm -v /Users/traceable/config.yaml:/go/src/_examples/http-server/config.yaml  -p 8081:8081 http-server:dev
+```
+
 In terminal 2 run the server:
 
 ```bash
@@ -237,3 +244,17 @@ go run ./_examples/grpc-server/main.go
 
 - [database/traceablesql](instrumentation/database/traceablesql)
 - [github.com/gorilla/traceablemux](instrumentation/github.com/gorilla/traceablemux)
+
+## Running unit tests
+The repo uses docker to run some unit tests as libtraceable needs a linux based environment and some unit tests involve it.
+
+Steps:
+1. Build the base image
+    ```bash
+    docker build --build-arg UBUNTU_VERSION=20.04 --build-arg GO_VERSION=1.22.8 --build-arg ARCH=arm64  -f ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.ubuntu.test ./filter/traceable/cmd/libtraceable-downloader -t traceable_goagent_test_base:ubuntu_20.04
+    ```
+2. Build the test image (this will trigger the tests)
+    ```bash
+    docker build --build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=ubuntu_20.04 --build-arg ARCH=arm64  -f ./_tests/Dockerfile.test . -t test:dev
+    ```
+

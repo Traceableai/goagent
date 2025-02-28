@@ -38,6 +38,7 @@ func main() {
 		WriteTimeout:      60 * time.Second,
 		ReadHeaderTimeout: 60 * time.Second,
 	}
+	log.Println("Starting HTTP server on :8081")
 	log.Fatal(srv.ListenAndServe())
 }
 

@@ -3,6 +3,8 @@ package goagent // import "github.com/Traceableai/goagent"
 import (
 	"os"
 
+	"go.uber.org/zap"
+
 	"github.com/Traceableai/goagent/config"
 	internalconfig "github.com/Traceableai/goagent/internal/config"
 	"github.com/Traceableai/goagent/internal/logger"
@@ -12,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/zap"
 )
 
 var versionInfoAttributes = []attribute.KeyValue{
@@ -41,11 +42,11 @@ func InitWithAttributesAndZap(cfg *config.AgentConfig, attributes []attribute.Ke
 }
 
 func RegisterService(
-	serviceName string,
+	key string,
 	resourceAttributes map[string]string,
-) (SpanStarter, trace.TracerProvider, error) {
-	s, tp, err := opentelemetry.RegisterServiceWithSpanProcessorWrapper(serviceName, resourceAttributes, &traceableSpanProcessorWrapper{},
-		versionInfoAttributes)
+	opts ...opentelemetry.ServiceOption) (SpanStarter, trace.TracerProvider, error) {
+	s, tp, err := opentelemetry.RegisterServiceWithSpanProcessorWrapper(key, resourceAttributes, &traceableSpanProcessorWrapper{},
+		versionInfoAttributes, opts...)
 	if err != nil {
 		return nil, tp, err
 	}
