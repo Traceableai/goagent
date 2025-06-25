@@ -210,7 +210,10 @@ func NewFilter(
 
 	// Check if blocking status code is of type 4xx
 	if config.BlockingConfig.ResponseStatusCode.Value/100 != 4 {
-		logger.Warn("The blocking status code should be of form 4xx.", zap.Int32("Invalid code-", config.BlockingConfig.ResponseStatusCode.Value))
+		logger.Warn(
+			"The blocking status code should be of form 4xx.",
+			zap.Int32("Invalid code-", config.BlockingConfig.ResponseStatusCode.Value),
+		)
 		traceableFilter.responseStatusCode = 403
 	} else {
 		traceableFilter.responseStatusCode = config.BlockingConfig.ResponseStatusCode.Value
@@ -338,7 +341,12 @@ func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
 	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
 
 	var processResult C.traceable_process_request_result
-	ret := C.w_traceable_process_request(f.libtraceable.processRequest, f.libtraceableHandle, inputLibTraceableAttributes, &processResult)
+	ret := C.w_traceable_process_request(
+		f.libtraceable.processRequest,
+		f.libtraceableHandle,
+		inputLibTraceableAttributes,
+		&processResult,
+	)
 	defer C.w_traceable_delete_process_request_result_data(f.libtraceable.deleteProcessResultData, processResult)
 	// if call fails just return false
 	if ret != C.TRACEABLE_SUCCESS {
@@ -351,10 +359,20 @@ func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
 		span.SetAttribute(k, v)
 	}
 
+	statusCode := int32(processResult.decorations.response_details.status_code)
+	if statusCode == 0 {
+		statusCode = f.responseStatusCode
+	}
+
+	responseMessage := getGoString(processResult.decorations.response_details.message)
+	if responseMessage == "" {
+		responseMessage = f.responseMessage
+	}
+
 	return filterresult.FilterResult{
 		Block:              processResult.block == 1,
-		ResponseStatusCode: f.responseStatusCode,
-		ResponseMessage:    f.responseMessage,
+		ResponseStatusCode: statusCode,
+		ResponseMessage:    responseMessage,
 		Decorations:        fromLibTraceableDecorations(processResult.decorations),
 	}
 }
@@ -370,10 +388,16 @@ func createLibTraceableAttributes(attributes map[string]string) C.traceable_attr
 
 	var inputAttributes C.traceable_attributes
 	inputAttributes.count = C.int(len(attributes))
-	inputAttributes.attribute_array = (*C.traceable_attribute)(C.malloc(C.size_t(C.sizeof_traceable_attribute) * C.size_t(len(attributes))))
+	inputAttributes.attribute_array = (*C.traceable_attribute)(
+		C.malloc(C.size_t(C.sizeof_traceable_attribute) * C.size_t(len(attributes))),
+	)
 	i := 0
 	for k, v := range attributes {
-		inputAttribute := (*C.traceable_attribute)(unsafe.Pointer(uintptr(unsafe.Pointer(inputAttributes.attribute_array)) + uintptr(i*C.sizeof_traceable_attribute)))
+		inputAttribute := (*C.traceable_attribute)(
+			unsafe.Pointer(
+				uintptr(unsafe.Pointer(inputAttributes.attribute_array)) + uintptr(i*C.sizeof_traceable_attribute),
+			),
+		)
 		(*inputAttribute).key = C.CString(k)
 		(*inputAttribute).value = C.CString(v)
 		i++
@@ -475,18 +499,32 @@ func populateLibtraceableConfig(
 	libtraceableConfig.remote_config.use_secure_connection = getCBool(remoteConfigPb.UseSecureConnection.Value)
 
 	libtraceableConfig.blocking_config.enabled = getCBool(config.BlockingConfig.Enabled.Value)
-	libtraceableConfig.blocking_config.modsecurity_config.enabled = getCBool(config.BlockingConfig.Modsecurity.Enabled.Value)
+	libtraceableConfig.blocking_config.modsecurity_config.enabled = getCBool(
+		config.BlockingConfig.Modsecurity.Enabled.Value,
+	)
 	libtraceableConfig.blocking_config.rb_config.enabled = getCBool(config.BlockingConfig.RegionBlocking.Enabled.Value)
 	libtraceableConfig.blocking_config.evaluate_body = getCBool(config.BlockingConfig.EvaluateBody.Value)
 	libtraceableConfig.blocking_config.skip_internal_request = getCBool(config.BlockingConfig.SkipInternalRequest.Value)
+	libtraceableConfig.blocking_config.skip_client_spans = getCBool(config.BlockingConfig.SkipClientSpans.Value)
 	libtraceableConfig.blocking_config.max_recursion_depth = C.int(config.BlockingConfig.MaxRecursionDepth.Value)
-	libtraceableConfig.blocking_config.eds_config.enabled = getCBool(config.BlockingConfig.EdgeDecisionService.Enabled.Value)
-	libtraceableConfig.blocking_config.eds_config.endpoint = C.CString(config.BlockingConfig.EdgeDecisionService.Endpoint.Value)
-	libtraceableConfig.blocking_config.eds_config.timeout_ms = C.int(config.BlockingConfig.EdgeDecisionService.TimeoutMs.Value)
-	includePathRegexes := createLibTraceableStringArray(config.BlockingConfig.GetEdgeDecisionService().GetIncludePathRegexes())
+	libtraceableConfig.blocking_config.eds_config.enabled = getCBool(
+		config.BlockingConfig.EdgeDecisionService.Enabled.Value,
+	)
+	libtraceableConfig.blocking_config.eds_config.endpoint = C.CString(
+		config.BlockingConfig.EdgeDecisionService.Endpoint.Value,
+	)
+	libtraceableConfig.blocking_config.eds_config.timeout_ms = C.int(
+		config.BlockingConfig.EdgeDecisionService.TimeoutMs.Value,
+	)
+	includePathRegexes := createLibTraceableStringArray(
+		config.BlockingConfig.GetEdgeDecisionService().GetIncludePathRegexes(),
+	)
 	libtraceableConfig.blocking_config.eds_config.include_path_regexes = includePathRegexes
-	excludePathRegexes := createLibTraceableStringArray(config.BlockingConfig.GetEdgeDecisionService().GetExcludePathRegexes())
+	excludePathRegexes := createLibTraceableStringArray(
+		config.BlockingConfig.GetEdgeDecisionService().GetExcludePathRegexes(),
+	)
 	libtraceableConfig.blocking_config.eds_config.exclude_path_regexes = excludePathRegexes
+	libtraceableConfig.blocking_config.evaluate_eds_first = getCBool(config.BlockingConfig.EvaluateEdsFirst.Value)
 
 	libtraceableConfig.sampling_config.enabled = getCBool(config.Sampling.Enabled.Value)
 	libtraceableConfig.sampling_config.default_rate_limit_config.enabled =
@@ -536,6 +574,11 @@ func populateLibtraceableConfig(
 		C.int(config.MetricsConfig.Exporter.ExportIntervalMs.Value)
 	libtraceableConfig.metrics_config.exporter.server.export_timeout_ms =
 		C.int(config.MetricsConfig.Exporter.ExportTimeoutMs.Value)
+
+	libtraceableConfig.parser_config.max_body_size =
+		C.uint32_t(uint32(config.GetParserConfig().GetMaxBodySize().GetValue()))
+	libtraceableConfig.parser_config.graphql.enabled =
+		getCBool(config.GetParserConfig().GetGraphql().GetEnabled().GetValue())
 }
 
 func freeLibTraceableConfig(config C.traceable_libtraceable_config) {

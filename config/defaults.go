@@ -86,6 +86,8 @@ var defaultConfig = &AgentConfig{
 				Endpoint:  traceableconfig.String("localhost:62060"),
 				TimeoutMs: traceableconfig.Int32(15),
 			},
+			EvaluateEdsFirst: traceableconfig.Bool(false),
+			SkipClientSpans:  traceableconfig.Bool(true),
 		},
 		RemoteConfig: defaultRemoteConfig,
 		Sampling: &traceableconfig.SamplingConfig{
@@ -123,6 +125,12 @@ var defaultConfig = &AgentConfig{
 				Enabled:          traceableconfig.Bool(false),
 				ExportIntervalMs: traceableconfig.Int32(60000),
 				ExportTimeoutMs:  traceableconfig.Int32(30000),
+			},
+		},
+		ParserConfig: &traceableconfig.ParserConfig{
+			MaxBodySize: traceableconfig.Int32(128 * 1024),
+			Graphql: &traceableconfig.GraphqlParserConfig{
+				Enabled: traceableconfig.Bool(false),
 			},
 		},
 	},

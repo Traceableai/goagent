@@ -10,11 +10,12 @@ import (
 
 	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc/internal/helloworld"
 	"github.com/Traceableai/goagent/internal/tracetesting"
+	"github.com/hypertrace/goagent/instrumentation/opentelemetry/grpcunaryinterceptors"
 	"github.com/stretchr/testify/assert"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	otelcodes "go.opentelemetry.io/otel/codes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
@@ -96,7 +97,7 @@ func TestServerRegisterPersonSuccess(t *testing.T) {
 		ctx,
 		"bufnet",
 		grpc.WithContextDialer(dialer),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		t.Fatalf("failed to dial bufnet: %v", err)
@@ -162,7 +163,7 @@ func TestServerRegisterPersonFails(t *testing.T) {
 		ctx,
 		"bufnet",
 		grpc.WithContextDialer(dialer),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		t.Fatalf("failed to dial bufnet: %v", err)
@@ -205,7 +206,7 @@ func BenchmarkServerRequestResponseBodyMarshaling(b *testing.B) {
 		ctx,
 		"bufnet",
 		grpc.WithContextDialer(dialer),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		b.Fatalf("failed to dial bufnet: %v", err)
@@ -230,7 +231,7 @@ func BenchmarkServerRequestDefaultInterceptor(b *testing.B) {
 	tracetesting.InitTracer()
 
 	s := grpc.NewServer(
-		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+		grpc.UnaryInterceptor(grpcunaryinterceptors.UnaryServerInterceptor()),
 	)
 	defer s.Stop()
 
@@ -245,7 +246,7 @@ func BenchmarkServerRequestDefaultInterceptor(b *testing.B) {
 		ctx,
 		"bufnet",
 		grpc.WithContextDialer(dialer),
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		b.Fatalf("failed to dial bufnet: %v", err)

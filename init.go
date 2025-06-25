@@ -29,14 +29,14 @@ func Init(cfg *config.AgentConfig) func() {
 	return InitWithAttributesAndZap(cfg, versionInfoAttributes, logger.GetLogger())
 }
 
-func InitWithAttributesAndZap(cfg *config.AgentConfig, attributes []attribute.KeyValue, logger *zap.Logger) func() {
+func InitWithAttributesAndZap(cfg *config.AgentConfig, attributes []attribute.KeyValue, logger *zap.Logger, opts ...opentelemetry.ServiceOption) func() {
 	if cfg.Tracing.Enabled.Value {
 		internalstate.InitConfig(cfg)
 	} else {
 		internalstate.InitConfig(internalconfig.DisabledConfig)
 	}
 
-	tracingCloser := opentelemetry.InitWithSpanProcessorWrapperAndZap(cfg.Tracing, &traceableSpanProcessorWrapper{}, attributes, logger)
+	tracingCloser := opentelemetry.InitWithSpanProcessorWrapperAndZap(cfg.Tracing, &traceableSpanProcessorWrapper{}, attributes, logger, opts...)
 	internalstate.AppendCloser(tracingCloser)
 	return internalstate.CloserFn()
 }

@@ -124,15 +124,16 @@ In terminal 1 run the client:
 go run ./_examples/http-client/main.go
 ```
 
+In terminal 2 run the server:
+
 For running the server with libtraceable running on a docker based environment
 
 ```bash
 docker build -f _examples/http-server/Dockerfile .  -t http-server:dev  
-docker run -it --rm -v /Users/traceable/config.yaml:/go/src/_examples/http-server/config.yaml  -p 8081:8081 http-server:dev
+docker run -it --rm -v /Users/<>/goagent-src/_examples/http-server/config.yaml:/go/src/config.yaml -p 8081:8081 http-server:dev
 ```
 
-In terminal 2 run the server:
-
+Or run it within linux shell as
 ```bash
 go run ./_examples/http-server/main.go
 ```

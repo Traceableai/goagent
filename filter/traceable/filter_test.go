@@ -103,6 +103,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				},
 				EvaluateBody:        traceableconfig.Bool(false),
 				SkipInternalRequest: wrapperspb.Bool(false),
+				SkipClientSpans:     wrapperspb.Bool(true),
 				RegionBlocking: &traceableconfig.RegionBlockingConfig{
 					Enabled: traceableconfig.Bool(false),
 				},
@@ -127,6 +128,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 						traceableconfig.String("test-path"),
 					},
 				},
+				EvaluateEdsFirst: traceableconfig.Bool(true),
 			},
 			RemoteConfig: &traceableconfig.RemoteConfig{
 				Enabled:                traceableconfig.Bool(true),
@@ -178,6 +180,12 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					ExportTimeoutMs:  traceableconfig.Int32(30),
 				},
 			},
+			ParserConfig: &traceableconfig.ParserConfig{
+				MaxBodySize: traceableconfig.Int32(128 * 1024),
+				Graphql: &traceableconfig.GraphqlParserConfig{
+					Enabled: traceableconfig.Bool(false),
+				},
+			},
 		},
 	)
 
@@ -185,11 +193,13 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.modsecurity_config.enabled))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.evaluate_body))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.skip_internal_request))
+	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.skip_client_spans))
 	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.rb_config.enabled))
 	assert.Equal(t, 10, int(libTraceableConfig.blocking_config.max_recursion_depth))
 	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.eds_config.enabled))
 	assert.Equal(t, "localhost:62060", getGoString(libTraceableConfig.blocking_config.eds_config.endpoint))
 	assert.Equal(t, 30, int(libTraceableConfig.blocking_config.eds_config.timeout_ms))
+	assert.Equal(t, 1, int(libTraceableConfig.blocking_config.evaluate_eds_first))
 	arr := getSliceFromCTraceableStringArray(libTraceableConfig.blocking_config.eds_config.include_path_regexes)
 	assert.Equal(t, 2, len(arr))
 	assert.Equal(t, "test-path1", getGoString(arr[0]))
@@ -234,6 +244,8 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 30, int(libTraceableConfig.metrics_config.exporter.server.export_timeout_ms))
 	assert.Equal(t, "test-env", getGoString(libTraceableConfig.agent_config.environment))
 	assert.Equal(t, "test-token", getGoString(libTraceableConfig.agent_config.agent_token))
+	assert.Equal(t, 0, int(libTraceableConfig.parser_config.graphql.enabled))
+	assert.Equal(t, 128*1024, int(libTraceableConfig.parser_config.max_body_size))
 
 	// verify for deprecated RemoteConfig
 	libTraceableConfig = getLibTraceableConfig(
@@ -258,6 +270,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				},
 				MaxRecursionDepth:   traceableconfig.Int32(10),
 				SkipInternalRequest: traceableconfig.Bool(true),
+				SkipClientSpans:     traceableconfig.Bool(false),
 				// takes precedence over top-level RemoteConfig
 				RemoteConfig: &traceableconfig.RemoteConfig{
 					Enabled:                traceableconfig.Bool(true),
@@ -274,6 +287,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					IncludePathRegexes: []*wrapperspb.StringValue{},
 					ExcludePathRegexes: []*wrapperspb.StringValue{},
 				},
+				EvaluateEdsFirst: traceableconfig.Bool(false),
 			},
 			// ignored during parsing
 			Opa: &traceableconfig.Opa{
@@ -333,6 +347,12 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					ExportTimeoutMs:  traceableconfig.Int32(30),
 				},
 			},
+			ParserConfig: &traceableconfig.ParserConfig{
+				MaxBodySize: traceableconfig.Int32(64 * 1024),
+				Graphql: &traceableconfig.GraphqlParserConfig{
+					Enabled: traceableconfig.Bool(true),
+				},
+			},
 		},
 	)
 
@@ -348,4 +368,8 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 0, len(arr))
 	assert.Equal(t, "", getGoString(libTraceableConfig.agent_config.environment))
 	assert.Equal(t, "", getGoString(libTraceableConfig.agent_config.agent_token))
+	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.evaluate_eds_first))
+	assert.Equal(t, 1, int(libTraceableConfig.parser_config.graphql.enabled))
+	assert.Equal(t, 64*1024, int(libTraceableConfig.parser_config.max_body_size))
+	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.skip_client_spans))
 }

@@ -1,2 +1,5 @@
 @tim-mwangi
 @davexroth
+
+# Libtraceable version file
+filter/traceable/cmd/libtraceable-downloader/version.go @tim-mwangi @shashank11p @uraina-harness @varkey98
