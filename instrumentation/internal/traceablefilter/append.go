@@ -3,9 +3,9 @@ package traceablefilter
 import (
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/filter/traceable"
+	sdkfilter "github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
-	sdkfilter "github.com/hypertrace/goagent/sdk/filter"
 	"go.uber.org/zap"
 )
 

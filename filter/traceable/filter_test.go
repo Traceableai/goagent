@@ -6,8 +6,11 @@ import (
 	"testing"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
+	"github.com/Traceableai/goagent/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -110,7 +113,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 				MaxRecursionDepth: traceableconfig.Int32(10),
 				RemoteConfig: &traceableconfig.RemoteConfig{
 					Enabled:                traceableconfig.Bool(true),
-					Endpoint:               traceableconfig.String("localhost:5441"),
+					Endpoint:               traceableconfig.String("localhost:5442"),
 					CertFile:               traceableconfig.String(""),
 					PollPeriodSeconds:      traceableconfig.Int32(30),
 					GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
@@ -132,7 +135,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 			},
 			RemoteConfig: &traceableconfig.RemoteConfig{
 				Enabled:                traceableconfig.Bool(true),
-				Endpoint:               traceableconfig.String("localhost:5441"),
+				Endpoint:               traceableconfig.String("localhost:5442"),
 				CertFile:               traceableconfig.String("/conf/tls.crt"),
 				PollPeriodSeconds:      traceableconfig.Int32(60),
 				GrpcMaxCallRecvMsgSize: traceableconfig.Int32(64 * 1024 * 1024),
@@ -209,7 +212,7 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, "test-path", getGoString(arr[0]))
 
 	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
-	assert.Equal(t, "localhost:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
+	assert.Equal(t, "localhost:5442", getGoString(libTraceableConfig.remote_config.remote_endpoint))
 	assert.Equal(t, "/conf/tls.crt", getGoString(libTraceableConfig.remote_config.cert_file))
 	assert.Equal(t, int64(64*1024*1024), int64(libTraceableConfig.remote_config.grpc_max_call_recv_msg_size))
 	assert.Equal(t, 60, int(libTraceableConfig.remote_config.poll_period_sec))
@@ -240,136 +243,116 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 1, int(libTraceableConfig.metrics_config.logging.enabled))
 	assert.Equal(t, "30m", getGoString(libTraceableConfig.metrics_config.logging.frequency))
 	assert.Equal(t, 1, int(libTraceableConfig.metrics_config.exporter.enabled))
+	assert.Equal(t, "localhost:1234", getGoString(libTraceableConfig.metrics_config.exporter.server.endpoint))
+	assert.Equal(t, "test-cert-file", getGoString(libTraceableConfig.metrics_config.exporter.server.cert_file))
+	assert.Equal(t, 0, int(libTraceableConfig.metrics_config.exporter.server.secure))
 	assert.Equal(t, 60, int(libTraceableConfig.metrics_config.exporter.server.export_interval_ms))
 	assert.Equal(t, 30, int(libTraceableConfig.metrics_config.exporter.server.export_timeout_ms))
+	assert.Equal(t, traceableconfig.TraceReporterType_OTLP, getGoReporterType(libTraceableConfig.metrics_config.exporter.reporter_type))
 	assert.Equal(t, "test-env", getGoString(libTraceableConfig.agent_config.environment))
 	assert.Equal(t, "test-token", getGoString(libTraceableConfig.agent_config.agent_token))
 	assert.Equal(t, 0, int(libTraceableConfig.parser_config.graphql.enabled))
 	assert.Equal(t, 128*1024, int(libTraceableConfig.parser_config.max_body_size))
+}
 
-	// verify for deprecated RemoteConfig
-	libTraceableConfig = getLibTraceableConfig(
-		"test-service",
-		&traceableconfig.AgentConfig{
-			DebugLog: traceableconfig.Bool(true), // ignored during parsing
-			Reporting: &traceableconfig.Reporting{
-				Endpoint:          traceableconfig.String("localhost:1234"),
-				Secure:            traceableconfig.Bool(false),
-				TraceReporterType: traceableconfig.TraceReporterType_OTLP,
-				CertFile:          traceableconfig.String("test-cert-file"),
-			},
-			BlockingConfig: &traceableconfig.BlockingConfig{
-				Enabled:  traceableconfig.Bool(true),
-				DebugLog: traceableconfig.Bool(true), //ignored during parsing
-				Modsecurity: &traceableconfig.ModsecurityConfig{
-					Enabled: traceableconfig.Bool(true),
-				},
-				EvaluateBody: traceableconfig.Bool(true),
-				RegionBlocking: &traceableconfig.RegionBlockingConfig{
-					Enabled: traceableconfig.Bool(true),
-				},
-				MaxRecursionDepth:   traceableconfig.Int32(10),
-				SkipInternalRequest: traceableconfig.Bool(true),
-				SkipClientSpans:     traceableconfig.Bool(false),
-				// takes precedence over top-level RemoteConfig
-				RemoteConfig: &traceableconfig.RemoteConfig{
-					Enabled:                traceableconfig.Bool(true),
-					Endpoint:               traceableconfig.String("agent.traceableai:5441"),
-					PollPeriodSeconds:      traceableconfig.Int32(10),
-					CertFile:               traceableconfig.String("/etc/tls.crt"),
-					GrpcMaxCallRecvMsgSize: traceableconfig.Int32(64 * 1024 * 1024),
-					UseSecureConnection:    traceableconfig.Bool(true),
-				},
-				EdgeDecisionService: &traceableconfig.EdgeDecisionServiceConfig{
-					Enabled:            traceableconfig.Bool(true),
-					Endpoint:           traceableconfig.String("localhost:62060"),
-					TimeoutMs:          traceableconfig.Int32(30),
-					IncludePathRegexes: []*wrapperspb.StringValue{},
-					ExcludePathRegexes: []*wrapperspb.StringValue{},
-				},
-				EvaluateEdsFirst: traceableconfig.Bool(false),
-			},
-			// ignored during parsing
-			Opa: &traceableconfig.Opa{
-				Enabled:             traceableconfig.Bool(true),
-				Endpoint:            traceableconfig.String("http://opa:8181"),
-				PollPeriodSeconds:   traceableconfig.Int32(10),
-				CertFile:            traceableconfig.String("/conf/tls.crt"),
-				UseSecureConnection: traceableconfig.Bool(true),
-			},
-			RemoteConfig: &traceableconfig.RemoteConfig{
-				Enabled:                traceableconfig.Bool(true),
-				Endpoint:               traceableconfig.String("localhost:5441"),
-				PollPeriodSeconds:      traceableconfig.Int32(30),
-				CertFile:               traceableconfig.String(""),
-				GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
-				UseSecureConnection:    traceableconfig.Bool(false),
-			},
-			Sampling: &traceableconfig.SamplingConfig{
-				Enabled: traceableconfig.Bool(false),
-				DefaultRateLimitConfig: &traceableconfig.RateLimitConfig{
-					Enabled:               traceableconfig.Bool(false),
-					MaxCountGlobal:        &wrapperspb.Int64Value{Value: 2},
-					MaxCountPerEndpoint:   &wrapperspb.Int64Value{Value: 1},
-					RefreshPeriod:         traceableconfig.String("30s"),
-					ValueExpirationPeriod: traceableconfig.String("200h"),
-					SpanType:              traceableconfig.SpanType_SPAN_TYPE_NO_SPAN,
-				},
-			},
-			Logging: &traceableconfig.LogConfig{
-				LogMode:  traceableconfig.LogMode_LOG_MODE_STDOUT,
-				LogLevel: traceableconfig.LogLevel_LOG_LEVEL_INFO,
-				LogFile: &traceableconfig.LogFileConfig{
-					MaxFiles:    traceableconfig.Int32(3),
-					MaxFileSize: traceableconfig.Int32(10 * 1024 * 1024),
-					FilePath:    traceableconfig.String("/var/log/traceable/libtraceable-goagent.log"),
-				},
-			},
-			MetricsConfig: &traceableconfig.MetricsConfig{
-				Enabled:      traceableconfig.Bool(true),
-				MaxQueueSize: traceableconfig.Int32(10),
-				EndpointConfig: &traceableconfig.EndpointMetricsConfig{
-					Enabled: traceableconfig.Bool(true),
-					// same values from libtraceable defaults
-					MaxEndpoints: traceableconfig.Int32(5000),
-					Logging: &traceableconfig.MetricsLogConfig{
-						Enabled:   traceableconfig.Bool(true),
-						Frequency: traceableconfig.String("30m"),
-					},
-				},
-				Logging: &traceableconfig.MetricsLogConfig{
-					Enabled:   traceableconfig.Bool(true),
-					Frequency: traceableconfig.String("30m"),
-				},
-				Exporter: &traceableconfig.MetricsExporterConfig{
-					Enabled:          traceableconfig.Bool(true),
-					ExportIntervalMs: traceableconfig.Int32(60),
-					ExportTimeoutMs:  traceableconfig.Int32(30),
-				},
-			},
-			ParserConfig: &traceableconfig.ParserConfig{
-				MaxBodySize: traceableconfig.Int32(64 * 1024),
-				Graphql: &traceableconfig.GraphqlParserConfig{
-					Enabled: traceableconfig.Bool(true),
-				},
-			},
+func TestFilterThreadPoolRace(t *testing.T) {
+	cfg := config.Load()
+	cfg.TraceableConfig.Goagent.FilterThreadPool = &traceableconfig.ThreadPool{
+		Enabled:    traceableconfig.Bool(true),
+		BufferSize: traceableconfig.Int32(1000),
+		NumWorkers: traceableconfig.Int32(2),
+	}
+
+	shutdownChan := make(chan struct{}, 1)
+
+	observed, logs := observer.New(zapcore.InfoLevel)
+	logger := zap.New(observed)
+
+	filter1 := NewFilter("test-tenant-1", "test-svc-1", cfg.TraceableConfig, logger)
+
+	go func() {
+		filter2 := NewFilter("test-tenant-2", "test-svc-2", cfg.TraceableConfig, logger)
+		<-shutdownChan
+		assert.True(t, filter2.Stop())
+	}()
+	close(shutdownChan)
+	assert.True(t, filter1.Stop())
+	assert.Equal(t, 1, logs.Len())
+	assert.Equal(t, "initializing filter worker pool", logs.All()[0].Message)
+}
+
+func TestMetricReportingEndpoint(t *testing.T) {
+	tests := []struct {
+		name                    string
+		metricReportingEndpoint *wrapperspb.StringValue
+		traceReportingEndpoint  *wrapperspb.StringValue
+		expected                string
+	}{
+		{
+			name:                    "metric endpoint present",
+			metricReportingEndpoint: traceableconfig.String("http://localhost:1234"),
+			traceReportingEndpoint:  traceableconfig.String("http://localhost:5678"),
+			expected:                "http://localhost:1234",
 		},
-	)
+		{
+			name:                   "metric endpoint absent",
+			traceReportingEndpoint: traceableconfig.String("http://localhost:5678"),
+			expected:               "http://localhost:5678",
+		},
+	}
 
-	assert.Equal(t, 1, int(libTraceableConfig.remote_config.enabled))
-	assert.Equal(t, "agent.traceableai:5441", getGoString(libTraceableConfig.remote_config.remote_endpoint))
-	assert.Equal(t, 10, int(libTraceableConfig.remote_config.poll_period_sec))
-	assert.Equal(t, "/etc/tls.crt", getGoString(libTraceableConfig.remote_config.cert_file))
-	assert.Equal(t, int64(64*1024*1024), int64(libTraceableConfig.remote_config.grpc_max_call_recv_msg_size))
-	assert.Equal(t, 1, int(libTraceableConfig.remote_config.use_secure_connection))
-	arr = getSliceFromCTraceableStringArray(libTraceableConfig.blocking_config.eds_config.include_path_regexes)
-	assert.Equal(t, 0, len(arr))
-	arr = getSliceFromCTraceableStringArray(libTraceableConfig.blocking_config.eds_config.exclude_path_regexes)
-	assert.Equal(t, 0, len(arr))
-	assert.Equal(t, "", getGoString(libTraceableConfig.agent_config.environment))
-	assert.Equal(t, "", getGoString(libTraceableConfig.agent_config.agent_token))
-	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.evaluate_eds_first))
-	assert.Equal(t, 1, int(libTraceableConfig.parser_config.graphql.enabled))
-	assert.Equal(t, 64*1024, int(libTraceableConfig.parser_config.max_body_size))
-	assert.Equal(t, 0, int(libTraceableConfig.blocking_config.skip_client_spans))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Load()
+			cfg.TraceableConfig.Reporting.MetricEndpoint = tt.metricReportingEndpoint
+			cfg.TraceableConfig.Reporting.Endpoint = tt.traceReportingEndpoint
+			libtraceableConfig := getLibTraceableConfig(
+				"test-service", cfg.TraceableConfig)
+			assert.Equal(t, tt.expected, getGoString(libtraceableConfig.metrics_config.exporter.server.endpoint))
+		})
+	}
+}
+
+func TestGetMetricReporterType(t *testing.T) {
+	tests := []struct {
+		name               string
+		metricReporterType traceableconfig.MetricReporterType
+		traceReporterType  traceableconfig.TraceReporterType
+		expected           traceableconfig.TraceReporterType
+	}{
+		{
+			name:              "metric reporter type not set",
+			traceReporterType: traceableconfig.TraceReporterType_OTLP,
+			expected:          traceableconfig.TraceReporterType_OTLP,
+		},
+		{
+			name:               "metric reporter type set to unspecified",
+			metricReporterType: traceableconfig.MetricReporterType_METRIC_REPORTER_TYPE_UNSPECIFIED,
+			traceReporterType:  traceableconfig.TraceReporterType_OTLP,
+			expected:           traceableconfig.TraceReporterType_OTLP,
+		},
+		{
+			name:               "metric reporter type set to unsupported value",
+			metricReporterType: traceableconfig.MetricReporterType_METRIC_REPORTER_TYPE_PROMETHEUS,
+			traceReporterType:  traceableconfig.TraceReporterType_OTLP,
+			expected:           traceableconfig.TraceReporterType_OTLP,
+		},
+		{
+			name:               "metric reporter type set",
+			metricReporterType: traceableconfig.MetricReporterType_METRIC_REPORTER_TYPE_LOGGING,
+			traceReporterType:  traceableconfig.TraceReporterType_OTLP,
+			expected:           traceableconfig.TraceReporterType_LOGGING,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Load()
+			cfg.TraceableConfig.Reporting.MetricReporterType = tt.metricReporterType
+			cfg.TraceableConfig.Reporting.TraceReporterType = tt.traceReporterType
+			libtraceableConfig := getLibTraceableConfig(
+				"test-service", cfg.TraceableConfig)
+			assert.Equal(t, tt.expected, getGoReporterType(libtraceableConfig.metrics_config.exporter.reporter_type))
+		})
+	}
 }

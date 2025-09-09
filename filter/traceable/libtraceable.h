@@ -42,7 +42,18 @@ typedef enum {
   TRACEABLE_FULL_SPAN
 } TRACEABLE_SPAN_TYPE;
 
-typedef enum { LOGGING, OTLP, OTLP_HTTP } TRACEABLE_TRACE_REPORTER_TYPE;
+typedef enum {
+  TRACEABLE_SPAN_KIND_SERVER,
+  TRACEABLE_SPAN_KIND_CLIENT,
+  TRACEABLE_SPAN_KIND_INTERNAL,
+} TRACEABLE_SPAN_KIND;
+
+typedef enum {
+  TRACEABLE_SPAN_STATUS_OK,
+  TRACEABLE_SPAN_STATUS_ERROR
+} TRACEABLE_SPAN_STATUS;
+
+typedef enum { LOGGING, OTLP, OTLP_HTTP } TRACEABLE_REPORTER_TYPE;
 
 // TODO remove this and use traceable_key_value_string
 typedef struct {
@@ -154,6 +165,7 @@ typedef struct {
 
 typedef struct {
   int enabled;
+  TRACEABLE_REPORTER_TYPE reporter_type;
   traceable_exporter_config server;
 } traceable_metrics_exporter_config;
 
@@ -169,7 +181,7 @@ typedef struct {
   int enabled;
   int max_batch_size;
   int max_queue_size;
-  TRACEABLE_TRACE_REPORTER_TYPE trace_reporter_type;
+  TRACEABLE_REPORTER_TYPE trace_reporter_type;
   traceable_exporter_config server;
 } traceable_traces_exporter_config;
 
@@ -241,6 +253,25 @@ typedef struct {
   modsecurity_rule_match* match_arr;
 } modsecurity_rule_matches;
 
+typedef struct {
+  const char* name;
+  TRACEABLE_SPAN_KIND span_kind;
+  const char* traceparent;
+} traceable_start_span_request;
+
+typedef struct {
+  void* span;
+  const char* tracecontext;
+} traceable_start_span_result;
+
+typedef struct {
+  // this is what is returned from traceable_start_span and should be returned
+  // back for freeing the memory
+  const char* tracecontext;
+  traceable_attributes attributes;
+  TRACEABLE_SPAN_STATUS status;
+} traceable_end_span_request;
+
 /*
  * Traceable api functions
  */
@@ -278,11 +309,12 @@ TRACEABLE_API TRACEABLE_RET traceable_process_request(
     traceable_libtraceable libtraceable, traceable_attributes attributes,
     traceable_process_request_result* out_process_result);
 
-/*
- * Export a request as a span to Traceable Platform Agent.
- */
-TRACEABLE_API TRACEABLE_RET traceable_export_request(
-    traceable_libtraceable libtraceable, traceable_attributes attributes);
+TRACEABLE_API TRACEABLE_RET traceable_start_span(
+    traceable_libtraceable libtraceable, traceable_start_span_request request,
+    traceable_start_span_result* out_result);
+
+TRACEABLE_API TRACEABLE_RET
+traceable_end_span(void* span, traceable_end_span_request request);
 
 TRACEABLE_API TRACEABLE_RET traceable_delete_process_request_result_data(
     traceable_process_request_result result);
@@ -295,6 +327,8 @@ TRACEABLE_API TRACEABLE_RET traceable_delete_process_request_result_data(
 TRACEABLE_API TRACEABLE_RET traceable_decode_protobuf(const char* blob,
                                                       int length, int depth,
                                                       char** out_string);
+
+TRACEABLE_API void traceable_delete_decode_protobuf_result(const char* string);
 
 TRACEABLE_API TRACEABLE_RET traceable_is_content_type_capturable(
     const char* media_type, const char** supported_content_types,

@@ -1,6 +1,6 @@
 package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 
-import "github.com/hypertrace/goagent/sdk/instrumentation/net/http"
+import "github.com/Traceableai/goagent/hypertrace/goagent/sdk/instrumentation/net/http"
 
 type HeaderAccessor interface {
 	http.HeaderAccessor

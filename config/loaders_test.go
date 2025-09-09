@@ -10,7 +10,7 @@ import (
 func TestLoadWithDefaults(t *testing.T) {
 	cfg := Load()
 
-	assert.Equal(t, "localhost:4317", cfg.Tracing.Reporting.Endpoint.Value)
+	assert.Equal(t, "localhost:5442", cfg.Tracing.Reporting.Endpoint.Value)
 	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
 	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
 	assert.Equal(t, true, cfg.Tracing.Reporting.EnableGrpcLoadbalancing.Value)
@@ -30,7 +30,7 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.Equal(t, int32(20), cfg.TraceableConfig.BlockingConfig.MaxRecursionDepth.Value)
 
 	assert.Equal(t, true, cfg.TraceableConfig.RemoteConfig.Enabled.Value)
-	assert.Equal(t, "localhost:5441", cfg.TraceableConfig.RemoteConfig.Endpoint.Value)
+	assert.Equal(t, "localhost:5442", cfg.TraceableConfig.RemoteConfig.Endpoint.Value)
 	assert.Equal(t, int32(30), cfg.TraceableConfig.RemoteConfig.PollPeriodSeconds.Value)
 	assert.Equal(t, "", cfg.TraceableConfig.RemoteConfig.CertFile.Value)
 	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
@@ -55,7 +55,7 @@ func TestLoadWithDefaults(t *testing.T) {
 
 	// deprecated defaults
 	assert.Equal(t, true, cfg.TraceableConfig.BlockingConfig.RemoteConfig.Enabled.Value)
-	assert.Equal(t, "localhost:5441", cfg.TraceableConfig.BlockingConfig.RemoteConfig.Endpoint.Value)
+	assert.Equal(t, "localhost:5442", cfg.TraceableConfig.BlockingConfig.RemoteConfig.Endpoint.Value)
 	assert.Equal(t, int32(30), cfg.TraceableConfig.BlockingConfig.RemoteConfig.PollPeriodSeconds.Value)
 	assert.Equal(t, "", cfg.TraceableConfig.BlockingConfig.RemoteConfig.CertFile.Value)
 	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.BlockingConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
@@ -69,7 +69,7 @@ func TestLoadFromFile(t *testing.T) {
 	cfg := LoadFromFile("./testdata/config.yaml")
 
 	assert.Equal(t, "goagent-example", cfg.Tracing.ServiceName.Value)
-	assert.Equal(t, "traceable-agent:4317", cfg.Tracing.Reporting.Endpoint.Value)
+	assert.Equal(t, "traceable-agent:5442", cfg.Tracing.Reporting.Endpoint.Value)
 	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
 	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
 
@@ -85,7 +85,7 @@ func TestLoadFromFile(t *testing.T) {
 	assert.Equal(t, "Custom Forbidden Message", cfg.TraceableConfig.BlockingConfig.ResponseMessage.Value)
 
 	assert.Equal(t, true, cfg.TraceableConfig.RemoteConfig.Enabled.Value)
-	assert.Equal(t, "http://traceable-agent:5441/", cfg.TraceableConfig.RemoteConfig.Endpoint.Value)
+	assert.Equal(t, "http://traceable-agent:5442/", cfg.TraceableConfig.RemoteConfig.Endpoint.Value)
 	assert.Equal(t, int32(30), cfg.TraceableConfig.RemoteConfig.PollPeriodSeconds.Value)
 	assert.Equal(t, "/conf/tls.crt", cfg.TraceableConfig.RemoteConfig.CertFile.Value)
 	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)

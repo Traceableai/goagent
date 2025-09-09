@@ -77,7 +77,7 @@ func main() {
 Filters allow users to filter requests based on URL, headers or body. Filters can be added in the handler declaration using the `traceablehttp.WithFilter` option. Multiple filters can be added too by using `filter.NewMultiFilter` and they will be run in sequence until a filter returns true (request is blocked), or all filters are run.
 
 ```go
-import "github.com/hypertrace/goagent/sdk/filter"
+import "github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 
 // ...
 
@@ -183,7 +183,7 @@ server := grpc.NewServer(
 Filters allow users to filter requests based on URL, headers or body. Filters can be added in the server interceptor declaration using the `traceablegrpc.WithFilter` option. Multiple filters can be added too by using `filter.NewMultiFilter` and they will be run in sequence until a filter returns true (request is blocked), or all filters are run.
 
 ```go
-import "github.com/hypertrace/goagent/sdk/filter"
+import "github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 
 // ...
 

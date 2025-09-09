@@ -1,9 +1,9 @@
 package traceablemux // import "github.com/Traceableai/goagent/instrumentation/github.com/gorilla/traceablemux"
 
 import (
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/github.com/gorilla/hypermux"
 	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
 	"github.com/gorilla/mux"
-	"github.com/hypertrace/goagent/instrumentation/hypertrace/github.com/gorilla/hypermux"
 )
 
 // NewMiddleware sets up a handler to start tracing the incoming requests.

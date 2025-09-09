@@ -3,8 +3,8 @@ package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/
 import (
 	"net/http"
 
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
 	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
-	"github.com/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
 )
 
 // NewHandler wraps the passed handler, functioning like middleware.

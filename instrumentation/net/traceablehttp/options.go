@@ -1,8 +1,8 @@
 package traceablehttp // import "github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 
 import (
-	"github.com/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
-	"github.com/hypertrace/goagent/sdk/filter"
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/net/hyperhttp"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 )
 
 type options struct {

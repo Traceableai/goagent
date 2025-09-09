@@ -1,8 +1,8 @@
 package traceablegrpc // import "github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc"
 
 import (
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/google.golang.org/hypergrpc"
 	"github.com/Traceableai/goagent/instrumentation/internal/traceablefilter"
-	"github.com/hypertrace/goagent/instrumentation/hypertrace/google.golang.org/hypergrpc"
 	"google.golang.org/grpc"
 )
 

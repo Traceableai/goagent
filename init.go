@@ -3,17 +3,18 @@ package goagent // import "github.com/Traceableai/goagent"
 import (
 	"os"
 
-	"go.uber.org/zap"
-
 	"github.com/Traceableai/goagent/config"
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry"
 	internalconfig "github.com/Traceableai/goagent/internal/config"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
 	"github.com/Traceableai/goagent/version"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry"
+	htconfig "github.com/hypertrace/agent-config/gen/go/v1"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var versionInfoAttributes = []attribute.KeyValue{
@@ -52,4 +53,9 @@ func RegisterService(
 	}
 
 	return translateSpanStarter(s), tp, nil
+}
+
+// NewZapCore returns a new [zapcore.Core] which exports the logs to the configured exporter
+func NewZapCore(name string, cfg *htconfig.LogsExport) zapcore.Core {
+	return opentelemetry.NewZapCore(name, cfg)
 }

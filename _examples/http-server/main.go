@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"go.uber.org/zap/zapcore"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -12,18 +13,22 @@ import (
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 )
 
 const (
 	port = ":8081"
 )
 
+var logger *zap.Logger
+
 func main() {
 	cfg := config.LoadFromFile("./config.yaml")
 
 	closer := goagent.Init(cfg)
 	defer closer()
-
+	logger, _ = zap.NewProduction()
+	logger = zap.New(zapcore.NewTee(logger.Core(), goagent.NewZapCore("http-server", cfg.Tracing.GetTelemetry().GetLogs())))
 	r := mux.NewRouter()
 	r.Handle("/foo", traceablehttp.NewHandler(
 		http.HandlerFunc(fooHandler),
@@ -32,13 +37,13 @@ func main() {
 	// Using log.Fatal(http.ListenAndServe(":8081", r)) causes a gosec timeout error.
 	// G114 (CWE-676): Use of net/http serve function that has no support for setting timeouts (Confidence: HIGH, Severity: MEDIUM)
 	srv := http.Server{
-		Addr:              ":8081",
+		Addr:              port,
 		Handler:           r,
 		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      60 * time.Second,
 		ReadHeaderTimeout: 60 * time.Second,
 	}
-	log.Println("Starting HTTP server on :8081")
+	log.Println("Starting HTTP server on " + port)
 	log.Fatal(srv.ListenAndServe())
 }
 
@@ -47,7 +52,8 @@ type person struct {
 }
 
 func fooHandler(w http.ResponseWriter, r *http.Request) {
-	sBody, err := ioutil.ReadAll(r.Body)
+	logger.Info("Received foo request")
+	sBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

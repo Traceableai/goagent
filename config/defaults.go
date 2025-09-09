@@ -1,6 +1,9 @@
 package config // import "github.com/Traceableai/goagent/config"
 
 import (
+	"runtime"
+	"time"
+
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -8,7 +11,7 @@ import (
 
 var defaultRemoteConfig = &traceableconfig.RemoteConfig{
 	Enabled:                traceableconfig.Bool(true),
-	Endpoint:               traceableconfig.String("localhost:5441"),
+	Endpoint:               traceableconfig.String("localhost:5442"),
 	PollPeriodSeconds:      traceableconfig.Int32(30),
 	CertFile:               traceableconfig.String(""),
 	GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
@@ -47,7 +50,7 @@ var defaultConfig = &AgentConfig{
 			},
 		},
 		Reporting: &hyperconfig.Reporting{
-			Endpoint:                hyperconfig.String("localhost:4317"),
+			Endpoint:                hyperconfig.String("localhost:5442"),
 			Secure:                  hyperconfig.Bool(false),
 			TraceReporterType:       hyperconfig.TraceReporterType_OTLP,
 			CertFile:                hyperconfig.String(""),
@@ -60,7 +63,7 @@ var defaultConfig = &AgentConfig{
 	TraceableConfig: &traceableconfig.AgentConfig{
 		Reporting: &traceableconfig.Reporting{
 			Token:                   traceableconfig.String(""),
-			Endpoint:                traceableconfig.String("localhost:4317"),
+			Endpoint:                traceableconfig.String("localhost:5442"),
 			Secure:                  traceableconfig.Bool(false),
 			TraceReporterType:       traceableconfig.TraceReporterType_OTLP,
 			CertFile:                traceableconfig.String(""),
@@ -131,6 +134,16 @@ var defaultConfig = &AgentConfig{
 			MaxBodySize: traceableconfig.Int32(128 * 1024),
 			Graphql: &traceableconfig.GraphqlParserConfig{
 				Enabled: traceableconfig.Bool(false),
+			},
+		},
+		Goagent: &traceableconfig.GoAgent{
+			FilterThreadPool: &traceableconfig.ThreadPool{
+				Enabled:    traceableconfig.Bool(false),
+				BufferSize: traceableconfig.Int32(1000),
+				NumWorkers: traceableconfig.Int32(int32(runtime.NumCPU())),
+				// setting 10 days as the default value to enforce blocking behavior.
+				// For non-blocking behavior, the default value should be overridden to a more sensible one.
+				TimeoutMs: wrapperspb.Int32(int32((10 * 24 * time.Hour).Milliseconds())),
 			},
 		},
 	},

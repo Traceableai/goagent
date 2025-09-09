@@ -107,22 +107,103 @@ traceable_libtraceable_config w_init_libtraceable_config (
 */
 import "C"
 import (
+	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
 	"unsafe"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
-	goagentconfig "github.com/Traceableai/goagent/config"
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64"
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_amd64-alpine"
 	_ "github.com/Traceableai/goagent/filter/traceable/libs/linux_arm64"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry/identifier"
-	"github.com/hypertrace/goagent/sdk"
-	"github.com/hypertrace/goagent/sdk/filter"
-	filterresult "github.com/hypertrace/goagent/sdk/filter/result"
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/identifier"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
+	filterresult "github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter/result"
+	"github.com/Traceableai/goagent/version"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
+
+const (
+	metricInstrumentationName  = "traceable_filter"
+	bufferPoolGaugeName        = "traceable.agent.filter.buffer.size"
+	samplingLoggerInitialLimit = 1
+	samplingLoggerThereafter   = 500
+)
+
+var (
+	once            sync.Once
+	poolEnabled     = false
+	poolSize        = 0
+	buffer          chan filterRequest
+	poolLogger      *zap.Logger
+	bufferSizeGauge metric.Int64ObservableGauge
+	// setting 10 days as the default timeout to enforce blocking behavior
+	timeout        = 10 * 24 * time.Hour
+	timedOutResult = filterresult.FilterResult{
+		Block: false,
+	}
+)
+
+func initializeWorkerPool(logger *zap.Logger, cfg *traceableconfig.ThreadPool) {
+	if !cfg.GetEnabled().GetValue() {
+		return
+	}
+
+	poolEnabled = true
+	poolSize = int(cfg.GetNumWorkers().GetValue())
+	bufferSize := int(cfg.GetBufferSize().GetValue())
+	if timeoutMs := cfg.GetTimeoutMs().GetValue(); timeoutMs > 0 {
+		timeout = time.Duration(timeoutMs) * time.Millisecond
+	}
+	logger.Info(
+		"initializing filter worker pool",
+		zap.Int("pool size", poolSize),
+		zap.Int("buffer size", bufferSize),
+		zap.String("timeout", timeout.String()),
+	)
+
+	buffer = make(chan filterRequest, bufferSize)
+	poolLogger = logger.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		return zapcore.NewSamplerWithOptions(core, time.Second, samplingLoggerInitialLimit, samplingLoggerThereafter)
+	}))
+	if gauge, err := otel.GetMeterProvider().Meter(
+		metricInstrumentationName,
+		metric.WithInstrumentationVersion(version.Version)).
+		Int64ObservableGauge(
+			bufferPoolGaugeName,
+			metric.WithInt64Callback(func(_ context.Context, observer metric.Int64Observer) error {
+				observer.Observe(int64(len(buffer)))
+				return nil
+			})); err == nil {
+		bufferSizeGauge = gauge
+	}
+
+	// start worker pool
+	for range poolSize {
+		go consume()
+	}
+}
+
+type filterRequest struct {
+	span         sdk.Span
+	responseChan chan<- filterresult.FilterResult
+	filter       *Filter
+}
+
+func consume() {
+	for {
+		req := <-buffer
+		req.responseChan <- req.filter.evaluate(req.span)
+		close(req.responseChan)
+	}
+}
 
 type Filter struct {
 	libtraceableHandle C.traceable_libtraceable
@@ -232,6 +313,11 @@ func NewFilter(
 		zap.String("traceableai.goagent.lib_path", libPath),
 	)
 
+	// initialize worker pool
+	once.Do(func() {
+		initializeWorkerPool(logger, config.GetGoagent().GetFilterThreadPool())
+	})
+
 	return &traceableFilter
 }
 
@@ -321,9 +407,36 @@ func (f *Filter) Stop() bool {
 	return true
 }
 
-// Evaluate calls into libtraceable to evaluate if request url, body and headers. It is
-// EvaluateURLAndHeaders and EvaluateBody combined into one call.
+// Evaluate adds an incoming filter request to the common buffer.
+// It waits when there are no workers free and buffer is full.
 func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
+	if !poolEnabled {
+		return f.evaluate(span)
+	}
+
+	responseChan := make(chan filterresult.FilterResult, 1)
+	req := filterRequest{
+		filter:       f,
+		responseChan: responseChan,
+		span:         span,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	select {
+	case buffer <- req:
+	case <-ctx.Done():
+		poolLogger.Info("Throttled log: filter buffer is full and request timed out waiting for worker, returning default response")
+		close(responseChan)
+		return timedOutResult
+	}
+	return <-responseChan
+}
+
+// evaluate calls into libtraceable to evaluate if request url, body and headers. It is
+// EvaluateURLAndHeaders and EvaluateBody combined into one call.
+func (f *Filter) evaluate(span sdk.Span) filterresult.FilterResult {
 	if !f.started {
 		f.logger.Debug("No evaluation as engine isn't started")
 		return filterresult.FilterResult{}
@@ -331,8 +444,23 @@ func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
 
 	attributes := map[string]string{}
 	span.GetAttributes().Iterate(func(key string, value interface{}) bool {
-		attributes[key] = fmt.Sprintf("%v", value)
+		if value == nil {
+			f.logger.Warn("Skipping nil attribute for filter evaluation", zap.String("key", key))
+			return true
+		}
 
+		attributes[key] = fmt.Sprintf("%v", value)
+		// the iterator from ht agent sends values based on this return value
+		return true
+	})
+
+	span.GetResourceAttributes().Iterate(func(key string, value interface{}) bool {
+		if value == nil {
+			f.logger.Warn("Skipping nil attribute for filter evaluation", zap.String("key", key))
+			return true
+		}
+
+		attributes[key] = fmt.Sprintf("%v", value)
 		// the iterator from ht agent sends values based on this return value
 		return true
 	})
@@ -480,11 +608,7 @@ func populateLibtraceableConfig(
 	libtraceableConfig.agent_config.service_instance_id = C.CString(identifier.ServiceInstanceIDAttr.AsString())
 	libtraceableConfig.agent_config.host_name = C.CString(getHostName(config.GetResourceAttributes()))
 	// remote_config under blocking is deprecated but need to honor that
-	remoteConfigPb := config.BlockingConfig.GetRemoteConfig()
-	// if it's not there then look at new location
-	if remoteConfigPb.String() == goagentconfig.GetDefaultRemoteConfig().String() {
-		remoteConfigPb = config.RemoteConfig
-	}
+	remoteConfigPb := config.RemoteConfig
 
 	// disable traces pipeline
 	libtraceableConfig.trace_exporter_config.enabled = C.int(0)
@@ -546,6 +670,10 @@ func populateLibtraceableConfig(
 	libtraceableConfig.log_config.file_config.max_file_size = C.int(config.Logging.LogFile.MaxFileSize.Value)
 	libtraceableConfig.log_config.file_config.log_file = C.CString(config.Logging.LogFile.FilePath.Value)
 
+	metricReportingEndpoint := config.GetReporting().GetMetricEndpoint().GetValue()
+	if len(metricReportingEndpoint) == 0 {
+		metricReportingEndpoint = config.GetReporting().GetEndpoint().GetValue()
+	}
 	libtraceableConfig.metrics_config.enabled =
 		getCBool(config.MetricsConfig.Enabled.Value)
 	libtraceableConfig.metrics_config.max_queue_size =
@@ -567,13 +695,15 @@ func populateLibtraceableConfig(
 	libtraceableConfig.metrics_config.exporter.server.secure =
 		getCBool(config.Reporting.Secure.Value)
 	libtraceableConfig.metrics_config.exporter.server.endpoint =
-		C.CString(config.Reporting.Endpoint.Value)
+		C.CString(metricReportingEndpoint)
 	libtraceableConfig.metrics_config.exporter.server.cert_file =
 		C.CString(config.Reporting.CertFile.Value)
 	libtraceableConfig.metrics_config.exporter.server.export_interval_ms =
 		C.int(config.MetricsConfig.Exporter.ExportIntervalMs.Value)
 	libtraceableConfig.metrics_config.exporter.server.export_timeout_ms =
 		C.int(config.MetricsConfig.Exporter.ExportTimeoutMs.Value)
+	libtraceableConfig.metrics_config.exporter.reporter_type =
+		getMetricReporterType(config.Reporting.MetricReporterType, config.Reporting.TraceReporterType)
 
 	libtraceableConfig.parser_config.max_body_size =
 		C.uint32_t(uint32(config.GetParserConfig().GetMaxBodySize().GetValue()))
@@ -670,4 +800,30 @@ func getHostName(resourceAttrs map[string]string) string {
 		return val
 	}
 	return ""
+}
+
+func getMetricReporterType(metricReporterType traceableconfig.MetricReporterType, traceReporterType traceableconfig.TraceReporterType) C.TRACEABLE_REPORTER_TYPE {
+	if metricReporterType != traceableconfig.MetricReporterType_METRIC_REPORTER_TYPE_UNSPECIFIED {
+		return getCTraceableMetricReporterType(metricReporterType)
+	}
+
+	return getCTraceableReporterType(traceReporterType)
+}
+
+func getCTraceableReporterType(reporterType traceableconfig.TraceReporterType) C.TRACEABLE_REPORTER_TYPE {
+	switch reporterType {
+	case traceableconfig.TraceReporterType_LOGGING:
+		return C.LOGGING
+	case traceableconfig.TraceReporterType_OTLP_HTTP:
+		return C.OTLP_HTTP
+	}
+	return C.OTLP
+}
+
+func getCTraceableMetricReporterType(reporterType traceableconfig.MetricReporterType) C.TRACEABLE_REPORTER_TYPE {
+	switch reporterType {
+	case traceableconfig.MetricReporterType_METRIC_REPORTER_TYPE_LOGGING:
+		return C.LOGGING
+	}
+	return C.OTLP
 }

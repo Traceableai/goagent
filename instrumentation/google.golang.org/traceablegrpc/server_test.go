@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/grpcunaryinterceptors"
 	"github.com/Traceableai/goagent/instrumentation/google.golang.org/traceablegrpc/internal/helloworld"
 	"github.com/Traceableai/goagent/internal/tracetesting"
-	"github.com/hypertrace/goagent/instrumentation/opentelemetry/grpcunaryinterceptors"
 	"github.com/stretchr/testify/assert"
 	otelcodes "go.opentelemetry.io/otel/codes"
 	"google.golang.org/grpc"

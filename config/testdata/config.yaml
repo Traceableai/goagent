@@ -2,7 +2,7 @@ environment: goagent-env
 service_name: goagent-example
 
 reporting:
-  endpoint: traceable-agent:4317
+  endpoint: traceable-agent:5442
   secure: false
   trace_reporter_type: OTLP
 
@@ -15,7 +15,7 @@ blocking_config:
 
 remote_config:
   enabled: true
-  endpoint: http://traceable-agent:5441/
+  endpoint: http://traceable-agent:5442/
   cert_file: "/conf/tls.crt"
 
 sampling:

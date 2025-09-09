@@ -1,8 +1,8 @@
 package traceablegin // import "github.com/Traceableai/goagent/instrumentation/github.com/gin-gonic/traceablegin"
 
 import (
-	"github.com/hypertrace/goagent/instrumentation/hypertrace/github.com/gin-gonic/hypergin"
-	"github.com/hypertrace/goagent/sdk/filter"
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/github.com/gin-gonic/hypergin"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 )
 
 type options struct {

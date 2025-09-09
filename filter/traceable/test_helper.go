@@ -65,3 +65,15 @@ func getGoSpanType(spanType C.TRACEABLE_SPAN_TYPE) traceableconfig.SpanType {
 	}
 	return traceableconfig.SpanType_SPAN_TYPE_UNSPECIFIED
 }
+
+func getGoReporterType(reporterType C.TRACEABLE_REPORTER_TYPE) traceableconfig.TraceReporterType {
+	switch reporterType {
+	case C.LOGGING:
+		return traceableconfig.TraceReporterType_LOGGING
+	case C.OTLP_HTTP:
+		return traceableconfig.TraceReporterType_OTLP_HTTP
+	case C.OTLP:
+		return traceableconfig.TraceReporterType_OTLP
+	}
+	return traceableconfig.TraceReporterType_UNSPECIFIED
+}

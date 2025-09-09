@@ -1,13 +1,13 @@
 service_name: http-server
 
 reporting:
-  endpoint: localhost:4317
+  endpoint: localhost:5442
   secure: false
   trace_reporter_type: OTLP
 
 remote_config:
   enabled: true
-  endpoint: localhost:5441
+  endpoint: localhost:5442
   poll_period_seconds: 30
 
 blocking_config:
@@ -26,3 +26,8 @@ blocking_config:
       - foo
 logging:
   log_level: LOG_LEVEL_INFO
+
+telemetry:
+  logs:
+    enabled: true
+    level: LOG_LEVEL_INFO

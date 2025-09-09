@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/hypertrace/goagent/instrumentation/hypertrace"
-	"github.com/hypertrace/goagent/sdk"
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
 )
 
 func SpanFromContext(ctx context.Context) sdk.Span {

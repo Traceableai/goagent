@@ -1,7 +1,7 @@
 package propagation // import "github.com/Traceableai/goagent/propagation"
 
 import (
-	hyperpropagation "github.com/hypertrace/goagent/instrumentation/hypertrace/propagation"
+	hyperpropagation "github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/propagation"
 )
 
 type TextMapCarrier hyperpropagation.TextMapCarrier

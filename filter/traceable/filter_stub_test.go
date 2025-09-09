@@ -10,7 +10,7 @@ import (
 	"time"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
-	"github.com/hypertrace/goagent/sdk"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
@@ -50,6 +50,10 @@ func (s noopSpan) IsNoop() bool { return true }
 func (s noopSpan) AddEvent(_ string, _ time.Time, _ map[string]interface{}) {}
 
 func (s noopSpan) GetSpanId() string { return "" }
+
+func (s noopSpan) GetResourceAttributes() sdk.AttributeList {
+	return &noopAttributes{}
+}
 
 func TestBlockingStub(t *testing.T) {
 	f := NewFilter("", "", &traceableconfig.AgentConfig{}, zap.NewNop())

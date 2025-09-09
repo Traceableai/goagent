@@ -5,8 +5,8 @@ import (
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent/config"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 	hyperconfig "github.com/hypertrace/agent-config/gen/go/v1"
-	"github.com/hypertrace/goagent/sdk/filter"
 	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"

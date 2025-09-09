@@ -3,7 +3,7 @@ package traceablegrpc
 import (
 	"testing"
 
-	"github.com/hypertrace/goagent/sdk/filter"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 	"github.com/stretchr/testify/assert"
 )
 

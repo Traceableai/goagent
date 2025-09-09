@@ -3,3 +3,4 @@
 build_example
 .release
 .vscode
+.DS_Store

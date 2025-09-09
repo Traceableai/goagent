@@ -1,7 +1,7 @@
 service_name: grpc-server
 
 reporting:
-  endpoint: localhost:4317
+  endpoint: localhost:5442
   secure: false
   trace_reporter_type: OTLP
 
@@ -12,5 +12,5 @@ debug_log: true
 
 remote_config:
   enabled: true
-  endpoint: localhost:5441
+  endpoint: localhost:5442
   poll_period_seconds: 30

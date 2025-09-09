@@ -1,8 +1,8 @@
 package traceablemux // import "github.com/Traceableai/goagent/instrumentation/github.com/gorilla/traceablemux"
 
 import (
-	"github.com/hypertrace/goagent/instrumentation/hypertrace/github.com/gorilla/hypermux"
-	"github.com/hypertrace/goagent/sdk/filter"
+	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/github.com/gorilla/hypermux"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk/filter"
 )
 
 type options struct {

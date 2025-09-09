@@ -4,10 +4,10 @@ import (
 	"os"
 
 	"github.com/Traceableai/goagent/config"
+	hyperotel "github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry"
 	internalconfig "github.com/Traceableai/goagent/internal/config"
 	"github.com/Traceableai/goagent/internal/logger"
 	internalstate "github.com/Traceableai/goagent/internal/state"
-	hyperotel "github.com/hypertrace/goagent/instrumentation/opentelemetry"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
