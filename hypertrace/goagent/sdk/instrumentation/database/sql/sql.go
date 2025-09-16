@@ -35,7 +35,7 @@ func setError(s sdk.Span, err error) {
 	}
 }
 
-func (in *interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQueryContext, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (in *interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQueryContext, query string, args []driver.NamedValue) (context.Context, driver.Rows, error) {
 	ctx, span, end := in.startSpan(ctx, "db:query", &sdk.SpanOptions{Kind: sdk.SpanKindClient})
 	defer end()
 
@@ -47,7 +47,7 @@ func (in *interceptor) StmtQueryContext(ctx context.Context, conn driver.StmtQue
 	rows, err := conn.QueryContext(ctx, args)
 	setError(span, err)
 
-	return rows, err
+	return ctx, rows, err
 }
 
 func (in *interceptor) StmtExecContext(ctx context.Context, conn driver.StmtExecContext, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -65,7 +65,7 @@ func (in *interceptor) StmtExecContext(ctx context.Context, conn driver.StmtExec
 	return rows, err
 }
 
-func (in *interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerContext, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (in *interceptor) ConnQueryContext(ctx context.Context, conn driver.QueryerContext, query string, args []driver.NamedValue) (context.Context, driver.Rows, error) {
 	ctx, span, end := in.startSpan(ctx, "db:query", &sdk.SpanOptions{Kind: sdk.SpanKindClient})
 	defer end()
 
@@ -77,7 +77,7 @@ func (in *interceptor) ConnQueryContext(ctx context.Context, conn driver.Queryer
 	rows, err := conn.QueryContext(ctx, query, args)
 	setError(span, err)
 
-	return rows, err
+	return ctx, rows, err
 }
 
 func (in *interceptor) ConnExecContext(ctx context.Context, conn driver.ExecerContext, query string, args []driver.NamedValue) (driver.Result, error) {
@@ -95,7 +95,7 @@ func (in *interceptor) ConnExecContext(ctx context.Context, conn driver.ExecerCo
 	return rows, err
 }
 
-func (in *interceptor) ConnBeginTx(ctx context.Context, conn driver.ConnBeginTx, txOpts driver.TxOptions) (driver.Tx, error) {
+func (in *interceptor) ConnBeginTx(ctx context.Context, conn driver.ConnBeginTx, txOpts driver.TxOptions) (context.Context, driver.Tx, error) {
 	ctx, span, end := in.startSpan(ctx, "db:begin_transaction", &sdk.SpanOptions{Kind: sdk.SpanKindClient})
 	defer end()
 
@@ -106,10 +106,10 @@ func (in *interceptor) ConnBeginTx(ctx context.Context, conn driver.ConnBeginTx,
 	tx, err := conn.BeginTx(ctx, txOpts)
 	setError(span, err)
 
-	return tx, err
+	return ctx, tx, err
 }
 
-func (in *interceptor) ConnPrepareContext(ctx context.Context, conn driver.ConnPrepareContext, query string) (driver.Stmt, error) {
+func (in *interceptor) ConnPrepareContext(ctx context.Context, conn driver.ConnPrepareContext, query string) (context.Context, driver.Stmt, error) {
 	ctx, span, end := in.startSpan(ctx, "db:prepare", &sdk.SpanOptions{Kind: sdk.SpanKindClient})
 	defer end()
 
@@ -120,7 +120,7 @@ func (in *interceptor) ConnPrepareContext(ctx context.Context, conn driver.ConnP
 	tx, err := conn.PrepareContext(ctx, query)
 	setError(span, err)
 
-	return tx, err
+	return ctx, tx, err
 }
 
 func (in *interceptor) TxCommit(ctx context.Context, tx driver.Tx) error {

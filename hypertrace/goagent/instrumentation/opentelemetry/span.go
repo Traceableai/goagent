@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 const (
@@ -142,6 +143,11 @@ func SpanFromContext(ctx context.Context) sdk.Span {
 
 type getTracerProvider func() trace.TracerProvider
 
+func NoopTracerProvider() trace.TracerProvider {
+	// This returns noop.TracerProvider which though it implements trace.TracerProvider, go compiler complains about its type.
+	return noop.NewTracerProvider()
+}
+
 func startSpan(provider getTracerProvider) sdk.StartSpan {
 	return func(ctx context.Context, name string, opts *sdk.SpanOptions) (context.Context, sdk.Span, func()) {
 		startOpts := make([]trace.SpanStartOption, 0)
@@ -152,6 +158,10 @@ func startSpan(provider getTracerProvider) sdk.StartSpan {
 				startOpts = append(startOpts, trace.WithTimestamp(time.Now()))
 			} else {
 				startOpts = append(startOpts, trace.WithTimestamp(opts.Timestamp))
+			}
+		} else {
+			opts = &sdk.SpanOptions{
+				Timestamp: time.Now(),
 			}
 		}
 		startOpts = append(
@@ -169,7 +179,7 @@ func startSpan(provider getTracerProvider) sdk.StartSpan {
 }
 
 var StartSpan = startSpan(otel.GetTracerProvider)
-var NoopStartSpan = startSpan(trace.NewNoopTracerProvider)
+var NoopStartSpan = startSpan(NoopTracerProvider)
 
 func mapSpanKind(kind sdk.SpanKind) trace.SpanKind {
 	switch kind {

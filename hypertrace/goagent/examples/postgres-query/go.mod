@@ -2,17 +2,11 @@ module github.com/Traceableai/goagent/hypertrace/goagent/examples/postgres-query
 
 go 1.24
 
-replace github.com/Traceableai/goagent/hypertrace/goagent => ../..
+replace github.com/Traceableai/goagent => ../../../../
 
-replace github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/github.com/jackc/hyperpgx => ../../instrumentation/hypertrace/github.com/jackc/hyperpgx
-
-replace github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/github.com/jackc/hyperpgx => ../../instrumentation/opentelemetry/github.com/jackc/hyperpgx
-
-require github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/hypertrace/github.com/jackc/hyperpgx v0.0.0-00010101000000-000000000000
+require github.com/Traceableai/goagent v0.0.0-00010101000000-000000000000
 
 require (
-	github.com/Traceableai/goagent/hypertrace/goagent v0.0.0-00010101000000-000000000000 // indirect
-	github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/github.com/jackc/hyperpgx v0.0.0-00010101000000-000000000000 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -28,8 +22,8 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgtype v1.14.0 // indirect
-	github.com/jackc/pgx/v4 v4.18.2 // indirect
+	github.com/jackc/pgtype v1.14.4 // indirect
+	github.com/jackc/pgx/v4 v4.18.3 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect

@@ -151,8 +151,8 @@ func TestIterate(t *testing.T) {
 		numAttrs++
 		return true
 	})
-	// service.instance.id is added implicitly in StartSpan so 3 attributes will be present.
-	assert.Equal(t, 3, numAttrs)
+	// service.instance.id is added implicitly in StartSpan. span name and kind are also added as attributes. so 5 attributes will be present.
+	assert.Equal(t, 5, numAttrs)
 }
 
 func TestLen(t *testing.T) {
@@ -165,8 +165,8 @@ func TestLen(t *testing.T) {
 	s.SetAttribute("k1", "v1")
 	s.SetAttribute("k2", 200)
 
-	// service.instance.id is added implicitly in StartSpan so 3 attributes will be present.
-	assert.Equal(t, 3, s.GetAttributes().Len())
+	// service.instance.id is added implicitly in StartSpan. span name and kind are also added as attributes. so 5 attributes will be present.
+	assert.Equal(t, 5, s.GetAttributes().Len())
 }
 
 func TestGetSpanID(t *testing.T) {
@@ -190,5 +190,6 @@ func TestSpanMetadata(t *testing.T) {
 	// name, kind and service.instance.id
 	assert.Equal(t, 3, attrs.Len())
 	assert.Equal(t, "test_span", attrs.GetValue("span.name"))
-	assert.Equal(t, "CLIENT", attrs.GetValue("span.kind"))
+	// span.kind attribute value is lowercased in startSpan function.
+	assert.Equal(t, "client", attrs.GetValue("span.kind"))
 }

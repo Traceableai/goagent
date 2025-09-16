@@ -8,8 +8,6 @@ WORKDIR ${GOPATH}/src/github.com/Traceableai/goagent
 
 COPY go.mod go.mod
 COPY go.sum go.sum
-COPY hypertrace/goagent/go.mod hypertrace/goagent/go.mod
-COPY hypertrace/goagent/go.sum hypertrace/goagent/go.sum
 
 RUN go get ./...
 

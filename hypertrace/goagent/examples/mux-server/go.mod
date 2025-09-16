@@ -2,10 +2,10 @@ module github.com/Traceableai/goagent/hypertrace/goagent/examples/mux-server
 
 go 1.24
 
-replace github.com/Traceableai/goagent/hypertrace/goagent => ../..
+replace github.com/Traceableai/goagent => ../../../../
 
 require (
-	github.com/Traceableai/goagent/hypertrace/goagent v0.0.0-00010101000000-000000000000
+	github.com/Traceableai/goagent v0.0.0-00010101000000-000000000000
 	github.com/gorilla/mux v1.8.0
 )
 

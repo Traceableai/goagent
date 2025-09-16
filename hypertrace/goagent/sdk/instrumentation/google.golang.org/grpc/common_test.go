@@ -39,11 +39,11 @@ func (s *server) SayHello(ctx context.Context, req *helloworld.HelloRequest) (*h
 	}
 
 	if err := grpc.SetTrailer(ctx, s.replyTrailer); err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("unable to send reply trailer: %v", err))
+		return nil, status.Errorf(codes.Internal, "unable to send reply trailer: %v", err)
 	}
 
 	if err := grpc.SendHeader(ctx, s.replyHeader); err != nil {
-		return nil, status.Errorf(codes.Internal, fmt.Sprintf("unable to send reply headers: %v", err))
+		return nil, status.Errorf(codes.Internal, "unable to send reply headers: %v", err)
 	}
 
 	return reply, s.err

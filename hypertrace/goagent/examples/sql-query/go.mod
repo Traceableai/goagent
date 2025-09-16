@@ -2,10 +2,10 @@ module github.com/Traceableai/goagent/hypertrace/goagent/examples/sql-query
 
 go 1.24
 
-replace github.com/Traceableai/goagent/hypertrace/goagent => ../..
+replace github.com/Traceableai/goagent => ../../../../
 
 require (
-	github.com/Traceableai/goagent/hypertrace/goagent v0.0.0-00010101000000-000000000000
+	github.com/Traceableai/goagent v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gorilla/mux v1.8.0
 )
@@ -20,7 +20,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/hypertrace/agent-config/gen/go v0.0.0-20250829142101-d829e6298c17 // indirect
-	github.com/ngrok/sqlmw v0.0.0-20200129213757-d5c93a81bec6 // indirect
+	github.com/ngrok/sqlmw v0.0.0-20220520173518-97c9c04efc79 // indirect
 	github.com/openzipkin/zipkin-go v0.4.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.14 // indirect
 	github.com/tklauser/numcpus v0.8.0 // indirect

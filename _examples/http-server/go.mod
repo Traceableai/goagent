@@ -10,7 +10,6 @@ require (
 
 require (
 	github.com/Traceableai/agent-config/gen/go v0.0.0-20250721171230-e7b2fd484619 // indirect
-	github.com/Traceableai/goagent/hypertrace/goagent v0.0.0-00010101000000-000000000000 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -56,7 +55,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace (
-	github.com/Traceableai/goagent => ../../
-	github.com/Traceableai/goagent/hypertrace/goagent => ../../hypertrace/goagent
-)
+replace github.com/Traceableai/goagent => ../../

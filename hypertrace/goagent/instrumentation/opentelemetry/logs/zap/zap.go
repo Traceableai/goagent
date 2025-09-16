@@ -1,6 +1,8 @@
 package zap
 
 import (
+	"slices"
+
 	agentconfig "github.com/hypertrace/agent-config/gen/go/v1"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.opentelemetry.io/otel/log"
@@ -10,8 +12,9 @@ import (
 var _ zapcore.Core = (*core)(nil)
 
 type core struct {
-	level    zapcore.Level
-	delegate zapcore.Core
+	level      zapcore.Level
+	delegate   zapcore.Core
+	attributes []zapcore.Field
 }
 
 func NewZapCore(name string, cfg *agentconfig.LogsExport, provider log.LoggerProvider) zapcore.Core {
@@ -29,10 +32,14 @@ func (c *core) Enabled(level zapcore.Level) bool {
 	return c.level.Enabled(level) && c.delegate.Enabled(level)
 }
 
-func (c *core) With(fields []zapcore.Field) zapcore.Core {
+func (c *core) With(attrs []zapcore.Field) zapcore.Core {
 	return &core{
 		level:    c.level,
-		delegate: c.delegate.With(fields),
+		delegate: c.delegate,
+		// TODO we have custom field logic here because of this issue:
+		// https://github.com/open-telemetry/opentelemetry-go-contrib/issues/7906
+		// once that gets fixed this append should be removed and the delegate should be created with delegate.With
+		attributes: append(slices.Clone(c.attributes), attrs...),
 	}
 }
 
@@ -48,6 +55,8 @@ func (c *core) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	// https://github.com/open-telemetry/opentelemetry-go-contrib/blob/main/bridges/otelzap/core.go#L235
 	// https://github.com/open-telemetry/opentelemetry-go/blob/main/sdk/log/provider.go#L124
 	entry.LoggerName = ""
+	// TODO this should be removed once the aforementioned issue is fixed
+	fields = append(slices.Clone(fields), c.attributes...)
 	return c.delegate.Write(entry, fields)
 }
 
