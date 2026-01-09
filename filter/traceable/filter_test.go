@@ -3,14 +3,22 @@
 package traceable
 
 import (
+	"context"
+	"reflect"
 	"testing"
+	"time"
+	"unsafe"
 
 	traceableconfig "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent/config"
+	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -68,9 +76,8 @@ func TestLibTraceableStringArray(t *testing.T) {
 
 func TestTraceableConfigDisabled(t *testing.T) {
 	f := NewFilter(
-		"test-tenant-id",
-		"test-service",
 		&traceableconfig.AgentConfig{
+			ServiceName: traceableconfig.String("test-service"),
 			BlockingConfig: &traceableconfig.BlockingConfig{
 				Enabled: traceableconfig.Bool(false),
 			},
@@ -79,12 +86,13 @@ func TestTraceableConfigDisabled(t *testing.T) {
 			},
 		},
 		zap.NewNop())
-	assert.IsType(t, Filter{}, *f)
-	assert.False(t, f.started)
+	assert.IsType(t, &Filter{}, f)
+	assert.False(t, f.isStarted.Load())
 
 	f.Start() // the blocking engine was not enabled thus start will never be true
-	assert.False(t, f.started)
-	f.Stop()
+	assert.False(t, f.isStarted.Load())
+	err := f.Stop()
+	assert.NoError(t, err)
 }
 
 func TestGetLibTraceableConfig(t *testing.T) {
@@ -189,6 +197,18 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					Enabled: traceableconfig.Bool(false),
 				},
 			},
+			PipelineManager: &traceableconfig.FilterPipelineManager{
+				PipelineRequestsQueueInitialSize: wrapperspb.Int64(10),
+			},
+			Telemetry: &traceableconfig.Telemetry{
+				Logs: &traceableconfig.LogsExport{
+					Enabled: traceableconfig.Bool(true),
+					Level:   traceableconfig.LogLevel_LOG_LEVEL_WARN,
+				},
+			},
+			AgentIdentity: &traceableconfig.AgentIdentity{
+				DeploymentName: traceableconfig.String("test-deployment"),
+			},
 		},
 	)
 
@@ -233,6 +253,9 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 10, int(libTraceableConfig.log_config.file_config.max_files))
 	assert.Equal(t, 100*1024*1024, int(libTraceableConfig.log_config.file_config.max_file_size))
 	assert.Equal(t, "/etc/libtraceable.log", getGoString(libTraceableConfig.log_config.file_config.log_file))
+	assert.Equal(t, 1, int(libTraceableConfig.log_config.exporter_config.enabled))
+	assert.Equal(t, traceableconfig.LogLevel_LOG_LEVEL_WARN, getGoLogLevel(libTraceableConfig.log_config.exporter_config.level))
+	assert.Equal(t, traceableconfig.TraceReporterType_OTLP, getGoReporterType(libTraceableConfig.log_config.exporter_config.reporter_type))
 
 	assert.Equal(t, 1, int(libTraceableConfig.metrics_config.enabled))
 	assert.Equal(t, 10, int(libTraceableConfig.metrics_config.max_queue_size))
@@ -243,74 +266,38 @@ func TestGetLibTraceableConfig(t *testing.T) {
 	assert.Equal(t, 1, int(libTraceableConfig.metrics_config.logging.enabled))
 	assert.Equal(t, "30m", getGoString(libTraceableConfig.metrics_config.logging.frequency))
 	assert.Equal(t, 1, int(libTraceableConfig.metrics_config.exporter.enabled))
-	assert.Equal(t, "localhost:1234", getGoString(libTraceableConfig.metrics_config.exporter.server.endpoint))
-	assert.Equal(t, "test-cert-file", getGoString(libTraceableConfig.metrics_config.exporter.server.cert_file))
-	assert.Equal(t, 0, int(libTraceableConfig.metrics_config.exporter.server.secure))
-	assert.Equal(t, 60, int(libTraceableConfig.metrics_config.exporter.server.export_interval_ms))
-	assert.Equal(t, 30, int(libTraceableConfig.metrics_config.exporter.server.export_timeout_ms))
+	assert.Equal(t, 60, int(libTraceableConfig.metrics_config.exporter.export_interval_ms))
 	assert.Equal(t, traceableconfig.TraceReporterType_OTLP, getGoReporterType(libTraceableConfig.metrics_config.exporter.reporter_type))
 	assert.Equal(t, "test-env", getGoString(libTraceableConfig.agent_config.environment))
 	assert.Equal(t, "test-token", getGoString(libTraceableConfig.agent_config.agent_token))
+	assert.Equal(t, "test-deployment", getGoString(libTraceableConfig.agent_config.deployment_name))
 	assert.Equal(t, 0, int(libTraceableConfig.parser_config.graphql.enabled))
 	assert.Equal(t, 128*1024, int(libTraceableConfig.parser_config.max_body_size))
+
+	assert.Equal(t, "localhost:1234", getGoString(libTraceableConfig.reporting_config.endpoint))
+	assert.Equal(t, "test-cert-file", getGoString(libTraceableConfig.reporting_config.cert_file))
+	assert.Equal(t, 0, int(libTraceableConfig.reporting_config.secure))
+	assert.Equal(t, 30, int(libTraceableConfig.reporting_config.timeout_ms))
 }
 
-func TestFilterThreadPoolRace(t *testing.T) {
+func TestMultipleFilters(t *testing.T) {
 	cfg := config.Load()
-	cfg.TraceableConfig.Goagent.FilterThreadPool = &traceableconfig.ThreadPool{
-		Enabled:    traceableconfig.Bool(true),
-		BufferSize: traceableconfig.Int32(1000),
-		NumWorkers: traceableconfig.Int32(2),
-	}
-
 	shutdownChan := make(chan struct{}, 1)
 
-	observed, logs := observer.New(zapcore.InfoLevel)
-	logger := zap.New(observed)
-
-	filter1 := NewFilter("test-tenant-1", "test-svc-1", cfg.TraceableConfig, logger)
+	logger := zaptest.NewLogger(t)
+	filter1Cfg := proto.Clone(cfg.TraceableConfig).(*traceableconfig.AgentConfig)
+	filter1Cfg.ServiceName = traceableconfig.String("test-svc-1")
+	filter1 := NewFilter(filter1Cfg, logger)
 
 	go func() {
-		filter2 := NewFilter("test-tenant-2", "test-svc-2", cfg.TraceableConfig, logger)
+		filter2Cfg := proto.Clone(cfg.TraceableConfig).(*traceableconfig.AgentConfig)
+		filter2Cfg.ServiceName = traceableconfig.String("test-svc-2")
+		filter2 := NewFilter(filter2Cfg, logger)
 		<-shutdownChan
-		assert.True(t, filter2.Stop())
+		assert.Nil(t, filter2.Stop())
 	}()
 	close(shutdownChan)
-	assert.True(t, filter1.Stop())
-	assert.Equal(t, 1, logs.Len())
-	assert.Equal(t, "initializing filter worker pool", logs.All()[0].Message)
-}
-
-func TestMetricReportingEndpoint(t *testing.T) {
-	tests := []struct {
-		name                    string
-		metricReportingEndpoint *wrapperspb.StringValue
-		traceReportingEndpoint  *wrapperspb.StringValue
-		expected                string
-	}{
-		{
-			name:                    "metric endpoint present",
-			metricReportingEndpoint: traceableconfig.String("http://localhost:1234"),
-			traceReportingEndpoint:  traceableconfig.String("http://localhost:5678"),
-			expected:                "http://localhost:1234",
-		},
-		{
-			name:                   "metric endpoint absent",
-			traceReportingEndpoint: traceableconfig.String("http://localhost:5678"),
-			expected:               "http://localhost:5678",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := config.Load()
-			cfg.TraceableConfig.Reporting.MetricEndpoint = tt.metricReportingEndpoint
-			cfg.TraceableConfig.Reporting.Endpoint = tt.traceReportingEndpoint
-			libtraceableConfig := getLibTraceableConfig(
-				"test-service", cfg.TraceableConfig)
-			assert.Equal(t, tt.expected, getGoString(libtraceableConfig.metrics_config.exporter.server.endpoint))
-		})
-	}
+	assert.Nil(t, filter1.Stop())
 }
 
 func TestGetMetricReporterType(t *testing.T) {
@@ -355,4 +342,152 @@ func TestGetMetricReporterType(t *testing.T) {
 			assert.Equal(t, tt.expected, getGoReporterType(libtraceableConfig.metrics_config.exporter.reporter_type))
 		})
 	}
+}
+
+var _ sdk.AttributeList = (*attrs)(nil)
+
+type attrs struct {
+	attributes map[string]interface{}
+}
+
+func (a *attrs) GetValue(key string) interface{} {
+	return a.attributes[key]
+}
+
+func (a *attrs) Iterate(yield func(key string, value interface{}) bool) {
+	for k, v := range a.attributes {
+		if !yield(k, v) {
+			return
+		}
+	}
+}
+
+func (a *attrs) Len() int {
+	return len(a.attributes)
+}
+
+var _ sdk.Span = (*span)(nil)
+
+type span struct {
+	attributes map[string]interface{}
+}
+
+func (s span) GetAttributes() sdk.AttributeList {
+	return &attrs{attributes: s.attributes}
+}
+
+func (s span) SetAttribute(key string, value interface{}) {
+	s.attributes[key] = value
+}
+
+func (s span) SetError(error) {}
+
+func (s span) SetStatus(sdk.Code, string) {}
+
+func (s span) IsNoop() bool {
+	return true
+}
+
+func (s span) AddEvent(string, time.Time, map[string]interface{}) {}
+
+func (s span) GetSpanId() string {
+	return ""
+}
+
+func (s span) GetResourceAttributes() sdk.AttributeList {
+	return nil
+}
+
+func (s span) GetName() string {
+	return ""
+}
+
+func (s span) GetKind() string {
+	return ""
+}
+
+func TestSpanSanitization(t *testing.T) {
+	var invalidString string
+	header := (*reflect.StringHeader)(unsafe.Pointer(&invalidString))
+	header.Data = uintptr(0)
+	header.Len = 10
+
+	obj := span{
+		attributes: make(map[string]interface{}),
+	}
+	obj.SetAttribute("bad-key", invalidString)
+
+	logger := zaptest.NewLogger(t)
+
+	agentConfig := config.Load().TraceableConfig
+	agentConfig.Goagent.SpanSanitizationMode = traceableconfig.SpanSanitizationMode_SPAN_SANITIZATION_MODE_DROP_SPAN_ON_FAILURE
+
+	isFilterInitialized.Store(false)
+	filter := NewFilter(agentConfig, logger)
+	require.True(t, filter.Start())
+	fr := filter.Evaluate(context.Background(), obj)
+
+	assert.Equal(t, noopResult, fr)
+	assert.Equal(t, "nospan", obj.GetAttributes().GetValue("traceableai.span_type"))
+	require.NoError(t, filter.Stop())
+}
+
+func TestStop(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	f := NewFilter(
+		config.Load().TraceableConfig,
+		logger)
+	assert.False(t, f.isStarted.Load())
+	assert.True(t, isFilterInitialized.Load())
+
+	assert.True(t, f.Start())
+	assert.True(t, f.isStarted.Load())
+
+	err := f.Stop()
+	assert.NoError(t, err)
+	assert.False(t, isFilterInitialized.Load())
+}
+
+func TestStopWhileSpansEvaluated(t *testing.T) {
+	observed, logs := observer.New(zapcore.DebugLevel)
+	logger := zaptest.NewLogger(t).WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(core, observed)
+	}))
+	f := NewFilter(
+		config.Load().TraceableConfig,
+		logger)
+	assert.False(t, f.isStarted.Load())
+	assert.True(t, isFilterInitialized.Load())
+
+	assert.True(t, f.Start())
+	assert.True(t, f.isStarted.Load())
+
+	f.shutdownWg.Add(1)
+	notification := make(chan struct{}, 1)
+	go func() {
+		err := f.Stop()
+		assert.NoError(t, err)
+		close(notification)
+	}()
+	time.Sleep(100 * time.Millisecond)
+
+	messages := getLogMessages(logs)
+	assert.Contains(t, messages, "Received shutdown signal for traceable filter")
+	assert.NotContains(t, messages, "Successfully shutdown traceable filter")
+
+	// till this is called, the shutdown thread will wait and the other log won't be printed
+	f.shutdownWg.Done()
+	<-notification
+	messages = getLogMessages(logs)
+	assert.Contains(t, messages, "Successfully shutdown traceable filter")
+	assert.False(t, isFilterInitialized.Load())
+}
+
+func getLogMessages(entries *observer.ObservedLogs) []string {
+	ret := make([]string, 0, entries.Len())
+	for _, entry := range entries.TakeAll() {
+		ret = append(ret, entry.Message)
+	}
+
+	return ret
 }

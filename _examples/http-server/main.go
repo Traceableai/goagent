@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap/zapcore"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Traceableai/goagent"
@@ -14,6 +15,7 @@ import (
 	"github.com/Traceableai/goagent/instrumentation/net/traceablehttp"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -23,7 +25,12 @@ const (
 var logger *zap.Logger
 
 func main() {
-	cfg := config.LoadFromFile("./config.yaml")
+	cfgFilePath, found := os.LookupEnv("TA_CONFIG_FILE")
+	if !found {
+		cfgFilePath = "./config.yaml"
+	}
+
+	cfg := config.LoadFromFile(filepath.Clean(cfgFilePath))
 
 	closer := goagent.Init(cfg)
 	defer closer()

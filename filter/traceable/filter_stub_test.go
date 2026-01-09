@@ -6,6 +6,7 @@ package traceable
 // To verify the Mac OS X blocking stub.
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -55,10 +56,18 @@ func (s noopSpan) GetResourceAttributes() sdk.AttributeList {
 	return &noopAttributes{}
 }
 
+func (s noopSpan) GetName() string {
+	return ""
+}
+
+func (s noopSpan) GetKind() string {
+	return ""
+}
+
 func TestBlockingStub(t *testing.T) {
-	f := NewFilter("", "", &traceableconfig.AgentConfig{}, zap.NewNop())
+	f := NewFilter(&traceableconfig.AgentConfig{}, zap.NewNop())
 	assert.IsType(t, Filter{}, *f)
 	assert.True(t, f.Start())
-	filterResult := f.Evaluate(noopSpan{})
+	filterResult := f.Evaluate(context.Background(), noopSpan{})
 	assert.False(t, filterResult.Block)
 }

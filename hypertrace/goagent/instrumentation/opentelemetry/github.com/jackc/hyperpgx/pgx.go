@@ -162,7 +162,7 @@ func Connect(ctx context.Context, connString string, options *Options) (PGXConn,
 		span.SetAttribute("span.kind", "client")
 
 		return ctx, span, func() {
-			_ = filter.Evaluate(span)
+			_ = filter.Evaluate(context.Background(), span)
 			closer()
 		}
 	}

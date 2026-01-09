@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	internalconfig "github.com/Traceableai/goagent/hypertrace/goagent/sdk/internal/config"
+	config "github.com/hypertrace/agent-config/gen/go/v1"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,38 @@ import (
 
 func TestRecordingDecisionReturnsFalseOnNoContentType(t *testing.T) {
 	assert.Equal(t, false, ShouldRecordBodyOfContentType(&headerMapAccessor{http.Header{"A": []string{"B"}}}))
+}
+
+func TestRecordingDecisionWildcardContentType(t *testing.T) {
+	t.Cleanup(internalconfig.ResetConfig)
+	cfg := config.Load()
+	cfg.DataCapture.AllowedContentTypes = []*wrapperspb.StringValue{wrapperspb.String("*")}
+	internalconfig.ResetConfig()
+	internalconfig.InitConfig(cfg)
+
+	tests := []struct {
+		name           string
+		headerAccessor HeaderAccessor
+	}{
+		{
+			name:           "text/plain",
+			headerAccessor: &headerMapAccessor{http.Header{"Content-Type": []string{"text/plain"}}},
+		},
+		{
+			name:           "application/json",
+			headerAccessor: &headerMapAccessor{http.Header{"Content-Type": []string{"application/json"}}},
+		},
+		{
+			name:           "no value present",
+			headerAccessor: &headerMapAccessor{http.Header{"A": []string{"B"}}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.True(t, ShouldRecordBodyOfContentType(tt.headerAccessor))
+		})
+	}
 }
 
 func TestRecordingDecisionSuccessOnHeaderSet(t *testing.T) {

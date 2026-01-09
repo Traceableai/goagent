@@ -2,6 +2,7 @@ package http // import "github.com/Traceableai/goagent/hypertrace/goagent/sdk/in
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -103,7 +104,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// single evaluation call to filter after capturing the configured parameters
-	filterResult := h.filter.Evaluate(span)
+	filterResult := h.filter.Evaluate(context.Background(), span)
 	if filterResult.Block {
 		w.WriteHeader(int(filterResult.ResponseStatusCode))
 		return

@@ -3,8 +3,10 @@ package opentelemetry // import "github.com/Traceableai/goagent/hypertrace/goage
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/identifier"
 	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
@@ -15,6 +17,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
+	"go.uber.org/zap"
 )
 
 const (
@@ -61,22 +64,46 @@ func generateAttribute(key string, value interface{}) attribute.KeyValue {
 	case bool:
 		return attribute.Bool(key, v)
 	case []bool:
+		if isBadSlice(v) {
+			zap.L().Warn("Trying to set invalid bool slice, dropping the attribute", zap.String("key", key))
+			return attribute.String(key, "invalid-bool-slice")
+		}
 		return attribute.BoolSlice(key, v)
 	case int:
 		return attribute.Int(key, v)
 	case []int:
+		if isBadSlice(v) {
+			zap.L().Warn("Trying to set invalid int slice, dropping the attribute", zap.String("key", key))
+			return attribute.String(key, "invalid-int-slice")
+		}
 		return attribute.IntSlice(key, v)
 	case int64:
 		return attribute.Int64(key, v)
 	case []int64:
+		if isBadSlice(v) {
+			zap.L().Warn("Trying to set invalid int64 slice, dropping the attribute", zap.String("key", key))
+			return attribute.String(key, "invalid-int64-slice")
+		}
 		return attribute.Int64Slice(key, v)
 	case float64:
 		return attribute.Float64(key, v)
 	case []float64:
+		if isBadSlice(v) {
+			zap.L().Warn("Trying to set invalid float64 slice, dropping the attribute", zap.String("key", key))
+			return attribute.String(key, "invalid-float64-slice")
+		}
 		return attribute.Float64Slice(key, v)
 	case string:
+		if isBadString(v) {
+			zap.L().Warn("Trying to set invalid string, dropping the attribute", zap.String("key", key))
+			return attribute.String(key, "invalid-string")
+		}
 		return attribute.String(key, v)
 	case []string:
+		if isBadSlice(v) {
+			zap.L().Warn("Trying to set invalid string slice, dropping the attribute", zap.String("key", key))
+			return attribute.String(key, "invalid-string-slice")
+		}
 		return attribute.StringSlice(key, v)
 	default:
 		return attribute.String(key, fmt.Sprintf("%v", v))
@@ -133,6 +160,20 @@ func (s *Span) AddEvent(name string, ts time.Time, attributes map[string]interfa
 
 func (s *Span) GetSpanId() string {
 	return s.Span.SpanContext().SpanID().String()
+}
+
+func (s *Span) GetName() string {
+	if roSpan, ok := s.Span.(sdktrace.ReadOnlySpan); ok {
+		return roSpan.Name()
+	}
+	return ""
+}
+
+func (s *Span) GetKind() string {
+	if roSpan, ok := s.Span.(sdktrace.ReadOnlySpan); ok {
+		return roSpan.SpanKind().String()
+	}
+	return ""
 }
 
 func SpanFromContext(ctx context.Context) sdk.Span {
@@ -194,4 +235,20 @@ func mapSpanKind(kind sdk.SpanKind) trace.SpanKind {
 	default:
 		return trace.SpanKindUnspecified
 	}
+}
+
+func isBadString(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	header := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	return header.Data == 0 && header.Len > 0
+}
+
+func isBadSlice[T any](s []T) bool {
+	if len(s) == 0 {
+		return false
+	}
+	header := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	return header.Data == 0 && header.Len > 0
 }

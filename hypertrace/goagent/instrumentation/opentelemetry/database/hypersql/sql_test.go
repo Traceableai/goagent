@@ -21,8 +21,12 @@ type mockFilter struct {
 	evaluator func(span sdk.Span) result.FilterResult
 }
 
-func (f *mockFilter) Evaluate(span sdk.Span) result.FilterResult {
+func (f *mockFilter) Evaluate(_ context.Context, span sdk.Span) result.FilterResult {
 	return f.evaluator(span)
+}
+
+func (f *mockFilter) Stop() error {
+	return nil
 }
 
 func createDB(t *testing.T) (*sql.DB, func() []sdktrace.ReadOnlySpan) {

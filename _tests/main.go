@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	v1 "github.com/Traceableai/agent-config/gen/go/v1"
 	"github.com/Traceableai/goagent"
 	"github.com/Traceableai/goagent/config"
 	"github.com/Traceableai/goagent/filter/traceable"
@@ -13,7 +14,11 @@ import (
 
 func main() {
 	cfg := config.Load()
-	cfg.TraceableConfig.DebugLog = config.Bool(true)
+	cfg.TraceableConfig.Logging.LogLevel = v1.LogLevel_LOG_LEVEL_TRACE
+	cfg.TraceableConfig.ServiceName = cfg.Tracing.ServiceName
+
+	shutdown := goagent.Init(cfg)
+	defer shutdown()
 
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -22,7 +27,7 @@ func main() {
 
 	logger.Debug("Logging is working!")
 
-	f := traceable.NewFilter("", cfg.Tracing.ServiceName.Value, cfg.TraceableConfig, logger)
+	f := traceable.NewFilter(cfg.TraceableConfig, logger)
 	if !f.Start() {
 		log.Fatal("Failed to initialize traceable filter")
 	}
@@ -40,9 +45,9 @@ func main() {
 	s.SetAttribute("http.request.header.a", "/usr/bin/perl")
 	s.SetAttribute("http.request.body", []byte("{\"bad_body\":\"/usr/bin/perl\""))
 
-	_ = f.Evaluate(s)
+	_ = f.Evaluate(context.Background(), s)
 
-	if !f.Stop() {
+	if f.Stop() != nil {
 		log.Fatal("Failed to initialize traceable filter")
 	}
 

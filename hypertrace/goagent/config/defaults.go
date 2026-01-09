@@ -37,6 +37,7 @@ var defaultConfig = agentconfig.AgentConfig{
 		TraceReporterType:       agentconfig.TraceReporterType_ZIPKIN,
 		CertFile:                agentconfig.String(""),
 		EnableGrpcLoadbalancing: agentconfig.Bool(true),
+		CompressionType:         agentconfig.CompressionType_COMPRESSION_TYPE_UNSPECIFIED,
 	},
 	Telemetry: &agentconfig.Telemetry{
 		StartupSpanEnabled: agentconfig.Bool(true),

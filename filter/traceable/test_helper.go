@@ -20,7 +20,7 @@ import (
 
 func getLibTraceableConfig(serviceName string, config *traceableconfig.AgentConfig) C.traceable_libtraceable_config {
 	libtraceableConfig := C.traceable_libtraceable_config{}
-	populateLibtraceableConfig(&libtraceableConfig, "", serviceName, config)
+	populateLibtraceableConfig(&libtraceableConfig, config)
 	return libtraceableConfig
 }
 

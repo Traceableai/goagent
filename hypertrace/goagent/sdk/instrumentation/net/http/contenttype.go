@@ -23,8 +23,12 @@ func ShouldRecordBodyOfContentType(h HeaderAccessor) bool {
 	//    header.Add("content-type", "charset=utf-8")
 	//    header.Add("content-type", "application/json")
 	// ```
-	for _, contentTypeValue := range contentTypeValues {
-		for _, contentTypeAllowed := range cfg.GetAllowedContentTypes() {
+	for _, contentTypeAllowed := range cfg.GetAllowedContentTypes() {
+		// Exit early if the capture is allowed for all content types
+		if contentTypeAllowed.GetValue() == "*" {
+			return true
+		}
+		for _, contentTypeValue := range contentTypeValues {
 			// userland code can set joint headers directly instead of adding
 			// them for example
 			//

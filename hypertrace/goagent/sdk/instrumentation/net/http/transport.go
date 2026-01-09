@@ -2,6 +2,7 @@ package http // import "github.com/Traceableai/goagent/hypertrace/goagent/sdk/in
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"net/http"
 	"strings"
@@ -63,7 +64,7 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		req.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 
-	filterResult := rt.filter.Evaluate(span)
+	filterResult := rt.filter.Evaluate(context.Background(), span)
 	if filterResult.Block {
 		span.SetStatus(codes.StatusCodeError, "Access Denied")
 		span.SetAttribute("http.status_code", filterResult.ResponseStatusCode)

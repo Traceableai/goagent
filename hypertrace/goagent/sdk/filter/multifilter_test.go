@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"context"
 	"testing"
 
 	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
@@ -11,7 +12,7 @@ import (
 
 func TestMultiFilterEmpty(t *testing.T) {
 	f := NewMultiFilter()
-	res := f.Evaluate(nil)
+	res := f.Evaluate(context.Background(), nil)
 	assert.False(t, res.Block)
 }
 
@@ -47,7 +48,7 @@ func TestMultiFilterStopsAfterTrue(t *testing.T) {
 
 	for name, tCase := range tCases {
 		t.Run(name, func(t *testing.T) {
-			res := tCase.multiFilter.Evaluate(nil)
+			res := tCase.multiFilter.Evaluate(context.Background(), nil)
 			assert.Equal(t, tCase.expectedFilterResult, res.Block)
 		})
 	}

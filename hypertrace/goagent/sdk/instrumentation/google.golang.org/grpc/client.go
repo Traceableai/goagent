@@ -72,7 +72,7 @@ func WrapUnaryClientInterceptor(
 				setAttributesFromRequestOutgoingMetadata(ctx, span)
 			}
 
-			fr := filter.Evaluate(span)
+			fr := filter.Evaluate(context.Background(), span)
 			if fr.Block {
 				statusText := StatusText(int(fr.ResponseStatusCode))
 				statusCode := StatusCode(int(fr.ResponseStatusCode))

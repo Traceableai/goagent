@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/internal/tracetesting"
 	sdkhttp "github.com/Traceableai/goagent/hypertrace/goagent/sdk/instrumentation/net/http"
@@ -51,6 +52,8 @@ func TestSpanRecordedCorrectly(t *testing.T) {
 
 	go server.ListenAndServe()
 
+	time.Sleep(100 * time.Millisecond)
+
 	req, _ := http.NewRequest(
 		"POST",
 		fmt.Sprintf("http://localhost:%d/things/123?include_something=1", port),
@@ -61,7 +64,7 @@ func TestSpanRecordedCorrectly(t *testing.T) {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
 	if want, have := 202, res.StatusCode; want != have {

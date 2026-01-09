@@ -50,6 +50,11 @@ import (
 	"google.golang.org/grpc/resolver"
 )
 
+const (
+	gzipStr                  = "gzip"
+	tracaebleaiAgentTokenKey = "traceableai-agent-token"
+)
+
 var (
 	batchTimeout          = time.Duration(200) * time.Millisecond
 	traceProviders        map[string]*sdktrace.TracerProvider
@@ -184,9 +189,17 @@ func makeMetricsExporterFactory(cfg *config.AgentConfig) func(opts ...ServiceOpt
 				opt(serviceOpts)
 			}
 
+			if cfg.GetReporting().GetToken().GetValue() != "" {
+				serviceOpts.headers[tracaebleaiAgentTokenKey] = cfg.GetReporting().GetToken().GetValue()
+			}
+
 			metricOpts := []otlpmetricgrpc.Option{
 				otlpmetricgrpc.WithEndpoint(removeProtocolPrefixForOTLP(endpoint)),
 				otlpmetricgrpc.WithHeaders(serviceOpts.headers),
+			}
+
+			if cfg.GetReporting().GetCompressionType() == config.CompressionType_COMPRESSION_TYPE_GZIP {
+				metricOpts = append(metricOpts, otlpmetricgrpc.WithCompressor(gzipStr))
 			}
 
 			if !cfg.GetReporting().GetSecure().GetValue() {
@@ -232,6 +245,11 @@ func makeExporterFactory(cfg *config.AgentConfig) func(serviceOpts ...ServiceOpt
 			for _, opt := range opts {
 				opt(serviceOpts)
 			}
+
+			if cfg.GetReporting().GetToken().GetValue() != "" {
+				serviceOpts.headers[tracaebleaiAgentTokenKey] = cfg.GetReporting().GetToken().GetValue()
+			}
+
 			return zipkin.New(
 				cfg.GetReporting().GetEndpoint().GetValue(),
 				zipkin.WithClient(client),
@@ -259,12 +277,20 @@ func makeExporterFactory(cfg *config.AgentConfig) func(serviceOpts ...ServiceOpt
 			standardOpts = append(standardOpts, otlphttp.WithTLSClientConfig(createTLSConfig(cfg.GetReporting())))
 		}
 
+		if cfg.GetReporting().GetCompressionType() == config.CompressionType_COMPRESSION_TYPE_GZIP {
+			standardOpts = append(standardOpts, otlphttp.WithCompression(otlphttp.GzipCompression))
+		}
+
 		return func(opts ...ServiceOption) (sdktrace.SpanExporter, error) {
 			serviceOpts := &ServiceOptions{
 				headers: make(map[string]string),
 			}
 			for _, opt := range opts {
 				opt(serviceOpts)
+			}
+
+			if cfg.GetReporting().GetToken().GetValue() != "" {
+				serviceOpts.headers[tracaebleaiAgentTokenKey] = cfg.GetReporting().GetToken().GetValue()
 			}
 
 			finalOpts := append([]otlphttp.Option{}, standardOpts...)
@@ -296,6 +322,10 @@ func makeExporterFactory(cfg *config.AgentConfig) func(serviceOpts ...ServiceOpt
 			standardOpts = append(standardOpts, otlpgrpc.WithServiceConfig(`{"loadBalancingConfig": [ { "round_robin": {} } ]}`))
 		}
 
+		if cfg.GetReporting().GetCompressionType() == config.CompressionType_COMPRESSION_TYPE_GZIP {
+			standardOpts = append(standardOpts, otlpgrpc.WithCompressor(gzipStr))
+		}
+
 		return func(opts ...ServiceOption) (sdktrace.SpanExporter, error) {
 			// Process options
 			serviceOpts := &ServiceOptions{
@@ -303,6 +333,10 @@ func makeExporterFactory(cfg *config.AgentConfig) func(serviceOpts ...ServiceOpt
 			}
 			for _, opt := range opts {
 				opt(serviceOpts)
+			}
+
+			if cfg.GetReporting().GetToken().GetValue() != "" {
+				serviceOpts.headers[tracaebleaiAgentTokenKey] = cfg.GetReporting().GetToken().GetValue()
 			}
 
 			finalOpts := append([]otlpgrpc.Option{}, standardOpts...)

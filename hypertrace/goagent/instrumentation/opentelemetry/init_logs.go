@@ -38,6 +38,10 @@ func makeLogsExporterFactory(cfg *config.AgentConfig) func(opts ...ServiceOption
 			standardOpts = append(standardOpts, otlploghttp.WithTLSClientConfig(createTLSConfig(cfg.GetReporting())))
 		}
 
+		if cfg.GetReporting().GetCompressionType() == config.CompressionType_COMPRESSION_TYPE_GZIP {
+			standardOpts = append(standardOpts, otlploghttp.WithCompression(otlploghttp.GzipCompression))
+		}
+
 		return func(opts ...ServiceOption) (sdklog.Exporter, error) {
 			serviceOpts := &ServiceOptions{
 				headers: make(map[string]string),
@@ -45,6 +49,11 @@ func makeLogsExporterFactory(cfg *config.AgentConfig) func(opts ...ServiceOption
 			for _, opt := range opts {
 				opt(serviceOpts)
 			}
+
+			if cfg.GetReporting().GetToken().GetValue() != "" {
+				serviceOpts.headers[tracaebleaiAgentTokenKey] = cfg.GetReporting().GetToken().GetValue()
+			}
+
 			finalOpts := append([]otlploghttp.Option{}, standardOpts...)
 			finalOpts = append(finalOpts, otlploghttp.WithHeaders(serviceOpts.headers))
 
@@ -62,6 +71,10 @@ func makeLogsExporterFactory(cfg *config.AgentConfig) func(opts ...ServiceOption
 			}
 			for _, opt := range opts {
 				opt(serviceOpts)
+			}
+
+			if cfg.GetReporting().GetToken().GetValue() != "" {
+				serviceOpts.headers[tracaebleaiAgentTokenKey] = cfg.GetReporting().GetToken().GetValue()
 			}
 
 			logsOpts := []otlploggrpc.Option{
@@ -89,6 +102,10 @@ func makeLogsExporterFactory(cfg *config.AgentConfig) func(opts ...ServiceOption
 
 			if serviceOpts.grpcConn != nil {
 				logsOpts = append(logsOpts, otlploggrpc.WithGRPCConn(serviceOpts.grpcConn))
+			}
+
+			if cfg.GetReporting().GetCompressionType() == config.CompressionType_COMPRESSION_TYPE_GZIP {
+				logsOpts = append(logsOpts, otlploggrpc.WithCompressor(gzipStr))
 			}
 
 			return otlploggrpc.New(context.Background(), logsOpts...)

@@ -9,15 +9,6 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-var defaultRemoteConfig = &traceableconfig.RemoteConfig{
-	Enabled:                traceableconfig.Bool(true),
-	Endpoint:               traceableconfig.String("localhost:5442"),
-	PollPeriodSeconds:      traceableconfig.Int32(30),
-	CertFile:               traceableconfig.String(""),
-	GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
-	UseSecureConnection:    traceableconfig.Bool(false),
-}
-
 // defaultConfig holds the default config values for agent.
 var defaultConfig = &AgentConfig{
 	// TODO update ht agent config so that we can refer that directly
@@ -59,6 +50,12 @@ var defaultConfig = &AgentConfig{
 		Goagent: &hyperconfig.GoAgent{
 			UseCustomBsp: hyperconfig.Bool(true),
 		},
+		Telemetry: &hyperconfig.Telemetry{
+			Logs: &hyperconfig.LogsExport{
+				Enabled: hyperconfig.Bool(false),
+				Level:   hyperconfig.LogLevel_LOG_LEVEL_INFO,
+			},
+		},
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
 		Reporting: &traceableconfig.Reporting{
@@ -80,7 +77,6 @@ var defaultConfig = &AgentConfig{
 				Enabled: traceableconfig.Bool(true),
 			},
 			SkipInternalRequest: traceableconfig.Bool(true),
-			RemoteConfig:        defaultRemoteConfig,
 			ResponseStatusCode:  traceableconfig.Int32(403),
 			ResponseMessage:     traceableconfig.String("Access Forbidden"),
 			MaxRecursionDepth:   traceableconfig.Int32(20),
@@ -92,7 +88,14 @@ var defaultConfig = &AgentConfig{
 			EvaluateEdsFirst: traceableconfig.Bool(false),
 			SkipClientSpans:  traceableconfig.Bool(true),
 		},
-		RemoteConfig: defaultRemoteConfig,
+		RemoteConfig: &traceableconfig.RemoteConfig{
+			Enabled:                traceableconfig.Bool(true),
+			Endpoint:               traceableconfig.String("localhost:5442"),
+			PollPeriodSeconds:      traceableconfig.Int32(30),
+			CertFile:               traceableconfig.String(""),
+			GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
+			UseSecureConnection:    traceableconfig.Bool(false),
+		},
 		Sampling: &traceableconfig.SamplingConfig{
 			Enabled: traceableconfig.Bool(true),
 			DefaultRateLimitConfig: &traceableconfig.RateLimitConfig{
@@ -145,10 +148,19 @@ var defaultConfig = &AgentConfig{
 				// For non-blocking behavior, the default value should be overridden to a more sensible one.
 				TimeoutMs: wrapperspb.Int32(int32((10 * 24 * time.Hour).Milliseconds())),
 			},
+			SpanSanitizationMode: traceableconfig.SpanSanitizationMode_SPAN_SANITIZATION_MODE_NONE,
+		},
+		// considering 200 requests get pushed to the queue and 66 max threads with a
+		// block size of 32
+		// More info: https://github.com/Traceableai/libtraceable/blob/main/traceable/source/metrics/README.md#moodycamel-concurrentqueue
+		PipelineManager: &traceableconfig.FilterPipelineManager{
+			PipelineRequestsQueueInitialSize: wrapperspb.Int64(4416),
+		},
+		Telemetry: &traceableconfig.Telemetry{
+			Logs: &traceableconfig.LogsExport{
+				Enabled: traceableconfig.Bool(false),
+				Level:   traceableconfig.LogLevel_LOG_LEVEL_INFO,
+			},
 		},
 	},
-}
-
-func GetDefaultRemoteConfig() *traceableconfig.RemoteConfig {
-	return defaultRemoteConfig
 }

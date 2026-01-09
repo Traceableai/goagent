@@ -124,6 +124,14 @@ func (s *Span) GetSpanId() string {
 	return ""
 }
 
+func (s *Span) GetName() string {
+	return ""
+}
+
+func (s *Span) GetKind() string {
+	return ""
+}
+
 type spanKey string
 
 func SpanFromContext(ctx context.Context) sdk.Span {

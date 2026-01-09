@@ -43,49 +43,21 @@ TRACEABLE_RET w_traceable_delete_libtraceable (
 	return f(libtraceable);
 }
 
-typedef TRACEABLE_RET (*traceable_process_request_headers_type)(
+typedef TRACEABLE_RET (*traceable_process_request_using_token_type)(
 	traceable_libtraceable,
 	traceable_attributes,
+	traceable_token_details,
 	traceable_process_request_result*
 );
 
-TRACEABLE_RET w_traceable_process_request_headers (
-	traceable_process_request_headers_type f,
+TRACEABLE_RET w_traceable_process_request_using_token (
+	traceable_process_request_using_token_type f,
 	traceable_libtraceable libtraceable,
 	traceable_attributes attributes,
+	traceable_token_details token_details,
 	traceable_process_request_result* out_result
 ) {
-	return f(libtraceable, attributes, out_result);
-}
-
-typedef TRACEABLE_RET (*traceable_process_request_body_type)(
-	traceable_libtraceable,
-	traceable_attributes,
-	traceable_process_request_result*
-);
-
-TRACEABLE_RET w_traceable_process_request_body (
-	traceable_process_request_body_type f,
-	traceable_libtraceable libtraceable,
-	traceable_attributes attributes,
-	traceable_process_request_result* out_result
-) {
-	return f(libtraceable, attributes, out_result);
-}
-
-typedef TRACEABLE_RET (*traceable_process_request_type)(
-	traceable_libtraceable,
-	traceable_attributes,
-	traceable_process_request_result*
-);
-
-TRACEABLE_RET w_traceable_process_request (
-	traceable_process_request_type f,
-	traceable_libtraceable libtraceable,
-	traceable_attributes attributes,
-	traceable_process_request_result* out_result
-) {
-	return f(libtraceable, attributes, out_result);
+	return f(libtraceable, attributes, token_details, out_result);
 }
 
 typedef TRACEABLE_RET (*traceable_delete_process_request_result_data_type)(traceable_process_request_result);
@@ -111,6 +83,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -125,8 +98,10 @@ import (
 	"github.com/Traceableai/goagent/version"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -135,108 +110,74 @@ const (
 	bufferPoolGaugeName        = "traceable.agent.filter.buffer.size"
 	samplingLoggerInitialLimit = 1
 	samplingLoggerThereafter   = 500
+	invalidSpansCounterName    = "traceable.agent.filter.invalid.spans"
+	internalOnlyTenantIdHeader = "traceableai-tenant-id"
+	internalOnlyAgentToken     = "traceableai-agent-token"
+	spanNameKey                = "span.name"
+	spanKindKey                = "span.kind"
 )
 
 var (
-	once            sync.Once
-	poolEnabled     = false
-	poolSize        = 0
+	once sync.Once
+	// setting 10 days as the default timeout to enforce blocking behavior
+	timeout    = 10 * 24 * time.Hour
+	noopResult = filterresult.FilterResult{
+		Block: false,
+	}
+	meter               metric.Meter
+	invalidSpanCounter  metric.Int64Counter
+	isFilterInitialized atomic.Bool
+)
+
+type Filter struct {
+	libtraceableHandle   C.traceable_libtraceable
+	libtraceable         *libtraceableMethods
+	logger               *zap.Logger
+	responseStatusCode   int32
+	responseMessage      string
+	spanSanitizationMode traceableconfig.SpanSanitizationMode
+
+	// filter thread pool
+	poolEnabled     bool
+	poolSize        int
 	buffer          chan filterRequest
 	poolLogger      *zap.Logger
 	bufferSizeGauge metric.Int64ObservableGauge
-	// setting 10 days as the default timeout to enforce blocking behavior
-	timeout        = 10 * 24 * time.Hour
-	timedOutResult = filterresult.FilterResult{
-		Block: false,
-	}
-)
 
-func initializeWorkerPool(logger *zap.Logger, cfg *traceableconfig.ThreadPool) {
-	if !cfg.GetEnabled().GetValue() {
-		return
-	}
-
-	poolEnabled = true
-	poolSize = int(cfg.GetNumWorkers().GetValue())
-	bufferSize := int(cfg.GetBufferSize().GetValue())
-	if timeoutMs := cfg.GetTimeoutMs().GetValue(); timeoutMs > 0 {
-		timeout = time.Duration(timeoutMs) * time.Millisecond
-	}
-	logger.Info(
-		"initializing filter worker pool",
-		zap.Int("pool size", poolSize),
-		zap.Int("buffer size", bufferSize),
-		zap.String("timeout", timeout.String()),
-	)
-
-	buffer = make(chan filterRequest, bufferSize)
-	poolLogger = logger.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-		return zapcore.NewSamplerWithOptions(core, time.Second, samplingLoggerInitialLimit, samplingLoggerThereafter)
-	}))
-	if gauge, err := otel.GetMeterProvider().Meter(
-		metricInstrumentationName,
-		metric.WithInstrumentationVersion(version.Version)).
-		Int64ObservableGauge(
-			bufferPoolGaugeName,
-			metric.WithInt64Callback(func(_ context.Context, observer metric.Int64Observer) error {
-				observer.Observe(int64(len(buffer)))
-				return nil
-			})); err == nil {
-		bufferSizeGauge = gauge
-	}
-
-	// start worker pool
-	for range poolSize {
-		go consume()
-	}
-}
-
-type filterRequest struct {
-	span         sdk.Span
-	responseChan chan<- filterresult.FilterResult
-	filter       *Filter
-}
-
-func consume() {
-	for {
-		req := <-buffer
-		req.responseChan <- req.filter.evaluate(req.span)
-		close(req.responseChan)
-	}
-}
-
-type Filter struct {
-	libtraceableHandle C.traceable_libtraceable
-	libtraceable       *libtraceableMethods
-	started            bool
-	logger             *zap.Logger
-	responseStatusCode int32
-	responseMessage    string
+	// shutdown semantics
+	shutdownWg sync.WaitGroup
+	isStarted  atomic.Bool
 }
 
 type libtraceableMethods struct {
 	startEngine             C.traceable_start_libtraceable_type
 	deleteEngine            C.traceable_delete_libtraceable_type
-	processRequestHeaders   C.traceable_process_request_headers_type
-	processRequestBody      C.traceable_process_request_body_type
-	processRequest          C.traceable_process_request_type
+	processRequest          C.traceable_process_request_using_token_type
 	deleteProcessResultData C.traceable_delete_process_request_result_data_type
 	initLibtraceableConfig  C.init_libtraceable_config_type
+}
+
+type filterRequest struct {
+	span         sdk.Span
+	ctx          context.Context
+	responseChan chan<- filterresult.FilterResult
 }
 
 var _ filter.Filter = (*Filter)(nil)
 
 // NewFilter creates libtraceable based filter.
-// It takes tenant id, service name, agent config and logger as parameters for creating a corresponding filter.
-// Library consumers which doesn't have access to tenant id should pass an empty string.
+// It takes agent config and logger as parameters for creating a corresponding filter.
 func NewFilter(
-	tenantId string,
-	serviceName string,
 	config *traceableconfig.AgentConfig,
 	logger *zap.Logger) *Filter {
 	if !config.BlockingConfig.Enabled.Value &&
 		!config.Sampling.Enabled.Value {
 		logger.Debug("Traceable filter is disabled by config.")
+		return &Filter{logger: logger}
+	}
+
+	if isFilterInitialized.Load() {
+		logger.Error("Traceable filter is already initialized, returning empty filter object.")
 		return &Filter{logger: logger}
 	}
 
@@ -268,7 +209,7 @@ func NewFilter(
 	}
 
 	libTraceableConfig := C.w_init_libtraceable_config(C.init_libtraceable_config_type(initLibtraceableConfig))
-	populateLibtraceableConfig(&libTraceableConfig, tenantId, serviceName, config)
+	populateLibtraceableConfig(&libTraceableConfig, config)
 	defer freeLibTraceableConfig(libTraceableConfig)
 
 	var traceableFilter Filter
@@ -314,11 +255,69 @@ func NewFilter(
 	)
 
 	// initialize worker pool
+	traceableFilter.initializeWorkerPool(config.GetGoagent().GetFilterThreadPool())
 	once.Do(func() {
-		initializeWorkerPool(logger, config.GetGoagent().GetFilterThreadPool())
+		meter = otel.GetMeterProvider().Meter(
+			metricInstrumentationName,
+			metric.WithInstrumentationVersion(version.Version))
+		invalidSpanCounter, err = meter.Int64Counter(invalidSpansCounterName)
+		if err != nil {
+			logger.Warn("error initializing counter", zap.String("name", invalidSpansCounterName), zap.Error(err))
+			invalidSpanCounter = noop.Int64Counter{}
+		}
 	})
 
+	traceableFilter.spanSanitizationMode = config.GetGoagent().GetSpanSanitizationMode()
+	isFilterInitialized.Store(true)
 	return &traceableFilter
+}
+
+func (f *Filter) initializeWorkerPool(cfg *traceableconfig.ThreadPool) {
+	if !cfg.GetEnabled().GetValue() {
+		return
+	}
+
+	f.poolEnabled = true
+	f.poolSize = int(cfg.GetNumWorkers().GetValue())
+	bufferSize := int(cfg.GetBufferSize().GetValue())
+	if timeoutMs := cfg.GetTimeoutMs().GetValue(); timeoutMs > 0 {
+		timeout = time.Duration(timeoutMs) * time.Millisecond
+	}
+	f.logger.Info(
+		"initializing filter worker pool",
+		zap.Int("pool size", f.poolSize),
+		zap.Int("buffer size", bufferSize),
+		zap.String("timeout", timeout.String()),
+	)
+
+	f.buffer = make(chan filterRequest, bufferSize)
+	f.poolLogger = f.logger.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		return zapcore.NewSamplerWithOptions(core, time.Second, samplingLoggerInitialLimit, samplingLoggerThereafter)
+	}))
+	if gauge, err := otel.GetMeterProvider().Meter(
+		metricInstrumentationName,
+		metric.WithInstrumentationVersion(version.Version)).
+		Int64ObservableGauge(
+			bufferPoolGaugeName,
+			metric.WithInt64Callback(func(_ context.Context, observer metric.Int64Observer) error {
+				observer.Observe(int64(len(f.buffer)))
+				return nil
+			})); err == nil {
+		f.bufferSizeGauge = gauge
+	}
+
+	// start worker pool
+	for range f.poolSize {
+		go f.consume()
+	}
+}
+
+func (f *Filter) consume() {
+	for {
+		req := <-f.buffer
+		req.responseChan <- f.evaluate(req.ctx, req.span)
+		close(req.responseChan)
+	}
 }
 
 func loadTraceableConfigMethods(libHandle unsafe.Pointer) (*libtraceableMethods, error) {
@@ -340,28 +339,12 @@ func loadTraceableConfigMethods(libHandle unsafe.Pointer) (*libtraceableMethods,
 		b.deleteEngine = C.traceable_delete_libtraceable_type(deleteEngine)
 	}
 
-	cStrProcessRequestHeaders := C.CString("traceable_process_request_headers")
-	defer C.free(unsafe.Pointer(cStrProcessRequestHeaders))
-	if processRequestHeaders := C.dlsym(libHandle, cStrProcessRequestHeaders); processRequestHeaders == nil {
-		return nil, errors.New("failed to load traceable_process_request_headers")
-	} else {
-		b.processRequestHeaders = C.traceable_process_request_headers_type(processRequestHeaders)
-	}
-
-	cStrProcessRequestBody := C.CString("traceable_process_request_body")
-	defer C.free(unsafe.Pointer(cStrProcessRequestBody))
-	if processRequestBody := C.dlsym(libHandle, cStrProcessRequestBody); processRequestBody == nil {
-		return nil, errors.New("failed to load traceable_process_request_body")
-	} else {
-		b.processRequestBody = C.traceable_process_request_body_type(processRequestBody)
-	}
-
-	cStrProcessRequest := C.CString("traceable_process_request")
+	cStrProcessRequest := C.CString("traceable_process_request_using_token")
 	defer C.free(unsafe.Pointer(cStrProcessRequest))
 	if processRequest := C.dlsym(libHandle, cStrProcessRequest); processRequest == nil {
 		return nil, errors.New("failed to load traceable_process_request")
 	} else {
-		b.processRequest = C.traceable_process_request_type(processRequest)
+		b.processRequest = C.traceable_process_request_using_token_type(processRequest)
 	}
 
 	cStrDeleteProcessRequestResultData := C.CString("traceable_delete_process_request_result_data")
@@ -380,7 +363,7 @@ func (f *Filter) Start() bool {
 	if f.libtraceableHandle != nil {
 		ret := C.w_traceable_start_libtraceable(f.libtraceable.startEngine, f.libtraceableHandle)
 		if ret == C.TRACEABLE_SUCCESS {
-			f.started = true
+			f.isStarted.Store(true)
 			return true
 		}
 
@@ -392,57 +375,75 @@ func (f *Filter) Start() bool {
 	return true
 }
 
-func (f *Filter) Stop() bool {
-	if f.libtraceableHandle != nil {
-		ret := C.w_traceable_delete_libtraceable(f.libtraceable.deleteEngine, f.libtraceableHandle)
-		if ret == C.TRACEABLE_SUCCESS {
-			f.started = false
-			return true
-		}
+func (f *Filter) Stop() error {
+	f.logger.Info("Received shutdown signal for traceable filter")
+	// set the init flag to false so that no new requests are accepted
+	f.isStarted.Store(false)
+	f.shutdownWg.Wait()
 
-		f.logger.Warn("Failed to delete libtraceable")
-		return false
+	defer isFilterInitialized.Store(false)
+	if f.libtraceableHandle == nil {
+		return nil
 	}
 
-	return true
+	ret := C.w_traceable_delete_libtraceable(f.libtraceable.deleteEngine, f.libtraceableHandle)
+	if ret == C.TRACEABLE_SUCCESS {
+		f.logger.Info("Successfully shutdown traceable filter")
+		return nil
+	}
+	return errors.New("failed to shutdown libtraceable")
 }
 
-// Evaluate adds an incoming filter request to the common buffer.
-// It waits when there are no workers free and buffer is full.
-func (f *Filter) Evaluate(span sdk.Span) filterresult.FilterResult {
-	if !poolEnabled {
-		return f.evaluate(span)
+// Evaluate adds an incoming filter request to the common buffer if the filter pool is enabled or directly
+// evaluates the request if the pool is disabled. It waits when there are no workers free and the buffer is full.
+func (f *Filter) Evaluate(ctx context.Context, span sdk.Span) filterresult.FilterResult {
+	if !f.isStarted.Load() {
+		f.logger.Debug("Traceable filter not initialized")
+		return noopResult
+	}
+	f.shutdownWg.Add(1)
+	defer f.shutdownWg.Done()
+
+	if !f.poolEnabled {
+		return f.evaluate(ctx, span)
 	}
 
 	responseChan := make(chan filterresult.FilterResult, 1)
 	req := filterRequest{
-		filter:       f,
 		responseChan: responseChan,
 		span:         span,
+		ctx:          ctx,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	select {
-	case buffer <- req:
+	case f.buffer <- req:
 	case <-ctx.Done():
-		poolLogger.Info("Throttled log: filter buffer is full and request timed out waiting for worker, returning default response")
+		f.poolLogger.Info("Throttled log: filter buffer is full and request timed out waiting for worker, returning default response")
 		close(responseChan)
-		return timedOutResult
+		return noopResult
 	}
 	return <-responseChan
 }
 
 // evaluate calls into libtraceable to evaluate if request url, body and headers. It is
 // EvaluateURLAndHeaders and EvaluateBody combined into one call.
-func (f *Filter) evaluate(span sdk.Span) filterresult.FilterResult {
-	if !f.started {
-		f.logger.Debug("No evaluation as engine isn't started")
-		return filterresult.FilterResult{}
+func (f *Filter) evaluate(ctx context.Context, span sdk.Span) (res filterresult.FilterResult) {
+	if f.spanSanitizationMode == traceableconfig.SpanSanitizationMode_SPAN_SANITIZATION_MODE_DROP_SPAN_ON_FAILURE {
+		defer func() {
+			if r := recover(); r != nil {
+				// drop the span and return noop result
+				span.SetAttribute("traceableai.span_type", "nospan")
+				f.logger.Warn("Recovered from invalid attribute for filter evaluation, dropping span")
+				res = noopResult
+				invalidSpanCounter.Add(ctx, 1)
+			}
+		}()
 	}
 
-	attributes := map[string]string{}
+	attributes := make(map[string]string, span.GetAttributes().Len()+span.GetResourceAttributes().Len())
 	span.GetAttributes().Iterate(func(key string, value interface{}) bool {
 		if value == nil {
 			f.logger.Warn("Skipping nil attribute for filter evaluation", zap.String("key", key))
@@ -465,14 +466,21 @@ func (f *Filter) evaluate(span sdk.Span) filterresult.FilterResult {
 		return true
 	})
 
+	attributes[spanNameKey] = span.GetName()
+	attributes[spanKindKey] = span.GetKind()
+
 	inputLibTraceableAttributes := createLibTraceableAttributes(attributes)
 	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
 
+	inputTokenDetails := createLibTraceableTokenDetails(ctx)
+	defer freeLibTraceableTokenDetails(inputTokenDetails)
+
 	var processResult C.traceable_process_request_result
-	ret := C.w_traceable_process_request(
+	ret := C.w_traceable_process_request_using_token(
 		f.libtraceable.processRequest,
 		f.libtraceableHandle,
 		inputLibTraceableAttributes,
+		inputTokenDetails,
 		&processResult,
 	)
 	defer C.w_traceable_delete_process_request_result_data(f.libtraceable.deleteProcessResultData, processResult)
@@ -509,7 +517,7 @@ func (f *Filter) evaluate(span sdk.Span) filterresult.FilterResult {
 func createLibTraceableAttributes(attributes map[string]string) C.traceable_attributes {
 	if len(attributes) == 0 {
 		return C.traceable_attributes{
-			count:           C.int(len(attributes)),
+			count:           C.int(0),
 			attribute_array: (*C.traceable_attribute)(nil),
 		}
 	}
@@ -556,6 +564,21 @@ func createLibTraceableStringArray(values []*wrapperspb.StringValue) C.traceable
 	return arr
 }
 
+// createLibTraceableTokenDetails converts filter.TokenDetails into C.traceable_token_details
+func createLibTraceableTokenDetails(ctx context.Context) C.traceable_token_details {
+	var token, tenantId string
+	md, found := metadata.FromIncomingContext(ctx)
+	if found {
+		token = mdGetFirstOrDefault(md, internalOnlyAgentToken, "")
+		tenantId = mdGetFirstOrDefault(md, internalOnlyTenantIdHeader, "")
+	}
+
+	return C.traceable_token_details{
+		token:     C.CString(token),
+		tenant_id: C.CString(tenantId),
+	}
+}
+
 // freeLibTraceableAttributes deletes allocated data in C.traceable_attributes
 func freeLibTraceableAttributes(attributes C.traceable_attributes) {
 	s := getSliceFromCTraceableAttributes(attributes)
@@ -573,6 +596,12 @@ func freeLibTraceableStringArray(arr C.traceable_string_array) {
 		C.free(unsafe.Pointer(val))
 	}
 	C.free(unsafe.Pointer((**C.char)(arr.values)))
+}
+
+// freeLibTraceableTokenDetails deletes allocated data in C.traceable_token_details
+func freeLibTraceableTokenDetails(tokenDetails C.traceable_token_details) {
+	C.free(unsafe.Pointer(tokenDetails.token))
+	C.free(unsafe.Pointer(tokenDetails.tenant_id))
 }
 
 func fromLibTraceableAttributes(attributes C.traceable_attributes) map[string]string {
@@ -598,23 +627,18 @@ func fromLibTraceableDecorations(decorations C.traceable_decorations) *filterres
 
 func populateLibtraceableConfig(
 	libtraceableConfig *C.traceable_libtraceable_config,
-	tenantId string,
-	serviceName string,
 	config *traceableconfig.AgentConfig) {
-	libtraceableConfig.agent_config.tenant_id = C.CString(tenantId)
 	libtraceableConfig.agent_config.environment = C.CString(config.GetEnvironment().GetValue())
-	libtraceableConfig.agent_config.service_name = C.CString(serviceName)
+	libtraceableConfig.agent_config.service_name = C.CString(config.GetServiceName().GetValue())
 	libtraceableConfig.agent_config.agent_token = C.CString(config.GetReporting().GetToken().GetValue())
 	libtraceableConfig.agent_config.service_instance_id = C.CString(identifier.ServiceInstanceIDAttr.AsString())
-	libtraceableConfig.agent_config.host_name = C.CString(getHostName(config.GetResourceAttributes()))
-	// remote_config under blocking is deprecated but need to honor that
-	remoteConfigPb := config.RemoteConfig
+	libtraceableConfig.agent_config.resource_attributes = createLibTraceableAttributes(config.GetResourceAttributes())
+	libtraceableConfig.agent_config.deployment_name = C.CString(config.GetAgentIdentity().GetDeploymentName().GetValue())
 
 	// disable traces pipeline
 	libtraceableConfig.trace_exporter_config.enabled = C.int(0)
-	// disable metrics exporter pipeline
-	libtraceableConfig.metrics_config.exporter.enabled = C.int(0)
 
+	remoteConfigPb := config.RemoteConfig
 	libtraceableConfig.remote_config.enabled = getCBool(remoteConfigPb.Enabled.Value)
 	libtraceableConfig.remote_config.remote_endpoint = C.CString(remoteConfigPb.Endpoint.Value)
 	libtraceableConfig.remote_config.poll_period_sec = C.int(remoteConfigPb.PollPeriodSeconds.Value)
@@ -669,11 +693,13 @@ func populateLibtraceableConfig(
 	libtraceableConfig.log_config.file_config.max_files = C.int(config.Logging.LogFile.MaxFiles.Value)
 	libtraceableConfig.log_config.file_config.max_file_size = C.int(config.Logging.LogFile.MaxFileSize.Value)
 	libtraceableConfig.log_config.file_config.log_file = C.CString(config.Logging.LogFile.FilePath.Value)
+	libtraceableConfig.log_config.exporter_config.enabled =
+		getCBool(config.GetTelemetry().GetLogs().GetEnabled().GetValue())
+	libtraceableConfig.log_config.exporter_config.level =
+		getCTraceableLogLevel(config.GetTelemetry().GetLogs().GetLevel())
+	libtraceableConfig.log_config.exporter_config.reporter_type =
+		getCTraceableReporterType(config.GetReporting().GetTraceReporterType())
 
-	metricReportingEndpoint := config.GetReporting().GetMetricEndpoint().GetValue()
-	if len(metricReportingEndpoint) == 0 {
-		metricReportingEndpoint = config.GetReporting().GetEndpoint().GetValue()
-	}
 	libtraceableConfig.metrics_config.enabled =
 		getCBool(config.MetricsConfig.Enabled.Value)
 	libtraceableConfig.metrics_config.max_queue_size =
@@ -692,16 +718,8 @@ func populateLibtraceableConfig(
 		C.CString(config.MetricsConfig.Logging.Frequency.Value)
 	libtraceableConfig.metrics_config.exporter.enabled =
 		getCBool(config.MetricsConfig.Exporter.Enabled.Value)
-	libtraceableConfig.metrics_config.exporter.server.secure =
-		getCBool(config.Reporting.Secure.Value)
-	libtraceableConfig.metrics_config.exporter.server.endpoint =
-		C.CString(metricReportingEndpoint)
-	libtraceableConfig.metrics_config.exporter.server.cert_file =
-		C.CString(config.Reporting.CertFile.Value)
-	libtraceableConfig.metrics_config.exporter.server.export_interval_ms =
+	libtraceableConfig.metrics_config.exporter.export_interval_ms =
 		C.int(config.MetricsConfig.Exporter.ExportIntervalMs.Value)
-	libtraceableConfig.metrics_config.exporter.server.export_timeout_ms =
-		C.int(config.MetricsConfig.Exporter.ExportTimeoutMs.Value)
 	libtraceableConfig.metrics_config.exporter.reporter_type =
 		getMetricReporterType(config.Reporting.MetricReporterType, config.Reporting.TraceReporterType)
 
@@ -709,6 +727,18 @@ func populateLibtraceableConfig(
 		C.uint32_t(uint32(config.GetParserConfig().GetMaxBodySize().GetValue()))
 	libtraceableConfig.parser_config.graphql.enabled =
 		getCBool(config.GetParserConfig().GetGraphql().GetEnabled().GetValue())
+
+	libtraceableConfig.pipeline_manager_config.pipeline_request_queue_size =
+		C.int(config.GetPipelineManager().GetPipelineRequestsQueueInitialSize().GetValue())
+
+	libtraceableConfig.reporting_config.secure =
+		getCBool(config.Reporting.Secure.Value)
+	libtraceableConfig.reporting_config.endpoint =
+		C.CString(config.GetReporting().GetEndpoint().GetValue())
+	libtraceableConfig.reporting_config.cert_file =
+		C.CString(config.Reporting.CertFile.Value)
+	libtraceableConfig.reporting_config.timeout_ms =
+		C.int(config.MetricsConfig.Exporter.ExportTimeoutMs.Value)
 }
 
 func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
@@ -718,11 +748,12 @@ func freeLibTraceableConfig(config C.traceable_libtraceable_config) {
 	C.free(unsafe.Pointer(config.agent_config.environment))
 	C.free(unsafe.Pointer(config.agent_config.agent_token))
 	C.free(unsafe.Pointer(config.agent_config.service_instance_id))
-	C.free(unsafe.Pointer(config.agent_config.host_name))
-	C.free(unsafe.Pointer(config.metrics_config.exporter.server.endpoint))
-	C.free(unsafe.Pointer(config.metrics_config.exporter.server.cert_file))
+	C.free(unsafe.Pointer(config.agent_config.deployment_name))
+	C.free(unsafe.Pointer(config.reporting_config.endpoint))
+	C.free(unsafe.Pointer(config.reporting_config.cert_file))
 	freeLibTraceableStringArray(config.blocking_config.eds_config.include_path_regexes)
 	freeLibTraceableStringArray(config.blocking_config.eds_config.exclude_path_regexes)
+	freeLibTraceableAttributes(config.agent_config.resource_attributes)
 }
 
 func getSliceFromCTraceableAttributes(attributes C.traceable_attributes) []C.traceable_attribute {
@@ -795,13 +826,6 @@ func getCBool(b bool) C.int {
 	return C.int(0)
 }
 
-func getHostName(resourceAttrs map[string]string) string {
-	if val, found := resourceAttrs["host.name"]; found {
-		return val
-	}
-	return ""
-}
-
 func getMetricReporterType(metricReporterType traceableconfig.MetricReporterType, traceReporterType traceableconfig.TraceReporterType) C.TRACEABLE_REPORTER_TYPE {
 	if metricReporterType != traceableconfig.MetricReporterType_METRIC_REPORTER_TYPE_UNSPECIFIED {
 		return getCTraceableMetricReporterType(metricReporterType)
@@ -826,4 +850,12 @@ func getCTraceableMetricReporterType(reporterType traceableconfig.MetricReporter
 		return C.LOGGING
 	}
 	return C.OTLP
+}
+
+func mdGetFirstOrDefault(md metadata.MD, key string, defaultValue string) string {
+	if result := md.Get(key); len(result) > 0 && len(result[0]) > 0 {
+		return result[0]
+	}
+
+	return defaultValue
 }

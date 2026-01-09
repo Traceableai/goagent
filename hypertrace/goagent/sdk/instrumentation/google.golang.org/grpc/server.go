@@ -107,7 +107,7 @@ func wrapHandler(
 
 		// TODO: decide what should be passed as URL in GRPC
 		// single evaluation call to filter after capturing the configured parameters
-		filterResult := filter.Evaluate(span)
+		filterResult := filter.Evaluate(context.Background(), span)
 		if filterResult.Block {
 			return nil, status.Error(StatusCode(int(filterResult.ResponseStatusCode)), StatusText(int(filterResult.ResponseStatusCode)))
 		} else if filterResult.Decorations != nil {

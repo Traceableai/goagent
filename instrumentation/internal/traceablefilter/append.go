@@ -20,12 +20,15 @@ func AppendTraceableFilter(f sdkfilter.Filter) sdkfilter.Filter {
 }
 
 func appendTraceableFilterPerConfig(cfg *config.AgentConfig, l *zap.Logger, f sdkfilter.Filter) (sdkfilter.Filter, func()) {
-	// tenant id should be empty in this case
-	traceableFilter := traceable.NewFilter("", cfg.Tracing.ServiceName.Value, cfg.TraceableConfig, l)
+	traceableFilter := traceable.NewFilter(cfg.TraceableConfig, l)
 	if !traceableFilter.Start() {
 		return f, func() {}
 	}
-	closer := func() { traceableFilter.Stop() }
+	closer := func() {
+		if err := traceableFilter.Stop(); err != nil {
+			l.Error("Failed to stop traceable filter", zap.Error(err))
+		}
+	}
 
 	l.Debug("Traceable filter appended successfully")
 	if f != nil {

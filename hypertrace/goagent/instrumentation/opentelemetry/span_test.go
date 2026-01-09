@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/Traceableai/goagent/hypertrace/goagent/config"
 	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
@@ -16,6 +18,8 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 )
 
 func newNoopSpan() trace.Span {
@@ -192,4 +196,17 @@ func TestSpanMetadata(t *testing.T) {
 	assert.Equal(t, "test_span", attrs.GetValue("span.name"))
 	// span.kind attribute value is lowercased in startSpan function.
 	assert.Equal(t, "client", attrs.GetValue("span.kind"))
+}
+
+func TestGenerateAttributeInvalidString(t *testing.T) {
+	logger := zaptest.NewLogger(t)
+	zap.ReplaceGlobals(logger)
+	defer zap.ReplaceGlobals(zap.NewNop())
+
+	var invalidString string
+	header := (*reflect.StringHeader)(unsafe.Pointer(&invalidString))
+	header.Data = uintptr(0)
+	header.Len = 10
+
+	generateAttribute("test", invalidString)
 }

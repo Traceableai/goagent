@@ -42,6 +42,12 @@ type Span interface {
 
 	// GetResourceAttributes fetches a read only view of the resource attributes for this span
 	GetResourceAttributes() AttributeList
+
+	// GetName returns the name of the span
+	GetName() string
+
+	// GetKind returns the kind of the span
+	GetKind() string
 }
 
 // SpanFromContext retrieves the existing span from a context

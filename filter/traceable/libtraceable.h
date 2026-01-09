@@ -55,6 +55,13 @@ typedef enum {
 
 typedef enum { LOGGING, OTLP, OTLP_HTTP } TRACEABLE_REPORTER_TYPE;
 
+typedef struct {
+  int secure;
+  const char* endpoint;
+  const char* cert_file;
+  int timeout_ms;
+} traceable_reporting_config;
+
 // TODO remove this and use traceable_key_value_string
 typedef struct {
   const char* key;
@@ -78,9 +85,19 @@ typedef struct {
 } traceable_log_file_config;
 
 typedef struct {
+  int enabled;
+  int max_batch_size;
+  int max_queue_size;
+  int export_interval_ms;
+  TRACEABLE_REPORTER_TYPE reporter_type;
+  TRACEABLE_LOG_LEVEL level;
+} traceable_log_exporter_config;
+
+typedef struct {
   TRACEABLE_LOG_MODE mode;
   TRACEABLE_LOG_LEVEL level;
   traceable_log_file_config file_config;
+  traceable_log_exporter_config exporter_config;
 } traceable_log_config;
 
 typedef struct {
@@ -125,9 +142,9 @@ typedef struct {
   const char* environment;
   const char* service_name;
   const char* service_instance_id;
-  const char* host_name;
   const char* agent_token;
-  const char* tenant_id;
+  const char* deployment_name;
+  traceable_attributes resource_attributes;
 } traceable_agent_config;
 
 typedef struct {
@@ -156,17 +173,9 @@ typedef struct {
 } traceable_endpoint_metrics_config;
 
 typedef struct {
-  int secure;
-  const char* endpoint;
-  const char* cert_file;
-  int export_interval_ms;
-  int export_timeout_ms;
-} traceable_exporter_config;
-
-typedef struct {
   int enabled;
+  int export_interval_ms;
   TRACEABLE_REPORTER_TYPE reporter_type;
-  traceable_exporter_config server;
 } traceable_metrics_exporter_config;
 
 typedef struct {
@@ -181,8 +190,8 @@ typedef struct {
   int enabled;
   int max_batch_size;
   int max_queue_size;
+  int export_interval_ms;
   TRACEABLE_REPORTER_TYPE trace_reporter_type;
-  traceable_exporter_config server;
 } traceable_traces_exporter_config;
 
 typedef struct {
@@ -193,6 +202,10 @@ typedef struct {
   traceable_graphql_parser_config graphql;
   uint32_t max_body_size;
 } traceable_parser_config;
+
+typedef struct {
+  int pipeline_request_queue_size;
+} traceable_pipeline_manager_config;
 
 typedef struct {
   int status_code;
@@ -223,6 +236,10 @@ typedef struct {
 } traceable_process_request_result;
 
 typedef struct {
+  int enabled;
+} traceable_threat_detection_engine_config;
+
+typedef struct {
   traceable_log_config log_config;
   traceable_remote_config remote_config;
   traceable_blocking_config blocking_config;
@@ -231,6 +248,9 @@ typedef struct {
   traceable_metrics_config metrics_config;
   traceable_traces_exporter_config trace_exporter_config;
   traceable_parser_config parser_config;
+  traceable_pipeline_manager_config pipeline_manager_config;
+  traceable_reporting_config reporting_config;
+  traceable_threat_detection_engine_config detection_config;
 } traceable_libtraceable_config;
 
 typedef enum { TRACEABLE_SUCCESS, TRACEABLE_FAIL } TRACEABLE_RET;
@@ -272,6 +292,11 @@ typedef struct {
   TRACEABLE_SPAN_STATUS status;
 } traceable_end_span_request;
 
+typedef struct {
+  const char* token;
+  const char* tenant_id;
+} traceable_token_details;
+
 /*
  * Traceable api functions
  */
@@ -307,6 +332,15 @@ TRACEABLE_API TRACEABLE_RET traceable_process_request_body(
  */
 TRACEABLE_API TRACEABLE_RET traceable_process_request(
     traceable_libtraceable libtraceable, traceable_attributes attributes,
+    traceable_process_request_result* out_process_result);
+
+/*
+ * Process request and perfom sampling and blocking in one phase for the
+ * specified tenant.
+ */
+TRACEABLE_API TRACEABLE_RET traceable_process_request_using_token(
+    traceable_libtraceable libtraceable, traceable_attributes attributes,
+    traceable_token_details token_details,
     traceable_process_request_result* out_process_result);
 
 TRACEABLE_API TRACEABLE_RET traceable_start_span(

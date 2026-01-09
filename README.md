@@ -130,7 +130,7 @@ For running the server with libtraceable running on a docker based environment
 
 ```bash
 docker build -f _examples/http-server/Dockerfile .  -t http-server:dev  
-docker run -it --rm -v /Users/<>/goagent-src/_examples/http-server/config.yaml:/go/src/config.yaml -p 8081:8081 http-server:dev
+docker run -it --rm -v /Users/<>/goagent-src/_examples/http-server/config.yaml::/opt/traceable/config.yaml -e TA_CONFIG_FILE=/opt/traceable/config.yaml -p 8081:8081 http-server:dev
 ```
 
 Or run it within linux shell as
@@ -252,7 +252,7 @@ The repo uses docker to run some unit tests as libtraceable needs a linux based 
 Steps:
 1. Build the base image
     ```bash
-    docker build --build-arg UBUNTU_VERSION=20.04 --build-arg GO_VERSION=1.22.8 --build-arg ARCH=arm64  -f ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.ubuntu.test ./filter/traceable/cmd/libtraceable-downloader -t traceable_goagent_test_base:ubuntu_20.04
+    docker build --build-arg UBUNTU_VERSION=20.04 --build-arg GO_VERSION=1.24.6 --build-arg ARCH=arm64  -f ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.ubuntu.test ./filter/traceable/cmd/libtraceable-downloader -t traceable_goagent_test_base:ubuntu_20.04
     ```
 2. Build the test image (this will trigger the tests)
     ```bash

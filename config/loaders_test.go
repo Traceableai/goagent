@@ -53,14 +53,6 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.True(t, cfg.TraceableConfig.MetricsConfig.Logging.Enabled.Value)
 	assert.Equal(t, "30m", cfg.TraceableConfig.MetricsConfig.Logging.Frequency.Value)
 
-	// deprecated defaults
-	assert.Equal(t, true, cfg.TraceableConfig.BlockingConfig.RemoteConfig.Enabled.Value)
-	assert.Equal(t, "localhost:5442", cfg.TraceableConfig.BlockingConfig.RemoteConfig.Endpoint.Value)
-	assert.Equal(t, int32(30), cfg.TraceableConfig.BlockingConfig.RemoteConfig.PollPeriodSeconds.Value)
-	assert.Equal(t, "", cfg.TraceableConfig.BlockingConfig.RemoteConfig.CertFile.Value)
-	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.BlockingConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
-	assert.Equal(t, false, cfg.TraceableConfig.BlockingConfig.RemoteConfig.UseSecureConnection.Value)
-
 	// environment field check, has to be default
 	assert.Equal(t, "", cfg.TraceableConfig.Environment.Value)
 }
@@ -130,16 +122,4 @@ func TestLoadFromFileWithoutEnvironmentInConfig(t *testing.T) {
 
 	// environment field check to be default
 	assert.Equal(t, "", cfg.TraceableConfig.Environment.Value)
-}
-
-func TestLoadFromFileDeprecated(t *testing.T) {
-	cfg := LoadFromFile("./testdata/config_deprecated.yaml")
-
-	// check remote_config in deprecated location still works
-	assert.Equal(t, true, cfg.TraceableConfig.BlockingConfig.RemoteConfig.Enabled.Value)
-	assert.Equal(t, "http://traceable-agent:5441/", cfg.TraceableConfig.BlockingConfig.RemoteConfig.Endpoint.Value)
-	assert.Equal(t, int32(30), cfg.TraceableConfig.BlockingConfig.RemoteConfig.PollPeriodSeconds.Value)
-	assert.Equal(t, "/conf/tls.crt", cfg.TraceableConfig.BlockingConfig.RemoteConfig.CertFile.Value)
-	assert.Equal(t, int32(32*1024*1024), cfg.TraceableConfig.BlockingConfig.RemoteConfig.GrpcMaxCallRecvMsgSize.Value)
-	assert.Equal(t, false, cfg.TraceableConfig.BlockingConfig.RemoteConfig.UseSecureConnection.Value)
 }
