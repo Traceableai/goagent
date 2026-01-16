@@ -13,6 +13,10 @@
 #define TRACEABLE_API
 #endif
 
+#ifdef TRACEABLE_STATIC_LINK
+#define TRACEABLE_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,7 +28,8 @@ extern "C" {
 typedef enum {
   TRACEABLE_LOG_NONE,
   TRACEABLE_LOG_STDOUT,
-  TRACEABLE_LOG_FILE
+  TRACEABLE_LOG_FILE,
+  TRACEABLE_LOG_WIN_EVENTS
 } TRACEABLE_LOG_MODE;
 
 typedef enum {
