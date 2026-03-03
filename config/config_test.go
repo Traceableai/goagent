@@ -19,18 +19,18 @@ func TestConfigLoadIsNotOverridenByDefaults(t *testing.T) {
 			},
 		},
 		TraceableConfig: &traceableconfig.AgentConfig{
-			Opa: &traceableconfig.Opa{
+			DetectionConfig: &traceableconfig.ThreatActivityDetection{
 				Enabled: traceableconfig.Bool(true),
 			},
 		},
 	}
 
 	assert.Equal(t, false, cfg.Tracing.DataCapture.RpcMetadata.Request.Value)
-	assert.Equal(t, true, cfg.TraceableConfig.Opa.Enabled.Value)
+	assert.Equal(t, true, cfg.TraceableConfig.DetectionConfig.Enabled.Value)
 
 	LoadEnv(cfg)
 	// we verify here the value isn't overridden by default value (true)
 	assert.Equal(t, false, cfg.Tracing.DataCapture.RpcMetadata.Request.Value)
 	// we verify default value is used for undefined value (true)
-	assert.Equal(t, true, cfg.TraceableConfig.Opa.Enabled.Value)
+	assert.Equal(t, true, cfg.TraceableConfig.DetectionConfig.Enabled.Value)
 }

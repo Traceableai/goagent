@@ -226,9 +226,9 @@ func TestFilter(t *testing.T) {
 
 	driverName, err := Register("sqlite3", b.StartSpan, &Options{
 		Filter: mock.Filter{
-			Evaluator: func(span sdk.Span) result.FilterResult {
-				assert.Equal(t, span.GetAttributes().GetValue("span.kind"), "client")
-				span.SetAttribute("span.type", "nospan")
+			Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+				assert.Equal(t, aa.GetAttributes().GetValue("span.kind"), "client")
+				aa.SetAttribute("span.type", "nospan")
 				return result.FilterResult{}
 			},
 		},

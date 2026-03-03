@@ -158,7 +158,7 @@ type libtraceableMethods struct {
 }
 
 type filterRequest struct {
-	span         sdk.Span
+	aa           sdk.AttributeAccessor
 	ctx          context.Context
 	responseChan chan<- filterresult.FilterResult
 }
@@ -315,7 +315,7 @@ func (f *Filter) initializeWorkerPool(cfg *traceableconfig.ThreadPool) {
 func (f *Filter) consume() {
 	for {
 		req := <-f.buffer
-		req.responseChan <- f.evaluate(req.ctx, req.span)
+		req.responseChan <- f.evaluate(req.ctx, req.aa)
 		close(req.responseChan)
 	}
 }
@@ -396,7 +396,7 @@ func (f *Filter) Stop() error {
 
 // Evaluate adds an incoming filter request to the common buffer if the filter pool is enabled or directly
 // evaluates the request if the pool is disabled. It waits when there are no workers free and the buffer is full.
-func (f *Filter) Evaluate(ctx context.Context, span sdk.Span) filterresult.FilterResult {
+func (f *Filter) Evaluate(ctx context.Context, aa sdk.AttributeAccessor) filterresult.FilterResult {
 	if !f.isStarted.Load() {
 		f.logger.Debug("Traceable filter not initialized")
 		return noopResult
@@ -405,13 +405,13 @@ func (f *Filter) Evaluate(ctx context.Context, span sdk.Span) filterresult.Filte
 	defer f.shutdownWg.Done()
 
 	if !f.poolEnabled {
-		return f.evaluate(ctx, span)
+		return f.evaluate(ctx, aa)
 	}
 
 	responseChan := make(chan filterresult.FilterResult, 1)
 	req := filterRequest{
 		responseChan: responseChan,
-		span:         span,
+		aa:           aa,
 		ctx:          ctx,
 	}
 
@@ -430,12 +430,12 @@ func (f *Filter) Evaluate(ctx context.Context, span sdk.Span) filterresult.Filte
 
 // evaluate calls into libtraceable to evaluate if request url, body and headers. It is
 // EvaluateURLAndHeaders and EvaluateBody combined into one call.
-func (f *Filter) evaluate(ctx context.Context, span sdk.Span) (res filterresult.FilterResult) {
+func (f *Filter) evaluate(ctx context.Context, aa sdk.AttributeAccessor) (res filterresult.FilterResult) {
 	if f.spanSanitizationMode == traceableconfig.SpanSanitizationMode_SPAN_SANITIZATION_MODE_DROP_SPAN_ON_FAILURE {
 		defer func() {
 			if r := recover(); r != nil {
-				// drop the span and return noop result
-				span.SetAttribute("traceableai.span_type", "nospan")
+				// drop the accessor and return noop result
+				aa.SetAttribute("traceableai.span_type", "nospan")
 				f.logger.Warn("Recovered from invalid attribute for filter evaluation, dropping span")
 				res = noopResult
 				invalidSpanCounter.Add(ctx, 1)
@@ -443,8 +443,8 @@ func (f *Filter) evaluate(ctx context.Context, span sdk.Span) (res filterresult.
 		}()
 	}
 
-	attributes := make(map[string]string, span.GetAttributes().Len()+span.GetResourceAttributes().Len())
-	span.GetAttributes().Iterate(func(key string, value interface{}) bool {
+	attributes := make(map[string]string, aa.GetAttributes().Len()+aa.GetResourceAttributes().Len())
+	aa.GetAttributes().Iterate(func(key string, value interface{}) bool {
 		if value == nil {
 			f.logger.Warn("Skipping nil attribute for filter evaluation", zap.String("key", key))
 			return true
@@ -455,7 +455,7 @@ func (f *Filter) evaluate(ctx context.Context, span sdk.Span) (res filterresult.
 		return true
 	})
 
-	span.GetResourceAttributes().Iterate(func(key string, value interface{}) bool {
+	aa.GetResourceAttributes().Iterate(func(key string, value interface{}) bool {
 		if value == nil {
 			f.logger.Warn("Skipping nil attribute for filter evaluation", zap.String("key", key))
 			return true
@@ -465,9 +465,6 @@ func (f *Filter) evaluate(ctx context.Context, span sdk.Span) (res filterresult.
 		// the iterator from ht agent sends values based on this return value
 		return true
 	})
-
-	attributes[spanNameKey] = span.GetName()
-	attributes[spanKindKey] = span.GetKind()
 
 	inputLibTraceableAttributes := createLibTraceableAttributes(attributes)
 	defer freeLibTraceableAttributes(inputLibTraceableAttributes)
@@ -492,7 +489,7 @@ func (f *Filter) evaluate(ctx context.Context, span sdk.Span) (res filterresult.
 
 	outputAttributes := fromLibTraceableAttributes(processResult.attributes)
 	for k, v := range outputAttributes {
-		span.SetAttribute(k, v)
+		aa.SetAttribute(k, v)
 	}
 
 	statusCode := int32(processResult.decorations.response_details.status_code)
@@ -731,6 +728,7 @@ func populateLibtraceableConfig(
 	libtraceableConfig.pipeline_manager_config.pipeline_request_queue_size =
 		C.int(config.GetPipelineManager().GetPipelineRequestsQueueInitialSize().GetValue())
 
+	libtraceableConfig.detection_config.enabled = getCBool(config.GetDetectionConfig().GetEnabled().GetValue())
 	libtraceableConfig.reporting_config.secure =
 		getCBool(config.Reporting.Secure.Value)
 	libtraceableConfig.reporting_config.endpoint =

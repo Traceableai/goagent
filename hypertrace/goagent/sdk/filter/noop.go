@@ -12,8 +12,8 @@ type NoopFilter struct{}
 
 var _ Filter = NoopFilter{}
 
-// Evaluate that always returns false
-func (NoopFilter) Evaluate(context.Context, sdk.Span) result.FilterResult {
+// Evaluate that always returns empty result
+func (NoopFilter) Evaluate(context.Context, sdk.AttributeAccessor) result.FilterResult {
 	return result.FilterResult{}
 }
 

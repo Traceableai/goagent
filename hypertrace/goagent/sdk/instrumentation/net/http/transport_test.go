@@ -417,7 +417,7 @@ func TestFilter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			filter := mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
+				Evaluator: func(span sdk.AttributeAccessor) result.FilterResult {
 					span.SetAttribute("filter.evaluated", true)
 					return result.FilterResult{
 						Block:              tt.block,

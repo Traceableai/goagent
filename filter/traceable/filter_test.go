@@ -119,14 +119,6 @@ func TestGetLibTraceableConfig(t *testing.T) {
 					Enabled: traceableconfig.Bool(false),
 				},
 				MaxRecursionDepth: traceableconfig.Int32(10),
-				RemoteConfig: &traceableconfig.RemoteConfig{
-					Enabled:                traceableconfig.Bool(true),
-					Endpoint:               traceableconfig.String("localhost:5442"),
-					CertFile:               traceableconfig.String(""),
-					PollPeriodSeconds:      traceableconfig.Int32(30),
-					GrpcMaxCallRecvMsgSize: traceableconfig.Int32(32 * 1024 * 1024),
-					UseSecureConnection:    traceableconfig.Bool(false),
-				},
 				EdgeDecisionService: &traceableconfig.EdgeDecisionServiceConfig{
 					Enabled:   traceableconfig.Bool(true),
 					Endpoint:  traceableconfig.String("localhost:62060"),

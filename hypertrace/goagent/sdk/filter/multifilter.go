@@ -21,7 +21,7 @@ func NewMultiFilter(filter ...Filter) *MultiFilter {
 }
 
 // Evaluate runs body evaluators for each filter until one returns true
-func (m *MultiFilter) Evaluate(ctx context.Context, span sdk.Span) result.FilterResult {
+func (m *MultiFilter) Evaluate(ctx context.Context, span sdk.AttributeAccessor) result.FilterResult {
 	for _, f := range m.filters {
 		filterResult := f.Evaluate(ctx, span)
 		if filterResult.Block {

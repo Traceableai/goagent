@@ -117,8 +117,8 @@ func TestServerInterceptorFilter(t *testing.T) {
 			expectedFilterResult: true,
 			expectedStatusCode:   codes.PermissionDenied,
 			multiFilter: filter.NewMultiFilter(mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
-					assert.Equal(t, "test_value", fmt.Sprintf("%s", span.GetAttributes().GetValue("rpc.request.metadata.test_key")))
+				Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+					assert.Equal(t, "test_value", fmt.Sprintf("%s", aa.GetAttributes().GetValue("rpc.request.metadata.test_key")))
 					return result.FilterResult{Block: true, ResponseStatusCode: 403}
 				},
 			}),
@@ -127,8 +127,8 @@ func TestServerInterceptorFilter(t *testing.T) {
 			expectedFilterResult: true,
 			expectedStatusCode:   codes.PermissionDenied,
 			multiFilter: filter.NewMultiFilter(mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
-					assert.Equal(t, "{\"name\":\"Pupo\"}", span.GetAttributes().GetValue("rpc.request.body"))
+				Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+					assert.Equal(t, "{\"name\":\"Pupo\"}", aa.GetAttributes().GetValue("rpc.request.body"))
 					return result.FilterResult{Block: true, ResponseStatusCode: 403}
 				},
 			}),
@@ -137,8 +137,8 @@ func TestServerInterceptorFilter(t *testing.T) {
 			expectedFilterResult: true,
 			expectedStatusCode:   codes.FailedPrecondition,
 			multiFilter: filter.NewMultiFilter(mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
-					assert.Equal(t, "{\"name\":\"Pupo\"}", span.GetAttributes().GetValue("rpc.request.body"))
+				Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+					assert.Equal(t, "{\"name\":\"Pupo\"}", aa.GetAttributes().GetValue("rpc.request.body"))
 					return result.FilterResult{Block: true, ResponseStatusCode: 412}
 				},
 			}),
@@ -211,9 +211,9 @@ func TestServerInterceptorFilterWithMaxProcessingBodyLen(t *testing.T) {
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(
 			WrapUnaryServerInterceptor(mockUnaryInterceptor, mock.SpanFromContext, &Options{Filter: mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
-					assert.Equal(t, true, span.GetAttributes().GetValue("rpc.request.body.truncated"))
-					assert.Equal(t, "{", span.GetAttributes().GetValue("rpc.request.body")) // body is truncated
+				Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+					assert.Equal(t, true, aa.GetAttributes().GetValue("rpc.request.body.truncated"))
+					assert.Equal(t, "{", aa.GetAttributes().GetValue("rpc.request.body")) // body is truncated
 					return result.FilterResult{}
 				},
 			}}, nil),
@@ -255,7 +255,7 @@ func TestServerInterceptorFilterDecorations(t *testing.T) {
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(
 			WrapUnaryServerInterceptor(mockInterceptor, mock.SpanFromContext, &Options{Filter: mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
+				Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
 					return result.FilterResult{Block: false, Decorations: &result.Decorations{
 						RequestHeaderInjections: []result.KeyValueString{
 							{
@@ -329,7 +329,7 @@ func TestServerInterceptorFilterEmptyDecorations(t *testing.T) {
 	s := grpc.NewServer(
 		grpc.UnaryInterceptor(
 			WrapUnaryServerInterceptor(mockInterceptor, mock.SpanFromContext, &Options{Filter: mock.Filter{
-				Evaluator: func(span sdk.Span) result.FilterResult {
+				Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
 					return result.FilterResult{Block: false, Decorations: &result.Decorations{}}
 				},
 			}}, nil),

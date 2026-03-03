@@ -65,12 +65,12 @@ func newConfig(opts []Option, role string) *config {
 
 	c.tracer = c.TracerProvider.Tracer(
 		otelgrpc.ScopeName,
-		trace.WithInstrumentationVersion(otelgrpc.Version()),
+		trace.WithInstrumentationVersion(otelgrpc.Version),
 	)
 
 	c.meter = c.MeterProvider.Meter(
 		otelgrpc.ScopeName,
-		metric.WithInstrumentationVersion(otelgrpc.Version()),
+		metric.WithInstrumentationVersion(otelgrpc.Version),
 		metric.WithSchemaURL(semconv.SchemaURL),
 	)
 

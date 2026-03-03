@@ -8,69 +8,69 @@ import (
 	"github.com/Traceableai/goagent/hypertrace/goagent/sdk"
 )
 
-// SetTruncatedBodyAttribute truncates the body and sets the body as a span attribute.
+// SetTruncatedBodyAttribute truncates the body and sets the body as an attribute in AttributeAccessor.
 // When body is being truncated, we also add a second attribute suffixed by `.truncated` to
 // make it clear to the user, body has been modified.
-func SetTruncatedBodyAttribute(attrName string, body []byte, bodyMaxSize int, span sdk.Span) {
+func SetTruncatedBodyAttribute(attrName string, body []byte, bodyMaxSize int, aa sdk.AttributeAccessor) {
 	bodyLen := len(body)
 	if bodyLen == 0 {
 		return
 	}
 
 	if bodyLen <= bodyMaxSize {
-		SetBodyAttribute(attrName, body, false, span)
+		SetBodyAttribute(attrName, body, false, aa)
 		return
 	}
 
 	truncatedBody := truncateUTF8Bytes(body, bodyMaxSize)
 
-	SetBodyAttribute(attrName, truncatedBody, true, span)
+	SetBodyAttribute(attrName, truncatedBody, true, aa)
 }
 
 // SetTruncatedEncodedBodyAttribute is like SetTruncatedBodyAttribute above but also base64 encodes the
 // body. This is usually due to non utf8 bytes in the body eg. for multipart/form-data content type.
 // The body attribute name has a ".base64" suffix.
-func SetTruncatedEncodedBodyAttribute(attrName string, body []byte, bodyMaxSize int, span sdk.Span) {
+func SetTruncatedEncodedBodyAttribute(attrName string, body []byte, bodyMaxSize int, aa sdk.AttributeAccessor) {
 	bodyLen := len(body)
 	if len(body) == 0 {
 		return
 	}
 
 	if bodyLen <= bodyMaxSize {
-		SetEncodedBodyAttribute(attrName, body, false, span)
+		SetEncodedBodyAttribute(attrName, body, false, aa)
 		return
 	}
 
 	truncatedBody := truncateUTF8Bytes(body, bodyMaxSize)
-	SetEncodedBodyAttribute(attrName, truncatedBody, true, span)
+	SetEncodedBodyAttribute(attrName, truncatedBody, true, aa)
 }
 
-// SetBodyAttribute sets the body as a span attribute.
+// SetBodyAttribute sets the body as an attribute in AttributeAccessor.
 // also sets truncated attribute if truncated is true
-func SetBodyAttribute(attrName string, body []byte, truncated bool, span sdk.Span) {
+func SetBodyAttribute(attrName string, body []byte, truncated bool, aa sdk.AttributeAccessor) {
 	if len(body) == 0 {
 		return
 	}
 
-	span.SetAttribute(attrName, string(body))
+	aa.SetAttribute(attrName, string(body))
 	// if already truncated then set attribute
 	if truncated {
-		span.SetAttribute(fmt.Sprintf("%s.truncated", attrName), true)
+		aa.SetAttribute(fmt.Sprintf("%s.truncated", attrName), true)
 	}
 }
 
 // SetEncodedBodyAttribute is like SetBodyAttribute above but also base64 encodes the
 // body. This is usually due to non utf8 bytes in the body eg. for multipart/form-data content type.
 // The body attribute name has a ".base64" suffix.
-func SetEncodedBodyAttribute(attrName string, body []byte, truncated bool, span sdk.Span) {
+func SetEncodedBodyAttribute(attrName string, body []byte, truncated bool, aa sdk.AttributeAccessor) {
 	if len(body) == 0 {
 		return
 	}
 
-	span.SetAttribute(attrName+".base64", base64.RawStdEncoding.EncodeToString(body))
+	aa.SetAttribute(attrName+".base64", base64.RawStdEncoding.EncodeToString(body))
 	// if already truncated then set attribute
 	if truncated {
-		span.SetAttribute(fmt.Sprintf("%s.truncated", attrName), true)
+		aa.SetAttribute(fmt.Sprintf("%s.truncated", attrName), true)
 	}
 }
 

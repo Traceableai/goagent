@@ -27,17 +27,17 @@ func TestMultiFilterStopsAfterTrue(t *testing.T) {
 			expectedFilterResult: true,
 			multiFilter: NewMultiFilter(
 				mock.Filter{
-					Evaluator: func(span sdk.Span) result.FilterResult {
+					Evaluator: func(span sdk.AttributeAccessor) result.FilterResult {
 						return result.FilterResult{}
 					},
 				},
 				mock.Filter{
-					Evaluator: func(span sdk.Span) result.FilterResult {
+					Evaluator: func(span sdk.AttributeAccessor) result.FilterResult {
 						return result.FilterResult{Block: true, ResponseStatusCode: 403}
 					},
 				},
 				mock.Filter{
-					Evaluator: func(span sdk.Span) result.FilterResult {
+					Evaluator: func(span sdk.AttributeAccessor) result.FilterResult {
 						assert.Fail(t, "should not be called")
 						return result.FilterResult{}
 					},

@@ -162,5 +162,8 @@ var defaultConfig = &AgentConfig{
 				Level:   traceableconfig.LogLevel_LOG_LEVEL_INFO,
 			},
 		},
+		DetectionConfig: &traceableconfig.ThreatActivityDetection{
+			Enabled: traceableconfig.Bool(false),
+		},
 	},
 }

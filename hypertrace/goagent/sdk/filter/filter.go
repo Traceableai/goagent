@@ -10,6 +10,6 @@ import (
 // Filter evaluates whether request should be blocked, `true` blocks the request and `false` continues it.
 type Filter interface {
 	// Evaluate can be used to evaluate URL, headers and body content in one call
-	Evaluate(context.Context, sdk.Span) result.FilterResult
+	Evaluate(context.Context, sdk.AttributeAccessor) result.FilterResult
 	Stop() error
 }

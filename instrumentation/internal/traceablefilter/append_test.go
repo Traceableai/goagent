@@ -21,9 +21,8 @@ func TestAppendTraceableFilter(t *testing.T) {
 			BlockingConfig: &traceableconfig.BlockingConfig{
 				Enabled: traceableconfig.Bool(true),
 			},
-			Opa: &traceableconfig.Opa{ // needed to run the test
-				Endpoint:          traceableconfig.String("http//localhost:123"),
-				PollPeriodSeconds: traceableconfig.Int32(10),
+			DetectionConfig: &traceableconfig.ThreatActivityDetection{
+				Enabled: traceableconfig.Bool(false),
 			},
 		}}
 	f, closer := appendTraceableFilterPerConfig(enabledConfig, zap.NewNop(), filter.NoopFilter{})

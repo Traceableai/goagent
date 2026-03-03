@@ -40,7 +40,7 @@ func UnaryClientInterceptor(opts ...Option) grpc.UnaryClientInterceptor {
 	cfg := newConfig(opts, "client")
 	tracer := cfg.TracerProvider.Tracer(
 		otelgrpc.ScopeName,
-		trace.WithInstrumentationVersion(otelgrpc.Version()),
+		trace.WithInstrumentationVersion(otelgrpc.Version),
 	)
 
 	return func(
@@ -107,7 +107,7 @@ func UnaryServerInterceptor(opts ...Option) grpc.UnaryServerInterceptor {
 	cfg := newConfig(opts, "server")
 	tracer := cfg.TracerProvider.Tracer(
 		otelgrpc.ScopeName,
-		trace.WithInstrumentationVersion(otelgrpc.Version()),
+		trace.WithInstrumentationVersion(otelgrpc.Version),
 	)
 
 	return func(

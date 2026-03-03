@@ -18,11 +18,11 @@ import (
 )
 
 type mockFilter struct {
-	evaluator func(span sdk.Span) result.FilterResult
+	evaluator func(span sdk.AttributeAccessor) result.FilterResult
 }
 
-func (f *mockFilter) Evaluate(_ context.Context, span sdk.Span) result.FilterResult {
-	return f.evaluator(span)
+func (f *mockFilter) Evaluate(_ context.Context, aa sdk.AttributeAccessor) result.FilterResult {
+	return f.evaluator(aa)
 }
 
 func (f *mockFilter) Stop() error {
@@ -208,10 +208,10 @@ func TestFilter(t *testing.T) {
 
 	driverName, err := Register("sqlite3", &sdkSQL.Options{
 		Filter: &mockFilter{
-			evaluator: func(span sdk.Span) result.FilterResult {
-				assert.Equal(t, span.GetAttributes().GetValue("span.kind"), "client")
+			evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+				assert.Equal(t, aa.GetAttributes().GetValue("span.kind"), "client")
 
-				span.SetAttribute("span.type", "nospan")
+				aa.SetAttribute("span.type", "nospan")
 				return result.FilterResult{}
 			},
 		},

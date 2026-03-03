@@ -294,8 +294,8 @@ func TestClientFilter(t *testing.T) {
 						mock.SpanFromContext,
 						&Options{
 							Filter: mock.Filter{
-								Evaluator: func(span sdk.Span) result.FilterResult {
-									span.SetAttribute("filter.evaluated", true)
+								Evaluator: func(aa sdk.AttributeAccessor) result.FilterResult {
+									aa.SetAttribute("filter.evaluated", true)
 									return result.FilterResult{
 										Block:              tt.block,
 										ResponseStatusCode: 403,

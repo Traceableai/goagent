@@ -11,7 +11,7 @@ import (
 func TestConfig(t *testing.T) {
 	InitConfig(&config.AgentConfig{
 		TraceableConfig: &traceableconfig.AgentConfig{
-			Opa: &traceableconfig.Opa{
+			DetectionConfig: &traceableconfig.ThreatActivityDetection{
 				Enabled: wrapperspb.Bool(true),
 			},
 		},

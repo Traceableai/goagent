@@ -9,6 +9,7 @@ import (
 )
 
 func TestBodyTruncationSuccess(t *testing.T) {
+	// mock Span implements AttributeAccessor
 	s := mock.NewSpan()
 	SetTruncatedBodyAttribute("http.request.body", []byte("text"), 2, s)
 	assert.Equal(t, "te", s.ReadAttribute("http.request.body"))

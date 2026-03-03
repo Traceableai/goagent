@@ -27,7 +27,7 @@ var _ filter.Filter = (*Filter)(nil)
 func (f Filter) Start() bool { return true }
 
 // Evaluate calls into libtraceable to evaluate if request should be blocked
-func (Filter) Evaluate(context.Context, sdk.Span) result.FilterResult {
+func (Filter) Evaluate(context.Context, sdk.AttributeAccessor) result.FilterResult {
 	return result.FilterResult{}
 }
 

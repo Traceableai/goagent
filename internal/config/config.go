@@ -12,7 +12,7 @@ var DisabledConfig = &config.AgentConfig{
 	},
 	TraceableConfig: &traceableconfig.AgentConfig{
 		Environment: config.String(""),
-		Opa: &traceableconfig.Opa{
+		DetectionConfig: &traceableconfig.ThreatActivityDetection{
 			Enabled: config.Bool(false),
 		},
 		BlockingConfig: &traceableconfig.BlockingConfig{

@@ -23,7 +23,6 @@ func (l noopAttributes) GetValue(key string) interface{} {
 }
 
 func (l noopAttributes) Iterate(yield func(key string, value interface{}) bool) {
-	return
 }
 
 func (l noopAttributes) Len() int {

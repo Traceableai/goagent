@@ -15,13 +15,19 @@ type AttributeList interface {
 	Len() int
 }
 
+type AttributeAccessor interface {
+	// GetAttributes fetches a read only view of the attributes for this accessor(could be span or request)
+	GetAttributes() AttributeList
+	// SetAttribute sets an attribute for the accessor.
+	SetAttribute(key string, value interface{})
+	// GetResourceAttributes fetches a read only view of the resource attributes for this accessor.
+	GetResourceAttributes() AttributeList
+}
+
 // Span is an interface that accepts attributes and can be
 // distinguished as noop
 type Span interface {
-	GetAttributes() AttributeList
-
-	// SetAttribute sets an attribute for the span.
-	SetAttribute(key string, value interface{})
+	AttributeAccessor
 
 	// SetError sets an error for the span.
 	SetError(err error)
@@ -39,9 +45,6 @@ type Span interface {
 
 	//GetSpanId fetches the ID of the span that it is called upon
 	GetSpanId() string
-
-	// GetResourceAttributes fetches a read only view of the resource attributes for this span
-	GetResourceAttributes() AttributeList
 
 	// GetName returns the name of the span
 	GetName() string
