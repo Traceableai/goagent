@@ -74,7 +74,7 @@ tidy:
 	@find . -name "go.mod" \
 	| grep go.mod \
 	| xargs -I {} bash -c 'dirname {}' \
-	| xargs -I {} bash -c 'echo "=> {}"; cd {}; go mod tidy -go=1.24.0 '
+	| xargs -I {} bash -c 'echo "=> {}"; cd {}; go mod tidy -go=1.25.0 '
 
 .PHONY: install-tools
 install-tools: ## Install all the dependencies under the tools module

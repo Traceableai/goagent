@@ -591,6 +591,85 @@ func TestMakeExporterFactory_Headers_ZipkinAndOTLPHTTP(t *testing.T) {
 	}
 }
 
+func TestCreateTracerProviderDoesNotRegisterInMap(t *testing.T) {
+	cfg := config.Load()
+	cfg.ServiceName = config.String("my_example_svc")
+	cfg.Reporting.TraceReporterType = config.TraceReporterType_LOGGING
+	cfg.Enabled = config.Bool(true)
+	cfg.Telemetry.MetricsEnabled = config.Bool(false)
+
+	shutdown := Init(cfg)
+	defer shutdown()
+
+	assert.True(t, initialized)
+	assert.Equal(t, 0, len(traceProviders))
+
+	startSpanFn, tp, err := CreateTracerProvider(
+		map[string]string{"service.name": "unregistered-svc"},
+		nil, versionInfoAttributes,
+	)
+	require.NoError(t, err)
+	assert.NotEqual(t, noop.NewTracerProvider(), tp)
+
+	_, s, ender := startSpanFn(context.Background(), "test_span", nil)
+	assert.False(t, s.IsNoop())
+	ender()
+
+	assert.Equal(t, 0, len(traceProviders), "CreateTracerProvider should not add to traceProviders map")
+}
+
+func TestCreateTracerProviderDisabledAgent(t *testing.T) {
+	cfg := config.Load()
+	cfg.Enabled = config.Bool(false)
+
+	shutdown := Init(cfg)
+	defer shutdown()
+
+	startSpanFn, tp, err := CreateTracerProvider(
+		map[string]string{"service.name": "disabled-svc"},
+		nil, versionInfoAttributes,
+	)
+	require.NoError(t, err)
+	assert.Equal(t, noop.NewTracerProvider(), tp)
+
+	_, s, ender := startSpanFn(context.Background(), "test_span", nil)
+	assert.True(t, s.IsNoop())
+	ender()
+}
+
+func TestShutDownTracersAndBackgroundShutdownSeparation(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.WriteHeader(http.StatusAccepted)
+	}))
+	defer srv.Close()
+
+	cfg := config.Load()
+	cfg.ServiceName = config.String("my_example_svc")
+	cfg.Reporting.Endpoint = config.String(srv.URL)
+	cfg.Reporting.TraceReporterType = config.TraceReporterType_ZIPKIN
+	cfg.Enabled = config.Bool(true)
+	cfg.Telemetry.MetricsEnabled = config.Bool(false)
+
+	batchTimeout = time.Duration(10) * time.Second
+
+	shutdown := Init(cfg)
+
+	_, _, err := RegisterService("svc_a", map[string]string{"test": "val"})
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(traceProviders))
+	assert.True(t, initialized)
+	assert.True(t, enabled)
+
+	ShutDownTracers()
+	assert.Equal(t, 0, len(traceProviders), "ShutDownTracers should clear the map")
+	assert.True(t, initialized, "ShutDownTracers should not reset initialized")
+	assert.True(t, enabled, "ShutDownTracers should not reset enabled")
+
+	shutdown()
+	assert.False(t, initialized, "Full shutdown should reset initialized")
+	assert.False(t, enabled, "Full shutdown should reset enabled")
+}
+
 func TestCreateGrpcConn(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
 	require.NoError(t, err)
@@ -622,6 +701,12 @@ func TestCreateGrpcConn(t *testing.T) {
 	conn.Close()
 
 	cfg.Reporting.EnableGrpcLoadbalancing = &wrapperspb.BoolValue{Value: true}
+	conn, err = CreateGrpcConn(cfg)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	conn.Close()
+
+	cfg.Reporting.Token = &wrapperspb.StringValue{Value: "test-token"}
 	conn, err = CreateGrpcConn(cfg)
 	require.NoError(t, err)
 	require.NotNil(t, conn)

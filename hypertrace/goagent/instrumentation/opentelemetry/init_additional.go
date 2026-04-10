@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	modbsp "github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/batchspanprocessor"
 	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/identifier"
 	sdkconfig "github.com/Traceableai/goagent/hypertrace/goagent/sdk/config"
 	config "github.com/hypertrace/agent-config/gen/go/v1"
@@ -46,10 +45,8 @@ func InitAsAdditional(cfg *config.AgentConfig) (trace.SpanProcessor, func()) {
 		exporter = addResourceToSpans(exporter, resource)
 	}
 
-	return modbsp.CreateBatchSpanProcessor(
-			shouldUseCustomBatchSpanProcessor(cfg),
-			exporter,
-			trace.WithBatchTimeout(batchTimeout)),
+	sp := createSpanProcessor(cfg, exporter)
+	return sp,
 		func() {
 			err := exporter.Shutdown(context.Background())
 			if err != nil {

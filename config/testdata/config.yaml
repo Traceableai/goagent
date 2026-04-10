@@ -5,6 +5,7 @@ reporting:
   endpoint: traceable-agent:5442
   secure: false
   trace_reporter_type: OTLP
+  span_processor_type: SPAN_PROCESSOR_TYPE_BATCH
 
 blocking_config:
   enabled: true

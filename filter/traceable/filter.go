@@ -507,6 +507,7 @@ func (f *Filter) evaluate(ctx context.Context, aa sdk.AttributeAccessor) (res fi
 		ResponseStatusCode: statusCode,
 		ResponseMessage:    responseMessage,
 		Decorations:        fromLibTraceableDecorations(processResult.decorations),
+		OutAttributes:      outputAttributes,
 	}
 }
 

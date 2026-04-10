@@ -14,6 +14,7 @@ func TestLoadWithDefaults(t *testing.T) {
 	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
 	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
 	assert.Equal(t, true, cfg.Tracing.Reporting.EnableGrpcLoadbalancing.Value)
+	assert.Equal(t, SpanProcessorType_SPAN_PROCESSOR_TYPE_UNSPECIFIED, cfg.Tracing.Reporting.SpanProcessorType)
 
 	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Request.Value)
 	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Response.Value)
@@ -64,6 +65,7 @@ func TestLoadFromFile(t *testing.T) {
 	assert.Equal(t, "traceable-agent:5442", cfg.Tracing.Reporting.Endpoint.Value)
 	assert.Equal(t, false, cfg.Tracing.Reporting.Secure.Value)
 	assert.Equal(t, TraceReporterType_OTLP, cfg.Tracing.Reporting.TraceReporterType)
+	assert.Equal(t, SpanProcessorType_SPAN_PROCESSOR_TYPE_BATCH, cfg.Tracing.Reporting.SpanProcessorType)
 
 	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Request.Value)
 	assert.Equal(t, true, cfg.Tracing.DataCapture.HttpBody.Response.Value)

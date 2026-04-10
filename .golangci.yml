@@ -1,13 +1,10 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - dupl
     - goconst
-    #- gocyclo response wrapper for server handler is too complex
-    - gofmt
+    # - gocyclo response wrapper for server handler is too complex
     # - golint
     - govet
     - ineffassign
@@ -18,18 +15,19 @@ linters:
     - unparam
     # Replaces structcheck and varcheck. Available since go 1.20
     - unused
-
-linters-settings:
-  dupl:
-    threshold: 400
-  lll:
-    line-length: 170
-  gocyclo:
-    min-complexity: 15
-
-issues:
-  exclude-rules:
-    - path: config\/.*.go # constants are generated with underscore in *.pb.go files
-      text: don't use underscores in Go names
-      linters:
-        - golint
+  settings:
+    dupl:
+      threshold: 400
+    gocyclo:
+      min-complexity: 25
+    lll:
+      line-length: 170
+  exclusions:
+    rules:
+      - path: config\/.*.go # constants are generated with underscore in *.pb.go files
+        text: don't use underscores in Go names
+        linters:
+          - golint
+formatters:
+  enable:
+    - gofmt

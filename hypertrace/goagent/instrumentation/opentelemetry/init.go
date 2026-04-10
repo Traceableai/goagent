@@ -47,6 +47,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/resolver"
 )
 
@@ -128,12 +129,48 @@ func CreateGrpcConn(cfg *config.AgentConfig) (*grpc.ClientConn, error) {
 		dialOpts = append(dialOpts, grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [ { "round_robin": {} } ]}`))
 	}
 
+	token := cfg.GetReporting().GetToken().GetValue()
+	if token != "" {
+		dialOpts = append(dialOpts,
+			grpc.WithUnaryInterceptor(headerUnaryClientInterceptor(tracaebleaiAgentTokenKey, token)),
+			grpc.WithStreamInterceptor(headerStreamClientInterceptor(tracaebleaiAgentTokenKey, token)),
+		)
+	}
+
 	conn, err := grpc.NewClient(endpoint, dialOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gRPC connection to %s: %v", endpoint, err)
 	}
 
 	return conn, nil
+}
+
+func headerUnaryClientInterceptor(k, v string) grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req, reply any,
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}
+
+func headerStreamClientInterceptor(k, v string) grpc.StreamClientInterceptor {
+	return func(
+		ctx context.Context,
+		desc *grpc.StreamDesc,
+		cc *grpc.ClientConn,
+		method string,
+		streamer grpc.Streamer,
+		opts ...grpc.CallOption,
+	) (grpc.ClientStream, error) {
+		ctx = metadata.AppendToOutgoingContext(ctx, k, v)
+		return streamer(ctx, desc, cc, method, opts...)
+	}
 }
 
 func makePropagator(formats []config.PropagationFormat) propagation.TextMapPropagator {
@@ -466,10 +503,7 @@ func InitWithSpanProcessorWrapperAndZap(cfg *config.AgentConfig, wrapper SpanPro
 		log.Fatal(err)
 	}
 
-	sp := modbsp.CreateBatchSpanProcessor(
-		shouldUseCustomBatchSpanProcessor(cfg),
-		exporter,
-		sdktrace.WithBatchTimeout(batchTimeout))
+	sp := createSpanProcessor(cfg, exporter)
 	if wrapper != nil {
 		sp = &spanProcessorWithWrapper{wrapper, sp}
 	}
@@ -509,27 +543,37 @@ func InitWithSpanProcessorWrapperAndZap(cfg *config.AgentConfig, wrapper SpanPro
 	}
 
 	return func() {
-		mu.Lock()
-		defer mu.Unlock()
-		for key, tracerProvider := range traceProviders {
-			err := tracerProvider.Shutdown(context.Background())
-			if err != nil {
-				log.Printf("error while shutting down tracer provider: %v\n", err)
-			}
-			delete(traceProviders, key)
-		}
-		traceProviders = map[string]*sdktrace.TracerProvider{}
-		err := tp.Shutdown(context.Background())
-		if err != nil {
-			log.Printf("error while shutting down default tracer provider: %v\n", err)
-		}
-
-		metricsShutdownFn()
-		logsShutdownFn()
-		initialized = false
-		enabled = false
-		sdkconfig.ResetConfig()
+		ShutDownTracers()
+		BackgroundTracerProviderShutdown(tp, metricsShutdownFn, logsShutdownFn)
 	}
+}
+
+func BackgroundTracerProviderShutdown(tp *sdktrace.TracerProvider, metricsShutdownFn func(), logsShutdownFn func()) {
+	mu.Lock()
+	defer mu.Unlock()
+	err := tp.Shutdown(context.Background())
+	if err != nil {
+		log.Printf("error while shutting down default tracer provider: %v\n", err)
+	}
+
+	metricsShutdownFn()
+	logsShutdownFn()
+	initialized = false
+	enabled = false
+	sdkconfig.ResetConfig()
+}
+
+func ShutDownTracers() {
+	mu.Lock()
+	defer mu.Unlock()
+	for key, tracerProvider := range traceProviders {
+		err := tracerProvider.Shutdown(context.Background())
+		if err != nil {
+			log.Printf("error while shutting down tracer provider: %v\n", err)
+		}
+		delete(traceProviders, key)
+	}
+	traceProviders = map[string]*sdktrace.TracerProvider{}
 }
 
 func createResources(resources map[string]string,
@@ -571,16 +615,39 @@ func RegisterServiceWithSpanProcessorWrapper(key string, resourceAttributes map[
 	if _, ok := traceProviders[key]; ok {
 		return nil, noop.NewTracerProvider(), fmt.Errorf("key %v is already used for initialization", key)
 	}
+	spanStarter, tp := createTracerProvider(resourceAttributes, versionInfoAttrs, wrapper, opts...)
+	sdkTp, ok := tp.(*sdktrace.TracerProvider)
+	if !ok {
+		return nil, tp, nil
+	}
 
+	traceProviders[key] = sdkTp
+	return spanStarter, tp, nil
+}
+
+func CreateTracerProvider(resourceAttributes map[string]string,
+	wrapper SpanProcessorWrapper, versionInfoAttrs []attribute.KeyValue, opts ...ServiceOption) (sdk.StartSpan, trace.TracerProvider, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	if !initialized {
+		return nil, noop.NewTracerProvider(), fmt.Errorf("hypertrace hadn't been initialized")
+	}
+
+	if !enabled {
+		return NoopStartSpan, noop.NewTracerProvider(), nil
+	}
+	spanStarter, tp := createTracerProvider(resourceAttributes, versionInfoAttrs, wrapper, opts...)
+	return spanStarter, tp, nil
+}
+
+func createTracerProvider(resourceAttributes map[string]string, versionInfoAttrs []attribute.KeyValue,
+	wrapper SpanProcessorWrapper, opts ...ServiceOption) (sdk.StartSpan, trace.TracerProvider) {
 	exporter, err := exporterFactory(opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sp := modbsp.CreateBatchSpanProcessor(
-		shouldUseCustomBatchSpanProcessor(configFactory()),
-		exporter,
-		sdktrace.WithBatchTimeout(batchTimeout))
+	sp := createSpanProcessor(configFactory(), exporter)
 	if wrapper != nil {
 		sp = &spanProcessorWithWrapper{wrapper, sp}
 	}
@@ -597,11 +664,9 @@ func RegisterServiceWithSpanProcessorWrapper(key string, resourceAttributes map[
 		sdktrace.WithSpanProcessor(sp),
 		sdktrace.WithResource(resources),
 	)
-
-	traceProviders[key] = tp
 	return startSpan(func() trace.TracerProvider {
 		return tp
-	}), tp, nil
+	}), tp
 }
 
 // NewZapCore returns a new [zapcore.Core] which exports the logs to the configured exporter
@@ -662,6 +727,23 @@ func shouldDisableMetrics(cfg *config.AgentConfig) bool {
 func shouldUseCustomBatchSpanProcessor(cfg *config.AgentConfig) bool {
 	return (cfg.GetGoagent() != nil && cfg.GetGoagent().GetUseCustomBsp().GetValue()) && // bsp enabled AND
 		(cfg.GetTelemetry() != nil && cfg.GetTelemetry().GetMetricsEnabled().GetValue()) // metrics enabled
+}
+
+func createSpanProcessor(cfg *config.AgentConfig, exporter sdktrace.SpanExporter) sdktrace.SpanProcessor {
+	if cfg == nil {
+		return sdktrace.NewBatchSpanProcessor(exporter, sdktrace.WithBatchTimeout(batchTimeout))
+	}
+
+	if cfg.GetReporting() != nil && cfg.GetReporting().GetSpanProcessorType() == config.SpanProcessorType_SPAN_PROCESSOR_TYPE_SIMPLE {
+		log.Printf("Using simple span processor")
+		return sdktrace.NewSimpleSpanProcessor(exporter)
+	}
+
+	return modbsp.CreateBatchSpanProcessor(
+		shouldUseCustomBatchSpanProcessor(cfg),
+		exporter,
+		sdktrace.WithBatchTimeout(batchTimeout),
+	)
 }
 
 func getResourceAttrsWithServiceName(resourceMap map[string]string, serviceName string) map[string]string {

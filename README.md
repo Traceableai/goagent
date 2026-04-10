@@ -252,7 +252,7 @@ The repo uses docker to run some unit tests as libtraceable needs a linux based 
 Steps:
 1. Build the base image
     ```bash
-    docker build --build-arg UBUNTU_VERSION=20.04 --build-arg GO_VERSION=1.24.6 --build-arg ARCH=arm64  -f ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.ubuntu.test ./filter/traceable/cmd/libtraceable-downloader -t traceable_goagent_test_base:ubuntu_20.04
+    docker build --build-arg UBUNTU_VERSION=20.04 --build-arg GO_VERSION=1.25.8 --build-arg ARCH=arm64  -f ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.ubuntu.test ./filter/traceable/cmd/libtraceable-downloader -t traceable_goagent_test_base:ubuntu_20.04
     ```
 2. Build the test image (this will trigger the tests)
     ```bash

@@ -14,4 +14,5 @@ type FilterResult struct {
 	ResponseStatusCode int32
 	ResponseMessage    string
 	Decorations        *Decorations
+	OutAttributes      map[string]string
 }

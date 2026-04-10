@@ -55,6 +55,17 @@ func RegisterService(
 	return translateSpanStarter(s), tp, nil
 }
 
+func CreateTracerProviderWithoutMapRegistration(
+	resourceAttributes map[string]string,
+	opts ...opentelemetry.ServiceOption) (SpanStarter, trace.TracerProvider, error) {
+	s, tp, err := opentelemetry.CreateTracerProvider(resourceAttributes, &traceableSpanProcessorWrapper{}, versionInfoAttributes, opts...)
+	if err != nil {
+		return nil, tp, err
+	}
+
+	return translateSpanStarter(s), tp, nil
+}
+
 // NewZapCore returns a new [zapcore.Core] which exports the logs to the configured exporter
 func NewZapCore(name string, cfg *htconfig.LogsExport) zapcore.Core {
 	return opentelemetry.NewZapCore(name, cfg)

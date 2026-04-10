@@ -39,7 +39,11 @@ This repo vendors/adapts OTEL SDK batch span processor internals here:
 
 **NOTE**: When executing this step, make sure to use the local repo of `github.com/open-telemetry/opentelemetry-go` as the opentelemetry-go repo.
 
-Compare the original opentelemetry-go file to the corresponding file suffixed with `.go_original` and apply the changes to the file with our customizations to the file suffixed with `.modified.go`. For example for `batch_span_processor.go` the original would be `batch_span_processor.go_original` and `batch_span_processor.go_modified.go` would contain our customizations. Once the changes are done copy the opentelemetry-go file to the one ending with `.go_original` to preserve the original file and help with future updates. Do this for these files in the `hypertrace/goagent/instrumentation/opentelemetry/batchspanprocessor/` directory:
+For each file below, first copy the upstream `opentelemetry-go` version into the corresponding `*_original` file (these `*_original` files are snapshots for diffing and are not used in builds). Then diff `*_original` against the corresponding `*.modified.go` file and port any upstream changes into the `*.modified.go` file while preserving Traceable customizations.
+
+For example, copy upstream `sdk/trace/batch_span_processor.go` into `batch_span_processor.go_original`, then diff it against `batch_span_processor.modified.go` and port upstream changes into `batch_span_processor.modified.go`.
+
+Do this for these files in the `hypertrace/goagent/instrumentation/opentelemetry/batchspanprocessor/` directory:
 
 - `batch_span_processor.go` whose opentelemetry-go original is `sdk/trace/batch_span_processor.go`
 - `env.go` whose opentelemetry-go original is `sdk/trace/internal/env/env.go`

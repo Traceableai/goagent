@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/Traceableai/goagent/hypertrace/goagent/config"
 	"github.com/Traceableai/goagent/hypertrace/goagent/instrumentation/opentelemetry/internal/tracetesting"
+	agentconfig "github.com/hypertrace/agent-config/gen/go/v1"
 	"github.com/openzipkin/zipkin-go/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -96,5 +98,53 @@ func TestInitAdditional(t *testing.T) {
 		if attr.Key == semconv.ServiceNameKey {
 			assert.Equal(t, "one-name", attr.Value.AsString())
 		}
+	}
+}
+
+func TestInitAdditional_SimpleSpanProcessorCanBeEnabled(t *testing.T) {
+	gotRequest := make(chan struct{}, 1)
+	zipkinSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		zs := []model.SpanModel{}
+		b, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		defer r.Body.Close()
+
+		err = json.Unmarshal(b, &zs)
+		require.NoError(t, err)
+
+		require.GreaterOrEqual(t, len(zs), 1)
+		assert.Equal(t, "test-span", zs[0].Name)
+
+		select {
+		case gotRequest <- struct{}{}:
+		default:
+		}
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer zipkinSrv.Close()
+
+	cfg := config.Load()
+	cfg.Reporting.TraceReporterType = config.TraceReporterType_ZIPKIN
+	cfg.Reporting.Endpoint = config.String(zipkinSrv.URL)
+	cfg.Reporting.SpanProcessorType = agentconfig.SpanProcessorType_SPAN_PROCESSOR_TYPE_SIMPLE
+
+	hyperSpanProcessor, shutdown := InitAsAdditional(cfg)
+	defer shutdown()
+
+	ctx := context.Background()
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSpanProcessor(hyperSpanProcessor),
+	)
+	defer func() { _ = tp.Shutdown(ctx) }()
+
+	_, s := tp.Tracer("test").Start(ctx, "test-span")
+	s.End()
+
+	select {
+	case <-gotRequest:
+		// Success: simple span processor exports synchronously on End.
+	case <-time.After(150 * time.Millisecond):
+		t.Fatalf("expected span export request within timeout")
 	}
 }

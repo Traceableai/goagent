@@ -30,7 +30,7 @@ deps:
 
 .PHONY: ci-deps
 deps-ci:
-	@go get github.com/golangci/golangci-lint/cmd/golangci-lint
+	@go get github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
 check-examples:
 	@find ./examples -type d -print | \
