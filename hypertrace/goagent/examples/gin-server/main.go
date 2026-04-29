@@ -14,15 +14,36 @@ func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// hypergin.DisableConsoleColor()
 	r := gin.Default()
+	db := make(map[string]string)
+	db["john"] = "doe"
+	db["jane"] = "smith"
+	db["bob"] = "builder"
 
 	r.Use(hypergin.Middleware())
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
+		c.Header("ping-response-header-1", "ping")
+		c.Writer.Header().Set("ping-response-header-2", "ping")
 		c.JSON(200, gin.H{
 			"code":    http.StatusOK,
 			"message": "pong",
 		})
+	})
+
+	// Get user value
+	r.GET("/user/:name", func(c *gin.Context) {
+		name := c.Params.ByName("name")
+		value, ok := db[name]
+		if ok {
+			c.Header("user-response-header-1", "valexists")
+			c.Writer.Header().Set("user-response-header-2", "valexists")
+			c.JSON(http.StatusOK, gin.H{"user": name, "value": value})
+		} else {
+			c.Header("user-response-header-1", "novalue")
+			c.Writer.Header().Set("user-response-header-2", "novalue")
+			c.JSON(http.StatusNotFound, gin.H{"user": name, "status": "no value"})
+		}
 	})
 
 	return r

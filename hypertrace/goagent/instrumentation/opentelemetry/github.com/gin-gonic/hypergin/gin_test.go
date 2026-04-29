@@ -18,12 +18,30 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+var testDb = map[string]string{
+	"123": "val1",
+	"456": "val2",
+}
+
 func handler(c *gin.Context) {
 	c.Header("request_id", "xyz123abc")
-	c.JSON(200, gin.H{
-		"code": http.StatusOK,
-		"id":   "123",
-	})
+	c.Writer.Header().Set("another-header", "val1")
+	c.Writer.Header().Set("yet-another-header", "val2")
+	id := c.Params.ByName("thing_id")
+	value, ok := testDb[id]
+	if ok {
+		c.JSON(200, gin.H{
+			"code":  http.StatusOK,
+			"id":    id,
+			"value": value,
+		})
+	} else {
+		c.JSON(404, gin.H{
+			"code":    404,
+			"id":      id,
+			"message": "not found",
+		})
+	}
 
 }
 
@@ -66,7 +84,54 @@ func TestSpanRecordedCorrectly(t *testing.T) {
 	assert.Equal(t, "abc123xyz", attrs.Get("http.request.header.api_key").AsString())
 	assert.Equal(t, `{"name":"Jacinto"}`, attrs.Get("http.request.body").AsString())
 	assert.Equal(t, "xyz123abc", attrs.Get("http.response.header.request_id").AsString())
-	assert.Equal(t, `{"code":200,"id":"123"}`, attrs.Get("http.response.body").AsString())
+	assert.Equal(t, "val1", attrs.Get("http.response.header.another-header").AsString())
+	assert.Equal(t, "val2", attrs.Get("http.response.header.yet-another-header").AsString())
+	assert.Equal(t, `{"code":200,"id":"123","value":"val1"}`, attrs.Get("http.response.body").AsString())
+	assert.Equal(t, "application/json; charset=utf-8", attrs.Get("http.response.header.content-type").AsString())
+}
+
+func TestSpanRecordedCorrectlyForErrorStatusCode(t *testing.T) {
+	_, flusher := tracetesting.InitTracer()
+
+	r := gin.Default()
+	r.Use(Middleware(&sdkhttp.Options{}))
+	r.POST("/things/:thing_id", handler)
+
+	server := httptest.NewServer(r)
+	defer server.Close()
+
+	req := httptest.NewRequest(
+		"POST",
+		"http://example.com/things/789?include_something=1",
+		bytes.NewBufferString(`{"name":"Batman"}`),
+	)
+	req.Header.Set("api_key", "abc123xyz")
+	req.Header.Set("content-type", "application/json")
+
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	if want, have := 404, w.Result().StatusCode; want != have {
+		t.Errorf("unexpected status code, want %q, have %q", want, have)
+	}
+
+	spans := flusher()
+	assert.Equal(t, 1, len(spans))
+
+	span := spans[0]
+	assert.Equal(t, "/things/:thing_id", span.Name())
+	assert.Equal(t, span.SpanKind(), trace.SpanKindServer)
+
+	attrs := tracetesting.LookupAttributes(span.Attributes())
+	// "http.request.method" replaces "http.method"
+	assert.Equal(t, "POST", attrs.Get("http.request.method").AsString())
+	assert.Equal(t, "abc123xyz", attrs.Get("http.request.header.api_key").AsString())
+	assert.Equal(t, `{"name":"Batman"}`, attrs.Get("http.request.body").AsString())
+	assert.Equal(t, "xyz123abc", attrs.Get("http.response.header.request_id").AsString())
+	assert.Equal(t, "val1", attrs.Get("http.response.header.another-header").AsString())
+	assert.Equal(t, "val2", attrs.Get("http.response.header.yet-another-header").AsString())
+	assert.Equal(t, `{"code":404,"id":"789","message":"not found"}`, attrs.Get("http.response.body").AsString())
 	assert.Equal(t, "application/json; charset=utf-8", attrs.Get("http.response.header.content-type").AsString())
 }
 

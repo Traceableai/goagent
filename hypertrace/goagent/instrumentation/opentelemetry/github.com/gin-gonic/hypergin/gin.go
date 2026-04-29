@@ -28,6 +28,10 @@ func (w *wrappedResponseWriter) WriteString(s string) (n int, err error) {
 	return w.writer.Write([]byte(s))
 }
 
+func (w *wrappedResponseWriter) WriteHeader(statusCode int) {
+	w.writer.WriteHeader(statusCode)
+}
+
 // An http.Handler that passes on calls to downstream middlewares
 type nextRequestHandler struct {
 	c *gin.Context
