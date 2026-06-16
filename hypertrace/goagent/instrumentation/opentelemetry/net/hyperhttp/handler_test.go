@@ -61,7 +61,7 @@ func TestServerRequestIsSuccessfullyTraced(t *testing.T) {
 	spans := flusher()
 	assert.Equal(t, 1, len(spans))
 
-	assert.Equal(t, "test_name", spans[0].Name())
+	assert.Equal(t, "GET", spans[0].Name())
 	assert.Equal(t, trace.SpanKindServer, spans[0].SpanKind())
 
 	attrs := tracetesting.LookupAttributes(spans[0].Attributes())
