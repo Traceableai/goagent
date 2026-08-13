@@ -620,6 +620,9 @@ func fromLibTraceableDecorations(decorations C.traceable_decorations) *filterres
 			Value: getGoString(header.value),
 		})
 	}
+	ret.RequestBodyModifications = getGoString(decorations.redacted_body_details.request_body)
+	ret.ResponseBodyModifications = getGoString(decorations.redacted_body_details.response_body)
+
 	return ret
 }
 

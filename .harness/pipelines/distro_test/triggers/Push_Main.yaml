@@ -1,0 +1,23 @@
+trigger:
+  name: Push_Main
+  identifier: Push_Main
+  enabled: true
+  orgIdentifier: PROD
+  projectIdentifier: Traceable
+  pipelineIdentifier: goagent_src_distro_test
+  source:
+    type: Webhook
+    spec:
+      type: Harness
+      spec:
+        type: Push
+        spec:
+          repoName: goagent-src
+          autoAbortPreviousExecutions: false
+          payloadConditions:
+            - key: targetBranch
+              operator: Equals
+              value: main
+  inputSetRefs:
+    - Push_Branch_Input_Set
+  pipelineBranchName: main

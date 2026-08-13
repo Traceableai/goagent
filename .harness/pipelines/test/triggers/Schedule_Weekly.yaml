@@ -1,0 +1,16 @@
+trigger:
+  name: Schedule_Weekly
+  identifier: Schedule_Weekly
+  enabled: true
+  orgIdentifier: PROD
+  projectIdentifier: Traceable
+  pipelineIdentifier: goagent_src_test
+  source:
+    type: Scheduled
+    spec:
+      type: Cron
+      spec:
+        expression: 0 6 * * 0
+  inputSetRefs:
+    - Push_Branch_Input_Set
+  pipelineBranchName: main

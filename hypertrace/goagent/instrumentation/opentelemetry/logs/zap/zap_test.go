@@ -7,6 +7,7 @@ import (
 
 	agentconfig "github.com/hypertrace/agent-config/gen/go/v1"
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/otel/attribute"
 	logapi "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
@@ -139,6 +140,10 @@ func TestCheck(t *testing.T) {
 }
 
 func TestWrite(t *testing.T) {
+	const (
+		fooKey = "foo"
+		barKey = "bar"
+	)
 	logger := zaptest.NewLogger(t)
 	provider, exp := getLoggerProvider()
 	testCore := NewZapCore(
@@ -152,9 +157,9 @@ func TestWrite(t *testing.T) {
 	logger = zap.New(zapcore.NewTee(logger.Core(), testCore))
 
 	logger.Debug("debug message")
-	logger.Info("info message", zap.String("foo", "info"), zap.Int("bar", 1))
-	logger.Warn("warn message", zap.String("foo", "warn"), zap.Int("bar", 2))
-	logger.Error("error message", zap.String("foo", "error"), zap.Int("bar", 3))
+	logger.Info("info message", zap.String(fooKey, "info"), zap.Int(barKey, 1))
+	logger.Warn("warn message", zap.String(fooKey, "warn"), zap.Int(barKey, 2))
+	logger.Error("error message", zap.String(fooKey, "error"), zap.Int(barKey, 3))
 
 	assert.Equal(t, 3, len(exp.records))
 	assert.Equal(t, "info message", exp.records[0].Body().String())
@@ -162,34 +167,34 @@ func TestWrite(t *testing.T) {
 	assert.Equal(t, "error message", exp.records[2].Body().String())
 
 	assertionsCount := 0
-	exp.records[0].WalkAttributes(func(kv logapi.KeyValue) bool {
-		if kv.Key == "foo" {
-			assert.Equal(t, "info", kv.Value.String())
+	exp.records[0].WalkAttributes(func(kv attribute.KeyValue) bool {
+		if kv.Key == fooKey {
+			assert.Equal(t, "info", kv.Value.AsString())
 			assertionsCount++
 		}
-		if kv.Key == "bar" {
+		if kv.Key == barKey {
 			assert.Equal(t, int64(1), kv.Value.AsInt64())
 			assertionsCount++
 		}
 		return true
 	})
-	exp.records[1].WalkAttributes(func(kv logapi.KeyValue) bool {
-		if kv.Key == "foo" {
-			assert.Equal(t, "warn", kv.Value.String())
+	exp.records[1].WalkAttributes(func(kv attribute.KeyValue) bool {
+		if kv.Key == fooKey {
+			assert.Equal(t, "warn", kv.Value.AsString())
 			assertionsCount++
 		}
-		if kv.Key == "bar" {
+		if kv.Key == barKey {
 			assert.Equal(t, int64(2), kv.Value.AsInt64())
 			assertionsCount++
 		}
 		return true
 	})
-	exp.records[2].WalkAttributes(func(kv logapi.KeyValue) bool {
-		if kv.Key == "foo" {
-			assert.Equal(t, "error", kv.Value.String())
+	exp.records[2].WalkAttributes(func(kv attribute.KeyValue) bool {
+		if kv.Key == fooKey {
+			assert.Equal(t, "error", kv.Value.AsString())
 			assertionsCount++
 		}
-		if kv.Key == "bar" {
+		if kv.Key == barKey {
 			assert.Equal(t, int64(3), kv.Value.AsInt64())
 			assertionsCount++
 		}

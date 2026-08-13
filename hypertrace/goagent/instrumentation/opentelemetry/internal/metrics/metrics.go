@@ -37,7 +37,9 @@ func setUpMetricRecorder(meter metric.Meter, metricPrefix string) error {
 	if meter == nil {
 		return fmt.Errorf("error while setting up metric recorder: meter is nil")
 	}
-	cpuSeconds, err := meter.Float64ObservableCounter(fmt.Sprintf("%straceable.agent.cpu.seconds.total", finalizedPrefix), metric.WithDescription("Metric to monitor total CPU seconds"))
+	cpuSeconds, err := meter.Float64ObservableCounter(
+		fmt.Sprintf("%straceable.agent.cpu.seconds.total", finalizedPrefix),
+		metric.WithDescription("Metric to monitor total CPU seconds"))
 	if err != nil {
 		return fmt.Errorf("error while setting up cpu seconds metric counter: %v", err)
 	}
@@ -46,7 +48,9 @@ func setUpMetricRecorder(meter metric.Meter, metricPrefix string) error {
 		return fmt.Errorf("error while setting up memory metric counter: %v", err)
 	}
 
-	uptime, err := meter.Float64ObservableGauge(fmt.Sprintf("%straceable.agent.uptime", finalizedPrefix), metric.WithDescription("Metric to monitor agent uptime in seconds"))
+	uptime, err := meter.Float64ObservableGauge(
+		fmt.Sprintf("%straceable.agent.uptime", finalizedPrefix),
+		metric.WithDescription("Metric to monitor agent uptime in seconds"))
 	if err != nil {
 		return fmt.Errorf("error while setting up uptime metric gauge: %v", err)
 	}

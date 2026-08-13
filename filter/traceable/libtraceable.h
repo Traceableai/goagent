@@ -227,9 +227,21 @@ typedef struct {
   const traceable_key_value_string* header_injections_array;
 } traceable_header_injections;
 
+/*
+ * Optional, output-only redacted bodies produced by EDS. NUL-terminated C
+ * strings; an empty string means "no replacement" and the agent should
+ * forward the original body. The buffers are owned by libtraceable and freed
+ * by traceable_delete_process_request_result_data.
+ */
+typedef struct {
+  const char* request_body;
+  const char* response_body;
+} traceable_redacted_body_details;
+
 typedef struct {
   traceable_header_injections request_header_injections;
   traceable_response_details response_details;
+  traceable_redacted_body_details redacted_body_details;
 } traceable_decorations;
 
 typedef struct {

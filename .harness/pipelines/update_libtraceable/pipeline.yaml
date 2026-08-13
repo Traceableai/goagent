@@ -1,0 +1,166 @@
+pipeline:
+  name: update-libtraceable
+  identifier: goagent_src_update_libtraceable
+  projectIdentifier: Traceable
+  orgIdentifier: PROD
+  tags: {}
+  variables:
+    - name: force_update
+      type: String
+      description: When "true", re-pull and commit the libtraceable .so files even if the version already matches (e.g. the release re-published the same tag).
+      required: false
+      value: <+input>.default("false").allowedValues(false,true)
+  properties:
+    ci:
+      codebase:
+        repoName: goagent-src
+        build:
+          type: branch
+          spec:
+            branch: main
+        fetchTags: true
+  stages:
+    - stage:
+        name: Update libtraceable
+        identifier: update_libtraceable
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Clone libtraceable and check version
+                  identifier: check_version
+                  spec:
+                    shell: Bash
+                    command: |-
+                      set -euo pipefail
+                      git clone "https://x-access-token:${HARNESS_CODE_READ_TOKEN}@git0.harness.io/l7B_kbSEQD2wjrM7PShm5w/PROD/Traceable/libtraceable.git" ./libtraceable
+                      cd ./libtraceable
+                      LATEST_VERSION=$(git describe --tags --abbrev=0)
+                      cd ..
+
+                      CURRENT_VERSION=$(grep '^var libVersion =' filter/traceable/cmd/libtraceable-downloader/version.go | awk -F '"' '{print $2}')
+                      echo "Current version: ${CURRENT_VERSION}"
+                      echo "Latest version: ${LATEST_VERSION}"
+
+                      FORCE_UPDATE="<+pipeline.variables.force_update>"
+                      echo "Force update: ${FORCE_UPDATE}"
+
+                      if [ "${FORCE_UPDATE}" = "true" ]; then
+                        echo "force_update set: re-pulling libtraceable regardless of version."
+                        export NEEDS_UPDATE="true"
+                      elif [ "${CURRENT_VERSION}" = "${LATEST_VERSION}" ]; then
+                        echo "No update needed."
+                        export NEEDS_UPDATE="false"
+                      else
+                        echo "Version needs updating."
+                        export NEEDS_UPDATE="true"
+                      fi
+                      export LATEST_VERSION CURRENT_VERSION
+                    envVariables:
+                      HARNESS_CODE_READ_TOKEN: <+secrets.getValue("harnessCodeToken")>
+                    outputVariables:
+                      - name: NEEDS_UPDATE
+                      - name: LATEST_VERSION
+                      - name: CURRENT_VERSION
+              - step:
+                  type: Run
+                  name: Update version and create PR
+                  identifier: update_and_pr
+                  when:
+                    stageStatus: Success
+                    condition: <+steps.check_version.output.outputVariables.NEEDS_UPDATE> == "true"
+                  spec:
+                    shell: Bash
+                    command: |-
+                      set -euo pipefail
+                      LATEST_VERSION="<+steps.check_version.output.outputVariables.LATEST_VERSION>"
+                      CURRENT_VERSION="<+steps.check_version.output.outputVariables.CURRENT_VERSION>"
+
+                      # Compare libtraceable.h
+                      HEADER_CHANGED="false"
+                      if ! diff ./libtraceable/traceable/source/public/libtraceable.h filter/traceable/libtraceable.h >/dev/null 2>&1; then
+                        echo "Changes detected in libtraceable.h. Manual updates will be required."
+                        HEADER_CHANGED="true"
+                      fi
+
+                      # Update version.go
+                      sed -i "s/^var libVersion = .*/var libVersion = \"${LATEST_VERSION}\"/" filter/traceable/cmd/libtraceable-downloader/version.go
+                      cat filter/traceable/cmd/libtraceable-downloader/version.go
+
+                      # Authenticate gcloud to GCP Artifact Registry. The libtraceable
+                      # downloader shells out to `gcloud artifacts files download`, but the
+                      # Harness Cloud runner ships no gcloud and no GCP identity, so install
+                      # the CLI, put it on PATH, and activate the reader service account.
+                      # Mirrors traceable-agent scripts/publish-gar-packages.sh.
+                      export CLOUDSDK_CONFIG="/tmp/google-cloud-cli/.config"
+                      if ! command -v gcloud >/dev/null 2>&1; then
+                        echo "Installing google-cloud-cli..."
+                        curl -fsSL \
+                          "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz" \
+                          -o /tmp/google-cloud-cli.tar.gz
+                        rm -rf /tmp/google-cloud-cli
+                        mkdir -p /tmp/google-cloud-cli
+                        tar -xzf /tmp/google-cloud-cli.tar.gz -C /tmp/google-cloud-cli --strip-components=1
+                        rm -f /tmp/google-cloud-cli.tar.gz
+                        mkdir -p "${CLOUDSDK_CONFIG}"
+                      fi
+                      export PATH="/tmp/google-cloud-cli/bin:${PATH}"
+                      echo "${GAR_KEY:?GAR_KEY is required}" > /tmp/gar-key.json
+                      gcloud auth activate-service-account --key-file=/tmp/gar-key.json
+                      gcloud config set project traceable-actions-386017
+                      gcloud auth list
+
+                      # Pull new libtraceable libs
+                      cd filter/traceable/cmd/libtraceable-downloader
+                      make pull-libtraceable
+                      cd ../../../..
+
+                      # Remove the service-account key before staging any changes
+                      rm -f /tmp/gar-key.json
+
+                      # Clean up libtraceable clone
+                      rm -rf libtraceable
+
+                      # Configure git for commit
+                      git config user.email "harness-ci@harness.io"
+                      git config user.name "Harness CI"
+                      BRANCH_NAME="create-pull-request/update-libtraceable-${LATEST_VERSION}"
+                      git checkout -b "${BRANCH_NAME}"
+
+                      # Stage and commit changes
+                      git add -A
+                      COMMIT_MSG="NO-TICKET: Upgrade libtraceable to ${LATEST_VERSION}"
+                      git commit -m "${COMMIT_MSG}"
+
+                      # Push the branch
+                      git remote set-url origin "https://x-access-token:${HARNESS_CODE_READ_TOKEN}@git0.harness.io/l7B_kbSEQD2wjrM7PShm5w/PROD/Traceable/goagent-src.git"
+                      git push origin "${BRANCH_NAME}"
+
+                      # Create PR via Harness Code API
+                      if [ "${HEADER_CHANGED}" = "true" ]; then
+                        PR_TITLE="Upgrade libtraceable to ${LATEST_VERSION} - MANUAL CHANGES REQUIRED"
+                        PR_BODY="# Automated Update - MANUAL CHANGES REQUIRED\n- Upgraded libtraceable from \`${CURRENT_VERSION}\` to \`${LATEST_VERSION}\`\n- **IMPORTANT**: Changes detected in libtraceable.h - manual updates required!\n- Please review the changes in libtraceable.h and update the code accordingly"
+                      else
+                        PR_TITLE="NO-TICKET: Upgrade libtraceable to ${LATEST_VERSION}"
+                        PR_BODY="# Automated Update\n- Upgraded libtraceable from \`${CURRENT_VERSION}\` to \`${LATEST_VERSION}\`\n- No manual changes required"
+                      fi
+
+                      curl -sf -X POST \
+                        "https://git0.harness.io/api/v1/repos/l7B_kbSEQD2wjrM7PShm5w%2FPROD%2FTraceable%2Fgoagent-src/pullreq" \
+                        -H "Authorization: Bearer ${HARNESS_CODE_READ_TOKEN}" \
+                        -H "Content-Type: application/json" \
+                        -d "{\"source_branch\": \"${BRANCH_NAME}\", \"target_branch\": \"main\", \"title\": \"${PR_TITLE}\", \"description\": \"${PR_BODY}\"}"
+                      echo ""
+                      echo "PR created successfully."
+                    envVariables:
+                      HARNESS_CODE_READ_TOKEN: <+secrets.getValue("harnessCodeToken")>
+                      GAR_KEY: <+secrets.getValue("org.traceable-gar-rw-key")>

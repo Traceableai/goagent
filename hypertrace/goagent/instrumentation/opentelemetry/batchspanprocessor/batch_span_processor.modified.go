@@ -454,11 +454,11 @@ func (bsp *batchSpanProcessor) enqueueDrop(ctx context.Context, sd sdktrace.Read
 func (bsp *batchSpanProcessor) MarshalLog() any {
 	return struct {
 		Type         string
-		SpanExporter sdktrace.SpanExporter
+		SpanExporter string
 		Config       sdktrace.BatchSpanProcessorOptions
 	}{
 		Type:         "BatchSpanProcessor",
-		SpanExporter: bsp.e,
+		SpanExporter: fmt.Sprintf("%T", bsp.e),
 		Config:       bsp.o,
 	}
 }

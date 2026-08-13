@@ -6,7 +6,9 @@ type KeyValueString struct {
 }
 
 type Decorations struct {
-	RequestHeaderInjections []KeyValueString
+	RequestHeaderInjections   []KeyValueString
+	RequestBodyModifications  string
+	ResponseBodyModifications string
 }
 
 type FilterResult struct {

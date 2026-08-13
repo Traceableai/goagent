@@ -475,7 +475,7 @@ func InitWithSpanProcessorWrapperAndZap(cfg *config.AgentConfig, wrapper SpanPro
 		}
 	}
 
-	// intialize logs
+	// initialize logs
 	logsShutdownFn := initializeLogs(cfg, versionInfoAttrs, opts...)
 	if logger != nil {
 		logExportCore := otelzap.NewZapCore("hypertrace", cfg.GetTelemetry().GetLogs(), global.GetLoggerProvider())

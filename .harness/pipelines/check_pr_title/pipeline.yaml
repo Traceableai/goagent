@@ -1,0 +1,37 @@
+pipeline:
+  name: check-pr-title
+  identifier: goagent_src_check_pr_title
+  projectIdentifier: Traceable
+  orgIdentifier: PROD
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        repoName: goagent-src
+        build: <+input>
+  failureStrategies:
+    - onFailure:
+        errors:
+          - AllErrors
+        action:
+          type: Abort
+  stages:
+    - stage:
+        name: Check PR title
+        identifier: check_pr_title_stage
+        template:
+          templateRef: Check_PR_Title
+          versionLabel: v1
+          gitBranch: main
+          templateInputs:
+            type: CI
+            variables:
+              - name: ENABLED
+                type: String
+                value: "true"
+              - name: ALLOWED_PREFIXES
+                type: String
+                value: ENGTAI|ENG|PROD|SUP|DEVOPS|SEC|ITOPS|CLI|ITOPSTAI|AAP|ASP|AST|APIST|ADP|DC|AUI|AIS|QPE
+              - name: EXCEPTION_REGEX
+                type: String
+                value: NO-TICKET

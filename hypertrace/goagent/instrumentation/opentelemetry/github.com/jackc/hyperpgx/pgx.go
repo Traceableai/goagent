@@ -45,7 +45,6 @@ var _ PGXConn = (*wrappedConn)(nil)
 type wrappedConn struct {
 	delegate  *pgx.Conn
 	connAttrs map[string]string
-	filter    filter.Filter
 	startSpan func(ctx context.Context, name string) (context.Context, sdk.Span, func())
 }
 

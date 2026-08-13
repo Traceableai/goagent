@@ -1,0 +1,14 @@
+inputSet:
+  name: Push Branch Input Set
+  identifier: Push_Branch_Input_Set
+  orgIdentifier: PROD
+  projectIdentifier: Traceable
+  pipeline:
+    identifier: goagent_src_test
+    properties:
+      ci:
+        codebase:
+          build:
+            type: branch
+            spec:
+              branch: <+trigger.targetBranch>

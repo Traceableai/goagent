@@ -162,10 +162,12 @@ func (r *rwInterceptor) WriteHeader(i int) {
 	r.w.WriteHeader(i)
 }
 
+//nolint:unused // retained for future re-wiring of response interception
 func (r *rwInterceptor) getStatusCode() int {
 	return r.statusCode
 }
 
+//nolint:unused // retained for future re-wiring of response interception
 func (r *rwInterceptor) wrap() http.ResponseWriter {
 	var (
 		hj, i0 = r.w.(http.Hijacker)

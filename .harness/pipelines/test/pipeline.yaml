@@ -1,0 +1,118 @@
+pipeline:
+  name: test
+  identifier: goagent_src_test
+  projectIdentifier: Traceable
+  orgIdentifier: PROD
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        repoName: goagent-src
+        build: <+input>
+  stages:
+    - stage:
+        name: Test and lint
+        identifier: test_and_lint
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            policy: pull-push
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Read Go version
+                  identifier: read_go_version
+                  spec:
+                    shell: Bash
+                    command: |-
+                      set -euo pipefail
+                      test -f go.mod
+                      GO_VERSION="$(awk '/^go / {print $2; exit}' go.mod)"
+                      if [ -z "${GO_VERSION}" ]; then
+                        echo "ERROR: failed to parse go version from go.mod" >&2
+                        exit 1
+                      fi
+                      echo "Detected Go version: ${GO_VERSION}"
+                      export GO_VERSION
+                    outputVariables:
+                      - name: GO_VERSION
+              - step:
+                  type: Action
+                  name: Setup Go
+                  identifier: setup_go
+                  spec:
+                    uses: actions/setup-go@v5
+                    with:
+                      go-version: <+steps.read_go_version.output.outputVariables.GO_VERSION>
+                      check-latest: true
+              - step:
+                  type: Run
+                  name: Download dependencies
+                  identifier: download_dependencies
+                  spec:
+                    shell: Bash
+                    command: |-
+                      set -euo pipefail
+                      make deps
+              - parallel:
+                  - step:
+                      type: Run
+                      name: Run golangci-lint
+                      identifier: run_golangci_lint
+                      spec:
+                        shell: Bash
+                        command: |-
+                          set -euo pipefail
+                          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+                            | sh -s -- -b "$(go env GOPATH)/bin" v2.5.0
+                          export PATH="$(go env GOPATH)/bin:${PATH}"
+                          golangci-lint version
+                          golangci-lint run -v ./...
+                  - step:
+                      type: Run
+                      name: Run tests
+                      identifier: run_tests
+                      spec:
+                        shell: Bash
+                        command: |-
+                          set -euo pipefail
+                          CGO_ENABLED=1 go test -coverprofile=coverage.out -v ./...
+                  - step:
+                      type: Run
+                      name: Check examples
+                      identifier: check_examples
+                      spec:
+                        shell: Bash
+                        command: |-
+                          set -euo pipefail
+                          make check-examples
+              - stepGroup:
+                  name: SonarQube Go analysis
+                  identifier: sonarqube_go_analysis
+                  template:
+                    templateRef: sonarqubeanalysis
+                    versionLabel: v1
+                    templateInputs:
+                      type: StepGroup
+                      variables:
+                        - name: sonarUrl
+                          type: Secret
+                          value: sonarUrl
+                        - name: sonarToken
+                          type: Secret
+                          value: sonarToken
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Ignore

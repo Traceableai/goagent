@@ -1,0 +1,23 @@
+trigger:
+  name: PR
+  identifier: PR
+  enabled: true
+  orgIdentifier: PROD
+  projectIdentifier: Traceable
+  pipelineIdentifier: goagent_src_test
+  source:
+    type: Webhook
+    spec:
+      type: Harness
+      spec:
+        type: PullRequest
+        spec:
+          repoName: goagent-src
+          autoAbortPreviousExecutions: true
+          actions:
+            - Create
+            - Reopen
+            - Update
+  inputSetRefs:
+    - PR_Runtime
+  pipelineBranchName: main

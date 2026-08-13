@@ -1,0 +1,128 @@
+pipeline:
+  name: distro-test
+  identifier: goagent_src_distro_test
+  projectIdentifier: Traceable
+  orgIdentifier: PROD
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        repoName: goagent-src
+        build: <+input>
+  stages:
+    - stage:
+        name: Distro Test
+        identifier: distro_test
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            policy: pull-push
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Parse distro version
+                  identifier: parse_distro_version
+                  spec:
+                    shell: Bash
+                    command: |
+                      set -euo pipefail
+                      DISTRO_VERSION="<+matrix.distro_version>"
+                      DISTRO="${DISTRO_VERSION%%_*}"
+                      VERSION="${DISTRO_VERSION#*_}"
+                      DISTRO_UPPER="$(echo "${DISTRO}" | tr '[:lower:]' '[:upper:]')"
+                      echo "Distro: ${DISTRO}, Version: ${VERSION}, Upper: ${DISTRO_UPPER}"
+                      export DISTRO
+                      export VERSION
+                      export DISTRO_UPPER
+                    outputVariables:
+                      - name: DISTRO
+                      - name: VERSION
+                      - name: DISTRO_UPPER
+              - step:
+                  type: Run
+                  name: Build base test image
+                  identifier: build_base_test_image
+                  spec:
+                    shell: Bash
+                    command: |
+                      set -euo pipefail
+                      docker build \
+                        --file ./filter/traceable/cmd/libtraceable-downloader/Dockerfile.<+steps.parse_distro_version.output.outputVariables.DISTRO>.test \
+                        --build-arg <+steps.parse_distro_version.output.outputVariables.DISTRO_UPPER>_VERSION=<+steps.parse_distro_version.output.outputVariables.VERSION> \
+                        --build-arg GO_VERSION=1.25.8 \
+                        --build-arg ARCH=amd64 \
+                        -t traceable_goagent_test_base:<+matrix.distro_version> \
+                        ./filter/traceable/cmd/libtraceable-downloader
+              - step:
+                  type: Run
+                  name: Run distro tests
+                  identifier: run_distro_tests
+                  spec:
+                    shell: Bash
+                    command: |
+                      set -euo pipefail
+                      docker build \
+                        --file ./_tests/Dockerfile.test \
+                        --build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=<+matrix.distro_version> \
+                        --build-arg ARCH=amd64 \
+                        -t traceable_goagent_test:<+matrix.distro_version> \
+                        .
+              - step:
+                  type: Run
+                  name: Run no-lib test
+                  identifier: run_no_lib_test
+                  spec:
+                    shell: Bash
+                    command: |
+                      set -euo pipefail
+                      if [ "<+matrix.distro_version>" = "ubuntu_20.04" ]; then
+                        docker build \
+                          --file ./_tests/Dockerfile.no_lib.test \
+                          --build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=<+matrix.distro_version> \
+                          -t traceable_goagent_no_lib_test:<+matrix.distro_version> \
+                          .
+                      else
+                        echo "Skipping no-lib test for <+matrix.distro_version>"
+                      fi
+              - step:
+                  type: Run
+                  name: Run missing-lib test
+                  identifier: run_missing_lib_test
+                  spec:
+                    shell: Bash
+                    command: |
+                      set -euo pipefail
+                      if [ "<+matrix.distro_version>" = "ubuntu_20.04" ]; then
+                        docker build \
+                          --file ./_tests/Dockerfile.missing_lib.test \
+                          --build-arg TRACEABLE_GOAGENT_DISTRO_VERSION=<+matrix.distro_version> \
+                          -t traceable_goagent_missing_lib_test:<+matrix.distro_version> \
+                          .
+                      else
+                        echo "Skipping missing-lib test for <+matrix.distro_version>"
+                      fi
+        strategy:
+          matrix:
+            distro_version:
+              - debian_11
+              - debian_12
+              - alpine_3.21
+              - alpine_3.22
+              - rhel_7
+              - rhel_8
+              - amazonlinux_2
+              - amazonlinux_2023
+              - ubuntu_18.04
+              - ubuntu_20.04
+              - ubuntu_22.04
+              - ubuntu_24.04
+            maxConcurrency: 4

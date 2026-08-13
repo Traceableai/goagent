@@ -1,0 +1,14 @@
+trigger:
+  name: Schedule_Weekly
+  identifier: Schedule_Weekly
+  enabled: true
+  orgIdentifier: PROD
+  projectIdentifier: Traceable
+  pipelineIdentifier: goagent_src_update_libtraceable
+  source:
+    type: Scheduled
+    spec:
+      type: Cron
+      spec:
+        expression: 0 3 * * 1
+  pipelineBranchName: main

@@ -1,0 +1,14 @@
+inputSet:
+  name: PR Runtime
+  identifier: PR_Runtime
+  orgIdentifier: PROD
+  projectIdentifier: Traceable
+  pipeline:
+    identifier: goagent_src_check_pr_title
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>

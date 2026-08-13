@@ -124,6 +124,8 @@ func TestGetResourceAttributesNoopSpan(t *testing.T) {
 }
 
 func TestGetResourceAttributes(t *testing.T) {
+	// WithResource merges OTEL_RESOURCE_ATTRIBUTES; clear it so the count is deterministic.
+	t.Setenv("OTEL_RESOURCE_ATTRIBUTES", "")
 	sampler := sdktrace.AlwaysSample()
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sampler),
