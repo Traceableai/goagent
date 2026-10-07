@@ -145,6 +145,90 @@ func TestSpanProcessorFullSpan(t *testing.T) {
 	assert.True(t, attrs.Has("rpc.response.body"))
 }
 
+func TestSpanProcessorCollectorModePassesNoSpanAndBareSpanThrough(t *testing.T) {
+	mockTraceProvider, _ := tracetesting.InitTracer()
+	sp := &mockSpanProcessor{}
+
+	_, span := mockTraceProvider.Start(context.Background(), "nospan-collector-mode")
+	span.SetAttributes(attribute.String("traceableai.span_type", "nospan"))
+	span.End()
+	enforceSpanType("COLLECTOR", span.(trace.ReadOnlySpan), sp)
+
+	_, span = mockTraceProvider.Start(context.Background(), "barespan-collector-mode")
+	span.SetAttributes(
+		attribute.String("traceableai.span_type", "barespan"),
+		attribute.String("http.request.body", "a"),
+	)
+	span.End()
+	enforceSpanType("COLLECTOR", span.(trace.ReadOnlySpan), sp)
+
+	// both spans pass through, tag intact for the collector to enforce -
+	// but not the enforcement location attribute itself, which TPA's
+	// collector processors never read (see enforceSpanType).
+	assert.Equal(t, 2, len(sp.spans))
+	attrs0 := tracetesting.LookupAttributes(sp.spans[0].Attributes())
+	assert.True(t, attrs0.Has("traceableai.span_type"))
+	assert.False(t, attrs0.Has("traceableai.sampling_enforcement_location"))
+	attrs1 := tracetesting.LookupAttributes(sp.spans[1].Attributes())
+	assert.True(t, attrs1.Has("http.request.body"))
+	assert.False(t, attrs1.Has("traceableai.sampling_enforcement_location"))
+}
+
+func TestSpanProcessorOnEndWiredToCollectorMode(t *testing.T) {
+	// Exercises the real OnEnd -> spanSamplingEnforcementLocation -> enforceSpanType
+	// wiring (not just the pure enforceSpanType helper), by setting the new
+	// traceableai.sampling_enforcement_location attribute directly on the span,
+	// the same way libtraceable would.
+	mockTraceProvider, _ := tracetesting.InitTracer()
+	sp := &mockSpanProcessor{}
+	spw := &traceableSpanProcessorWrapper{}
+
+	_, span := mockTraceProvider.Start(context.Background(), "nospan-wired-collector")
+	span.SetAttributes(
+		attribute.String("traceableai.span_type", "nospan"),
+		attribute.String("traceableai.sampling_enforcement_location", "COLLECTOR"),
+	)
+	span.End()
+	spw.OnEnd(span.(trace.ReadOnlySpan), sp)
+
+	// via the real OnEnd wiring (not the bare helper), nospan must pass
+	// through in COLLECTOR mode, tag intact, but with the enforcement
+	// location attribute itself stripped (TPA never reads it).
+	assert.Equal(t, 1, len(sp.spans))
+	attrs := tracetesting.LookupAttributes(sp.spans[0].Attributes())
+	assert.True(t, attrs.Has("traceableai.span_type"))
+	assert.False(t, attrs.Has("traceableai.sampling_enforcement_location"))
+}
+
+func TestSpanProcessorDefaultsToAgentModeWhenAttributeAbsent(t *testing.T) {
+	// Older libtraceable versions won't emit traceableai.sampling_enforcement_location
+	// at all. Absence must default to AGENT (local enforcement), not COLLECTOR.
+	mockTraceProvider, _ := tracetesting.InitTracer()
+	sp := &mockSpanProcessor{}
+	spw := &traceableSpanProcessorWrapper{}
+
+	_, span := mockTraceProvider.Start(context.Background(), "nospan-no-location-attr")
+	span.SetAttributes(attribute.String("traceableai.span_type", "nospan"))
+	span.End()
+	spw.OnEnd(span.(trace.ReadOnlySpan), sp)
+
+	assert.Equal(t, 0, len(sp.spans))
+}
+
+func TestSpanProcessorAgentModeStillDropsAndBares(t *testing.T) {
+	mockTraceProvider, _ := tracetesting.InitTracer()
+	sp := &mockSpanProcessor{}
+
+	for _, location := range []string{"", "AGENT"} {
+		_, span := mockTraceProvider.Start(context.Background(), "nospan-agent-mode")
+		span.SetAttributes(attribute.String("traceableai.span_type", "nospan"))
+		span.End()
+		enforceSpanType(location, span.(trace.ReadOnlySpan), sp)
+	}
+
+	assert.Equal(t, 0, len(sp.spans))
+}
+
 func TestSpanProcessorNoSpanType(t *testing.T) {
 	mockTraceProvider, _ := tracetesting.InitTracer()
 	sp := &mockSpanProcessor{}
@@ -173,4 +257,26 @@ func TestSpanProcessorNoSpanType(t *testing.T) {
 	assert.True(t, attrs.Has("http.response.body"))
 	assert.True(t, attrs.Has("rpc.request.body"))
 	assert.True(t, attrs.Has("rpc.response.body"))
+}
+
+func TestSpanProcessorFullSpanStripsEnforcementLocationAttribute(t *testing.T) {
+	// The plain fullspan passthrough path (AGENT mode, or no span_type at
+	// all) must also strip traceableai.sampling_enforcement_location -
+	// TPA's collector processors never read it, and this attribute is
+	// only ever meant to be consumed by enforceSpanType itself.
+	mockTraceProvider, _ := tracetesting.InitTracer()
+	sp := &mockSpanProcessor{}
+
+	_, span := mockTraceProvider.Start(context.Background(), "fullspan-agent-mode")
+	span.SetAttributes(
+		attribute.String("traceableai.span_type", "fullspan"),
+		attribute.String("traceableai.sampling_enforcement_location", "AGENT"),
+	)
+	span.End()
+	enforceSpanType("AGENT", span.(trace.ReadOnlySpan), sp)
+
+	assert.Equal(t, 1, len(sp.spans))
+	attrs := tracetesting.LookupAttributes(sp.spans[0].Attributes())
+	assert.True(t, attrs.Has("traceableai.span_type"))
+	assert.False(t, attrs.Has("traceableai.sampling_enforcement_location"))
 }

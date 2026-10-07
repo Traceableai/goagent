@@ -25,6 +25,8 @@ pipeline:
           runtime:
             type: Cloud
             spec: {}
+          envVariables:
+            CI_ENABLE_HCLI_FOR_TESTS: "true"
           execution:
             steps:
               - step:
@@ -95,24 +97,18 @@ pipeline:
                         command: |-
                           set -euo pipefail
                           make check-examples
-              - stepGroup:
-                  name: SonarQube Go analysis
-                  identifier: sonarqube_go_analysis
+              - step:
+                  name: Code Coverage
+                  identifier: code_coverage
                   template:
-                    templateRef: sonarqubeanalysis
+                    templateRef: account.codeCoverage
                     versionLabel: v1
                     templateInputs:
-                      type: StepGroup
-                      variables:
-                        - name: sonarUrl
-                          type: Secret
-                          value: sonarUrl
-                        - name: sonarToken
-                          type: Secret
-                          value: sonarToken
-                  failureStrategies:
-                    - onFailure:
-                        errors:
-                          - AllErrors
-                        action:
-                          type: Ignore
+                      type: Run
+                      spec:
+                        envVariables:
+                          patch_coverage_percent: "80"
+                          file_path: coverage.out
+                          overall_coverage_percent: "0"
+                          ignore_failure: "false"
+                          exclude: "**/*_test.go,_tests/**,_examples/**"
